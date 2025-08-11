@@ -1,0 +1,63 @@
+## Build artifacts
+[bB]in/
+[oO]bj/
+**/Debug/
+**/Release/
+
+## Visual Studio
+.vs/
+TestResult*/
+*.user
+*.suo
+*.userprefs
+
+## Rider / IntelliJ
+.idea/
+*.iml
+
+## VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+## Logs
+*.log
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/packages/
+NuGet.exe
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Resharper
+_ReSharper.Caches/
+
+## DOTNET Generated
+*.gen.cs
+
+## Entity Framework Migrations snapshots (keep the files you need)
+# Uncomment if you want to exclude snapshots
+# *ModelSnapshot.cs
+
+## Coverage
+coverage/
+*.coverage
+*.coveragexml
+
+## Temporary files
+~$*
+*.tmp
+*.temp
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Others
+*.swp
+*.orig
+
