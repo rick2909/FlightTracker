@@ -1,0 +1,148 @@
+@model IEnumerable<FlightTracker.Application.Dtos.UserFlightDto>
+@{
+    ViewData["Title"] = "My Flights";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>My Flights</h1>
+                <div>
+                    <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary">← Back to Dashboard</a>
+                    <button class="btn btn-primary" disabled>Add New Flight (Coming Soon)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Flight History (@Model.Count() flights)</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Flight</th>
+                                        <th>Route</th>
+                                        <th>Departure</th>
+                                        <th>Arrival</th>
+                                        <th>Class</th>
+                                        <th>Seat</th>
+                                        <th>Status</th>
+                                        <th>Booked</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var flight in Model.OrderByDescending(f => f.DepartureTimeUtc))
+                                    {
+                                        <tr class="@(flight.DidFly ? "" : "table-warning")">
+                                            <td>
+                                                <strong>@flight.FlightNumber</strong>
+                                                <br />
+                                                <small class="text-muted">@flight.FlightStatus</small>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <strong>@flight.DepartureAirportCode</strong> 
+                                                    <small class="text-muted">@flight.DepartureCity</small>
+                                                </div>
+                                                <div class="text-center my-1">
+                                                    <i class="fas fa-arrow-down text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <strong>@flight.ArrivalAirportCode</strong> 
+                                                    <small class="text-muted">@flight.ArrivalCity</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div>@flight.DepartureTimeUtc.ToString("MMM dd, yyyy")</div>
+                                                <small class="text-muted">@flight.DepartureTimeUtc.ToString("HH:mm") UTC</small>
+                                            </td>
+                                            <td>
+                                                <div>@flight.ArrivalTimeUtc.ToString("MMM dd, yyyy")</div>
+                                                <small class="text-muted">@flight.ArrivalTimeUtc.ToString("HH:mm") UTC</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge @GetClassBadgeColor(flight.FlightClass)">
+                                                    @flight.FlightClass
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">@flight.SeatNumber</span>
+                                            </td>
+                                            <td>
+                                                @if (flight.DidFly)
+                                                {
+                                                    <span class="badge bg-success">Completed</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">No Show</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">@flight.BookedOnUtc.ToString("MMM dd, yyyy")</small>
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(flight.Notes))
+                                                {
+                                                    <span data-bs-toggle="tooltip" title="@flight.Notes">
+                                                        <i class="fas fa-comment-alt text-info"></i>
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-plane fa-3x text-muted mb-3"></i>
+                            <h4>No flights recorded</h4>
+                            <p class="text-muted">Start tracking your aviation journey by adding your first flight!</p>
+                            <button class="btn btn-primary" disabled>Add Your First Flight (Coming Soon)</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetClassBadgeColor(FlightTracker.Domain.Enums.FlightClass flightClass)
+    {
+        return flightClass switch
+        {
+            FlightTracker.Domain.Enums.FlightClass.First => "bg-warning text-dark",
+            FlightTracker.Domain.Enums.FlightClass.Business => "bg-info",
+            FlightTracker.Domain.Enums.FlightClass.PremiumEconomy => "bg-secondary",
+            FlightTracker.Domain.Enums.FlightClass.Economy => "bg-primary",
+            _ => "bg-light text-dark"
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        // Initialize tooltips
+        $(document).ready(function() {
+            $('[data-bs-toggle="tooltip"]').tooltip();
+        });
+    </script>
+}

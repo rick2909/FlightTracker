@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Application",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Infrastructure", "FlightTracker.Infrastructure\FlightTracker.Infrastructure.csproj", "{929158DC-97CB-4B25-BFCF-2C696959027C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Web", "FlightTracker.Web\FlightTracker.Web.csproj", "{2C74B886-C8A8-4560-B897-3505899B36F5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{929158DC-97CB-4B25-BFCF-2C696959027C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{929158DC-97CB-4B25-BFCF-2C696959027C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{929158DC-97CB-4B25-BFCF-2C696959027C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C74B886-C8A8-4560-B897-3505899B36F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C74B886-C8A8-4560-B897-3505899B36F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C74B886-C8A8-4560-B897-3505899B36F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C74B886-C8A8-4560-B897-3505899B36F5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
