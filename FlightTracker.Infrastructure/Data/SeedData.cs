@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Domain.Entities;
+using FlightTracker.Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,6 +51,12 @@ public static class SeedData
 		if (userManager != null)
 		{
 			await SeedUsersAsync(userManager, cancellationToken);
+			
+			// Seed UserFlights after users are created
+			if (!context.UserFlights.Any())
+			{
+				await SeedUserFlightsAsync(context, userManager, cancellationToken);
+			}
 		}
 	}
 
@@ -72,31 +79,31 @@ public static class SeedData
 		{
 			new()
 			{
-				FlightNumber = "FT100", Status = "Scheduled",
+				FlightNumber = "FT100", Status = FlightStatus.Scheduled,
 				DepartureAirportId = A("JFK").Id, ArrivalAirportId = A("LAX").Id,
 				DepartureTimeUtc = baseTime.AddHours(2), ArrivalTimeUtc = baseTime.AddHours(8)
 			},
 			new()
 			{
-				FlightNumber = "FT101", Status = "Scheduled",
+				FlightNumber = "FT101", Status = FlightStatus.Scheduled,
 				DepartureAirportId = A("LAX").Id, ArrivalAirportId = A("JFK").Id,
 				DepartureTimeUtc = baseTime.AddHours(3), ArrivalTimeUtc = baseTime.AddHours(9)
 			},
 			new()
 			{
-				FlightNumber = "FT200", Status = "Delayed",
+				FlightNumber = "FT200", Status = FlightStatus.Delayed,
 				DepartureAirportId = A("LHR").Id, ArrivalAirportId = A("FRA").Id,
 				DepartureTimeUtc = baseTime.AddHours(1), ArrivalTimeUtc = baseTime.AddHours(3)
 			},
 			new()
 			{
-				FlightNumber = "FT300", Status = "Scheduled",
+				FlightNumber = "FT300", Status = FlightStatus.Scheduled,
 				DepartureAirportId = A("FRA").Id, ArrivalAirportId = A("NRT").Id,
 				DepartureTimeUtc = baseTime.AddHours(5), ArrivalTimeUtc = baseTime.AddHours(17)
 			},
 			new()
 			{
-				FlightNumber = "FT400", Status = "Cancelled",
+				FlightNumber = "FT400", Status = FlightStatus.Cancelled,
 				DepartureAirportId = A("NRT").Id, ArrivalAirportId = A("LHR").Id,
 				DepartureTimeUtc = baseTime.AddHours(6), ArrivalTimeUtc = baseTime.AddHours(18)
 			}
@@ -120,5 +127,67 @@ public static class SeedData
 
 		await EnsureUserAsync("admin", "admin@example.com", "Admin#123");
 		await EnsureUserAsync("demo", "demo@example.com", "Demo#123");
+	}
+
+	private static async Task SeedUserFlightsAsync(FlightTrackerDbContext context, UserManager<ApplicationUser> userManager, CancellationToken cancellationToken)
+	{
+		var demoUser = await userManager.FindByNameAsync("demo");
+		var adminUser = await userManager.FindByNameAsync("admin");
+		
+		if (demoUser == null || adminUser == null) return;
+
+		var flights = await context.Flights.ToListAsync(cancellationToken);
+		if (!flights.Any()) return;
+
+		var baseTime = DateTime.UtcNow;
+		
+		var userFlights = new List<UserFlight>
+		{
+			// Demo user's flights
+			new()
+			{
+				UserId = demoUser.Id,
+				FlightId = flights.First(f => f.FlightNumber == "FT100").Id,
+				FlightClass = FlightClass.Economy,
+				SeatNumber = "12A",
+				BookedOnUtc = baseTime.AddDays(-30),
+				Notes = "Nice window seat, good service",
+				DidFly = true
+			},
+			new()
+			{
+				UserId = demoUser.Id,
+				FlightId = flights.First(f => f.FlightNumber == "FT200").Id,
+				FlightClass = FlightClass.Business,
+				SeatNumber = "3B",
+				BookedOnUtc = baseTime.AddDays(-15),
+				Notes = "Delayed but comfortable business class",
+				DidFly = true
+			},
+			// Admin user's flights
+			new()
+			{
+				UserId = adminUser.Id,
+				FlightId = flights.First(f => f.FlightNumber == "FT101").Id,
+				FlightClass = FlightClass.PremiumEconomy,
+				SeatNumber = "8C",
+				BookedOnUtc = baseTime.AddDays(-20),
+				Notes = "Extra legroom was worth it",
+				DidFly = true
+			},
+			new()
+			{
+				UserId = adminUser.Id,
+				FlightId = flights.First(f => f.FlightNumber == "FT300").Id,
+				FlightClass = FlightClass.First,
+				SeatNumber = "1A",
+				BookedOnUtc = baseTime.AddDays(-10),
+				Notes = "Amazing first class experience on long haul",
+				DidFly = true
+			}
+		};
+
+		await context.UserFlights.AddRangeAsync(userFlights, cancellationToken);
+		await context.SaveChangesAsync(cancellationToken);
 	}
 }

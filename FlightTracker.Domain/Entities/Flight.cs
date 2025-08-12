@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using FlightTracker.Domain.Enums;
 
 namespace FlightTracker.Domain.Entities;
 
@@ -16,10 +17,9 @@ public class Flight
     public string FlightNumber { get; set; } = string.Empty;
 
     /// <summary>
-    /// Current status text (e.g., Scheduled, Boarding, Departed, Landed, Cancelled, Delayed).
-    /// (Can be replaced later by a strongly-typed enum if desired.)
+    /// Current status of the flight.
     /// </summary>
-    public string Status { get; set; } = string.Empty;
+    public FlightStatus Status { get; set; } = FlightStatus.Scheduled;
 
     public DateTime DepartureTimeUtc { get; set; }
     public DateTime ArrivalTimeUtc { get; set; }
@@ -30,6 +30,11 @@ public class Flight
     // Navigation properties (optional in pure domain model; included for EF convenience)
     public Airport? DepartureAirport { get; set; }
     public Airport? ArrivalAirport { get; set; }
+
+    /// <summary>
+    /// Collection of user flight experiences for this flight.
+    /// </summary>
+    public ICollection<UserFlight> UserFlights { get; set; } = new List<UserFlight>();
 
     /// <summary>
     /// Optional collection for related operational notes or events in future iterations.

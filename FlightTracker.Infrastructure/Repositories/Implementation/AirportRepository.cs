@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Domain.Entities;
 using FlightTracker.Infrastructure.Data;
-using FlightTracker.Infrastructure.Repositories.Interfaces;
+using FlightTracker.Application.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace FlightTracker.Infrastructure.Repositories.Implementation;
