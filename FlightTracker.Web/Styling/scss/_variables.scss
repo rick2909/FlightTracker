@@ -14,3 +14,19 @@ $color-highlight: #29B6F6;
 $navbar-height: 56px;
 $transition-fast: 150ms ease;
 $font-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+
+// Breakpoints (min-width)
+$bp-xs: 576px;
+$bp-sm: 768px;
+$bp-md: 1024px;
+$bp-lg: 1280px;
+$bp-xl: 1920px;
+$bp-xx: 2560px;
+
+// Generic media mixins using variables (alternative to map in _sidebar)
+@mixin up-xs { @media (min-width: $bp-xs) { @content; } }
+@mixin up-sm { @media (min-width: $bp-sm) { @content; } }
+@mixin up-md { @media (min-width: $bp-md) { @content; } }
+@mixin up-lg { @media (min-width: $bp-lg) { @content; } }
+@mixin up-xl { @media (min-width: $bp-xl) { @content; } }
+@mixin up-xx { @media (min-width: $bp-xx) { @content; } }

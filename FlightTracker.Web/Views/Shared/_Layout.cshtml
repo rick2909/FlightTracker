@@ -12,9 +12,9 @@
     <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true"/>
 </head>
 <body class="layout">
-    <div class="layout__sidebar">
+    <nav class="">
         @await Html.PartialAsync("_Sidebar")
-    </div>
+    </nav>
     <div class="layout__main">
         <header class="layout__header">
             <h1 class="layout__title">@ViewData["Title"]</h1>
@@ -25,17 +25,34 @@
         <footer class="layout__footer">&copy; 2025 - FlightTracker.Web - <a asp-controller="Home" asp-action="Privacy">Privacy</a></footer>
     </div>
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
-        <script>
-                (function(){
-                    const sidebar=document.querySelector('[data-sidebar]');
-                    const toggle=document.querySelector('[data-sidebar-toggle]');
-                    if(!sidebar||!toggle) return;
-                    toggle.addEventListener('click',()=>{
-                        const collapsed=sidebar.classList.toggle('sidebar--collapsed');
-                        toggle.setAttribute('aria-expanded',(!collapsed).toString());
-                    });
-                })();
-        </script>
+    <script>
+        (function(){
+            const sidebar=document.querySelector('[data-sidebar]');
+            const toggle=document.querySelector('[data-sidebar-toggle]');
+            const nav=document.querySelector('[data-sidebar-nav]');
+            if(!sidebar||!toggle) return;
+            function setState(collapsed){
+                sidebar.classList.toggle('sidebar--collapsed',collapsed);
+                toggle.setAttribute('aria-expanded',(!collapsed).toString());
+            }
+            toggle.addEventListener('click',e=>{
+                e.stopPropagation();
+                setState(!sidebar.classList.contains('sidebar--collapsed'));
+            });
+            // Clicking on whitespace inside collapsed sidebar (not a link or button) expands it
+            sidebar.addEventListener('click',e=>{
+                if(!sidebar.classList.contains('sidebar--collapsed')) return;
+                const target=e.target;
+                if(target.closest('button, a')) return; // ignore interactive elements
+                setState(false);
+            });
+            nav?.addEventListener('click',e=>{
+                if(e.target.closest('a') && sidebar.classList.contains('sidebar--collapsed')){
+                    setState(false);
+                }
+            });
+        })();
+    </script>
         @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

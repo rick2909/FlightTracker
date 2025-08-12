@@ -8,40 +8,66 @@
         return string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase);
     }
 }
+@{
+    var displayName = User?.Identity?.IsAuthenticated == true ? User.Identity!.Name ?? "User" : "Guest User";
+    string GetInitials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 0) return "GU";
+        if (parts.Length == 1) return new string(parts[0].Take(2).Select(char.ToUpper).ToArray());
+        return string.Concat(char.ToUpper(parts[0][0]), char.ToUpper(parts[1][0]));
+    }
+    var initials = GetInitials(displayName);
+}
 <aside class="sidebar" aria-label="Primary navigation" data-sidebar>
-    <div class="sidebar__brand">
-        <button class="sidebar__toggle" type="button" aria-label="Toggle navigation" aria-expanded="true" data-sidebar-toggle>
-            <span class="sidebar__hamburger" aria-hidden="true">
-                <span></span><span></span><span></span>
-            </span>
-        </button>
-        <span class="material-symbols-outlined sidebar__logo" aria-hidden="true">flight</span>
-        <span class="sidebar__title">FlightTracker</span>
+    <div class="sidebar__scroll">
+    <div class="sidebar__profile-card sidebar__section">
+            <div class="sidebar__avatar" aria-hidden="true">@initials</div>
+            <div class="sidebar__profile-text">
+                <div class="sidebar__name" title="@displayName">@displayName</div>
+                <div class="sidebar__role">Traveler</div>
+            </div>
+        </div>
+    <div class="sidebar__flight-card sidebar__section">
+            <div class="flight-card__title">Flight Details</div>
+            <div class="flight-card__item">
+                <span class="material-icons" aria-hidden="true">flight_takeoff</span>
+                <span class="flight-card__label">Next: <em>None</em></span>
+            </div>
+            <div class="flight-card__item">
+                <span class="material-icons" aria-hidden="true">schedule</span>
+                <span class="flight-card__label">UTC: @DateTime.UtcNow.ToString("HH:mm")</span>
+            </div>
+        </div>
+    <nav class="sidebar__nav sidebar__section" data-sidebar-nav>
+            <a class="sidebar__link @(IsActive("Home","Index") ? "is-active" : null)" asp-controller="Home" asp-action="Index">
+                <span class="material-icons" aria-hidden="true">home</span>
+                <span class="sidebar__text">Home</span>
+            </a>
+            <a class="sidebar__link @(IsActive("Dashboard","MyFlights") ? "is-active" : null)" asp-controller="Dashboard" asp-action="MyFlights">
+                <span class="material-symbols-outlined" aria-hidden="true">flight</span>
+                <span class="sidebar__text">Flights</span>
+            </a>
+            <a class="sidebar__link @(IsActive("Airports") ? "is-active" : null)" asp-controller="Airports" asp-action="Index">
+                <span class="material-icons" aria-hidden="true">location_city</span>
+                <span class="sidebar__text">Airports</span>
+            </a>
+            <a class="sidebar__link @(IsActive("Dashboard","Statistics") ? "is-active" : null)" asp-controller="Dashboard" asp-action="Statistics">
+                <span class="material-icons" aria-hidden="true">insert_chart</span>
+                <span class="sidebar__text">Statistics</span>
+            </a>
+            <a class="sidebar__link @(IsActive("Settings") ? "is-active" : null)" asp-controller="Settings" asp-action="Index">
+                <span class="material-icons" aria-hidden="true">settings</span>
+                <span class="sidebar__text">Settings</span>
+            </a>
+            <a class="sidebar__link @(IsActive("Help") ? "is-active" : null)" asp-controller="Help" asp-action="Index">
+                <span class="material-icons" aria-hidden="true">help_outline</span>
+                <span class="sidebar__text">Help</span>
+            </a>
+        </nav>
     </div>
-    <nav class="sidebar__nav">
-        <a class="sidebar__link @(IsActive("Home","Index") ? "is-active" : null)" asp-controller="Home" asp-action="Index">
-            <span class="material-icons" aria-hidden="true">home</span>
-            <span class="sidebar__text">Home</span>
-        </a>
-        <a class="sidebar__link @(IsActive("Dashboard","MyFlights") ? "is-active" : null)" asp-controller="Dashboard" asp-action="MyFlights">
-            <span class="material-symbols-outlined" aria-hidden="true">flight</span>
-            <span class="sidebar__text">Flights</span>
-        </a>
-        <a class="sidebar__link @(IsActive("Airports") ? "is-active" : null)" asp-controller="Airports" asp-action="Index">
-            <span class="material-icons" aria-hidden="true">location_city</span>
-            <span class="sidebar__text">Airports</span>
-        </a>
-        <a class="sidebar__link @(IsActive("Dashboard","Statistics") ? "is-active" : null)" asp-controller="Dashboard" asp-action="Statistics">
-            <span class="material-icons" aria-hidden="true">insert_chart</span>
-            <span class="sidebar__text">Statistics</span>
-        </a>
-        <a class="sidebar__link @(IsActive("Settings") ? "is-active" : null)" asp-controller="Settings" asp-action="Index">
-            <span class="material-icons" aria-hidden="true">settings</span>
-            <span class="sidebar__text">Settings</span>
-        </a>
-        <a class="sidebar__link @(IsActive("Help") ? "is-active" : null)" asp-controller="Help" asp-action="Index">
-            <span class="material-icons" aria-hidden="true">help_outline</span>
-            <span class="sidebar__text">Help</span>
-        </a>
-    </nav>
+    <button class="sidebar__collapse-btn" type="button" aria-label="Toggle sidebar" aria-expanded="true" data-sidebar-toggle>
+        <span class="material-icons collapse-icon collapse-icon-open" aria-hidden="true">arrow_right_alt</span>
+        <span class="material-icons collapse-icon collapse-icon-close" aria-hidden="true">close</span>
+    </button>
 </aside>
