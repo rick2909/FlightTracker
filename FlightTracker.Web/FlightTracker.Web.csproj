@@ -12,4 +12,42 @@
       <ProjectReference Include="..\FlightTracker.Infrastructure\FlightTracker.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <RazorComponent Include="App.razor" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Radzen.Blazor" Version="4.29.6" />
+    </ItemGroup>
+
+    <!-- SCSS / JS build configuration -->
+    <PropertyGroup>
+  <SassExecutable>npx sass</SassExecutable>
+      <SassSourceDir>Styling/scss</SassSourceDir>
+      <SassEntry>styles.scss</SassEntry>
+      <CssOutputDir>wwwroot/css</CssOutputDir>
+      <JsSourceDir>Styling/js</JsSourceDir>
+      <JsOutputDir>wwwroot/js</JsOutputDir>
+    </PropertyGroup>
+
+    <!-- Ensure output directories exist -->
+    <Target Name="EnsureAssetDirs" BeforeTargets="Compile">
+      <MakeDir Directories="$(CssOutputDir);$(JsOutputDir)" />
+    </Target>
+
+    <!-- Compile SCSS to CSS (expects 'sass' CLI available: npm install -g sass) -->
+    <Target Name="CompileScss" DependsOnTargets="EnsureAssetDirs" BeforeTargets="Build">
+      <Message Text="Compiling SCSS $(SassSourceDir)/$(SassEntry) -> $(CssOutputDir)/styles.css" Importance="high" />
+  <Exec Command="$(SassExecutable) --no-source-map $(SassSourceDir)/$(SassEntry):$(CssOutputDir)/styles.css" IgnoreExitCode="false" Condition="'$(SassExecutable)' != ''" />
+    </Target>
+
+    <!-- Process JS: basic whitespace/comment minify via PowerShell on Windows; fallback copy otherwise -->
+    <Target Name="ProcessJs" DependsOnTargets="EnsureAssetDirs" BeforeTargets="Build">
+      <Message Text="Processing JS from $(JsSourceDir) -> $(JsOutputDir)" Importance="high" />
+      <Exec Condition="'$(OS)' == 'Windows_NT'" Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;Get-ChildItem -Path '$(JsSourceDir)' -Filter *.js | ForEach-Object { $raw = (Get-Content $_.FullName -Raw); $min = $raw -replace '(?s)/\*.*?\*/','' -replace '//.*','' -replace '\s+',' '; Set-Content -Path (Join-Path '$(JsOutputDir)' $_.Name) -Value $min -Encoding utf8 }&quot;" />
+      <Copy Condition="'$(OS)' != 'Windows_NT'" SourceFiles="@(JsSource)" DestinationFolder="$(JsOutputDir)" SkipUnchangedFiles="true" />
+    </Target>
+
+  <!-- Compiled assets in wwwroot are included implicitly by SDK -->
+
 </Project>

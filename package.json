@@ -1,0 +1,27 @@
+{
+  "name": "flighttracker",
+  "version": "1.0.0",
+  "description": "A modern, multi-platform flight tracking application (web, desktop, mobile) built with .NET and Clean Architecture principles. Designed to evolve from a simple flight & airport data core into a richer experience (live map, passport/stats, playback, provider adapters like OpenSky and FR24).",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rick2909/FlightTracker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/rick2909/FlightTracker/issues"
+  },
+  "homepage": "https://github.com/rick2909/FlightTracker#readme",
+  "devDependencies": {
+    "sass": "^1.90.0"
+  }
+}

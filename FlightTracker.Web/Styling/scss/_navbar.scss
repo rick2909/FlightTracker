@@ -1,0 +1,126 @@
+@use 'variables' as *;
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $navbar-height;
+  background: $color-primary;
+  padding: 0 1rem;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,.15);
+
+  &__brand {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #fff;
+    text-decoration: none;
+
+    .material-icons {
+      font-size: 1.4rem;
+      margin-right: .4rem;
+    }
+  }
+
+  &__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background $transition-fast;
+
+    &:hover, &:focus-visible {
+      background: rgba(255,255,255,.12);
+      outline: none;
+    }
+
+    .material-icons {
+      font-size: 28px;
+    }
+  }
+
+  &__menu {
+    position: fixed;
+    top: $navbar-height;
+    left: 0;
+    right: 0;
+    background: $color-primary;
+    display: none;
+    flex-direction: column;
+    padding: .5rem 0 1rem;
+    gap: .25rem;
+    border-bottom: 1px solid rgba(255,255,255,.15);
+
+    &--open {
+      display: flex;
+    }
+
+    @media (min-width: 900px) {
+      position: static;
+      display: flex !important;
+      flex-direction: row;
+      align-items: stretch;
+      background: transparent;
+      padding: 0;
+      gap: 0.25rem;
+      border: none;
+    }
+  }
+
+  &__item {
+    list-style: none;
+
+    &--active > .navbar__link {
+      background: $color-secondary;
+      color: #000;
+    }
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .55rem 1rem;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: .95rem;
+    letter-spacing: .25px;
+    border-radius: 4px;
+    transition: background $transition-fast, color $transition-fast;
+
+    .material-icons {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    &:hover, &:focus-visible {
+      background: $color-highlight;
+      color: #000;
+      outline: none;
+    }
+  }
+}
+
+.nav-spacer { height: $navbar-height; }
+
+/* Utility for visually hidden text */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}

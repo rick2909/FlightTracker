@@ -1,0 +1,47 @@
+@{
+    var currentController = (string?)ViewContext.RouteData.Values["controller"] ?? string.Empty;
+    var currentAction = (string?)ViewContext.RouteData.Values["action"] ?? string.Empty;
+    bool IsActive(string controller, string? action = null)
+    {
+        if (!string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase)) return false;
+        if (action == null) return true;
+        return string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase);
+    }
+}
+<aside class="sidebar" aria-label="Primary navigation" data-sidebar>
+    <div class="sidebar__brand">
+        <button class="sidebar__toggle" type="button" aria-label="Toggle navigation" aria-expanded="true" data-sidebar-toggle>
+            <span class="sidebar__hamburger" aria-hidden="true">
+                <span></span><span></span><span></span>
+            </span>
+        </button>
+        <span class="material-symbols-outlined sidebar__logo" aria-hidden="true">flight</span>
+        <span class="sidebar__title">FlightTracker</span>
+    </div>
+    <nav class="sidebar__nav">
+        <a class="sidebar__link @(IsActive("Home","Index") ? "is-active" : null)" asp-controller="Home" asp-action="Index">
+            <span class="material-icons" aria-hidden="true">home</span>
+            <span class="sidebar__text">Home</span>
+        </a>
+        <a class="sidebar__link @(IsActive("Dashboard","MyFlights") ? "is-active" : null)" asp-controller="Dashboard" asp-action="MyFlights">
+            <span class="material-symbols-outlined" aria-hidden="true">flight</span>
+            <span class="sidebar__text">Flights</span>
+        </a>
+        <a class="sidebar__link @(IsActive("Airports") ? "is-active" : null)" asp-controller="Airports" asp-action="Index">
+            <span class="material-icons" aria-hidden="true">location_city</span>
+            <span class="sidebar__text">Airports</span>
+        </a>
+        <a class="sidebar__link @(IsActive("Dashboard","Statistics") ? "is-active" : null)" asp-controller="Dashboard" asp-action="Statistics">
+            <span class="material-icons" aria-hidden="true">insert_chart</span>
+            <span class="sidebar__text">Statistics</span>
+        </a>
+        <a class="sidebar__link @(IsActive("Settings") ? "is-active" : null)" asp-controller="Settings" asp-action="Index">
+            <span class="material-icons" aria-hidden="true">settings</span>
+            <span class="sidebar__text">Settings</span>
+        </a>
+        <a class="sidebar__link @(IsActive("Help") ? "is-active" : null)" asp-controller="Help" asp-action="Index">
+            <span class="material-icons" aria-hidden="true">help_outline</span>
+            <span class="sidebar__text">Help</span>
+        </a>
+    </nav>
+</aside>

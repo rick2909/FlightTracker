@@ -62,3 +62,7 @@ Thumbs.db
 *.orig
 
 .fake
+
+node_modules/
+wwwroot/css/*
+wwwroot/js/*

@@ -1,0 +1,16 @@
+@using Microsoft.AspNetCore.Components.Routing
+@namespace FlightTracker.Web
+<CascadingAuthenticationState>
+	<RadzenNotification />
+	<RadzenDialog />
+	<RadzenContextMenu />
+	<RadzenTooltip />
+	<Router AppAssembly="@typeof(App).Assembly">
+		<Found Context="routeData">
+			<RouteView RouteData="@routeData" DefaultLayout="null" />
+		</Found>
+		<NotFound>
+			<p class="radzen-text">Component not found.</p>
+		</NotFound>
+	</Router>
+</CascadingAuthenticationState>

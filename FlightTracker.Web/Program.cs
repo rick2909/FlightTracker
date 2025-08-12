@@ -4,11 +4,18 @@ using FlightTracker.Application.Repositories.Interfaces;
 using FlightTracker.Infrastructure.Repositories.Implementation;
 using FlightTracker.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Radzen;
+using FlightTracker.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add MVC (Radzen/Blazor deferred until components added)
 builder.Services.AddControllersWithViews();
+// Configure known HTTPS port for HttpsRedirectionMiddleware
+builder.Services.AddHttpsRedirection(options =>
+{
+    options.HttpsPort = 7222; // matches launchSettings https profile
+});
 
 // Configure Entity Framework
 builder.Services.AddDbContext<FlightTrackerDbContext>(options =>
@@ -46,5 +53,7 @@ app.MapControllerRoute(
         name: "default",
         pattern: "{controller=Dashboard}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+// (Radzen/Blazor root removed – no interactive components yet)
 
 app.Run();
