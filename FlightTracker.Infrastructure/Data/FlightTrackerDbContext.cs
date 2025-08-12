@@ -14,6 +14,7 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
 	public DbSet<Flight> Flights => Set<Flight>();
 	public DbSet<Airport> Airports => Set<Airport>();
 	public DbSet<UserFlight> UserFlights => Set<UserFlight>();
+	public DbSet<Aircraft> Aircraft => Set<Aircraft>();
 
 	protected override void OnModelCreating(ModelBuilder builder)
 	{
@@ -35,7 +36,24 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
 				  .HasForeignKey(f => f.ArrivalAirportId)
 				  .OnDelete(DeleteBehavior.Restrict);
 
+			entity.HasOne(f => f.Aircraft)
+				  .WithMany(a => a.Flights)
+				  .HasForeignKey(f => f.AircraftId)
+				  .OnDelete(DeleteBehavior.SetNull);
+
 			entity.HasIndex(f => f.FlightNumber);
+		});
+
+		// Configure Aircraft entity
+		builder.Entity<Aircraft>(entity =>
+		{
+			entity.Property(a => a.Registration).HasMaxLength(8).IsRequired();
+			entity.Property(a => a.Manufacturer).HasConversion<string>().IsRequired();
+			entity.Property(a => a.Model).HasMaxLength(64).IsRequired();
+			entity.Property(a => a.IcaoTypeCode).HasMaxLength(4);
+			entity.Property(a => a.Notes).HasMaxLength(500);
+
+			entity.HasIndex(a => a.Registration).IsUnique();
 		});
 
 		builder.Entity<Airport>(entity =>

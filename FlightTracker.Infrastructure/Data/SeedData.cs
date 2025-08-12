@@ -41,9 +41,18 @@ public static class SeedData
 			await context.SaveChangesAsync(cancellationToken);
 		}
 
+		if (!context.Aircraft.Any())
+		{
+			var aircraft = GetSeedAircraft();
+			await context.Aircraft.AddRangeAsync(aircraft, cancellationToken);
+			await context.SaveChangesAsync(cancellationToken);
+		}
+
 		if (!context.Flights.Any())
 		{
-			var flights = GetSeedFlights(context.Airports.Local.Any() ? context.Airports.Local.ToList() : await context.Airports.ToListAsync(cancellationToken));
+			var airports = context.Airports.Local.Any() ? context.Airports.Local.ToList() : await context.Airports.ToListAsync(cancellationToken);
+			var aircraft = context.Aircraft.Local.Any() ? context.Aircraft.Local.ToList() : await context.Aircraft.ToListAsync(cancellationToken);
+			var flights = GetSeedFlights(airports, aircraft);
 			await context.Flights.AddRangeAsync(flights, cancellationToken);
 			await context.SaveChangesAsync(cancellationToken);
 		}
@@ -69,11 +78,21 @@ public static class SeedData
 		new() { Code = "NRT", Name = "Narita International", City = "Tokyo", Country = "Japan" }
 	};
 
-	private static IReadOnlyList<Flight> GetSeedFlights(IReadOnlyList<Airport> airports)
+	private static IReadOnlyList<Aircraft> GetSeedAircraft() => new List<Aircraft>
+	{
+		new() { Registration = "N12345", Manufacturer = AircraftManufacturer.Boeing, Model = "737-800", YearManufactured = 2018, PassengerCapacity = 189, IcaoTypeCode = "B738" },
+		new() { Registration = "N67890", Manufacturer = AircraftManufacturer.Airbus, Model = "A320", YearManufactured = 2020, PassengerCapacity = 180, IcaoTypeCode = "A320" },
+		new() { Registration = "G-ABCD", Manufacturer = AircraftManufacturer.Boeing, Model = "777-200", YearManufactured = 2019, PassengerCapacity = 314, IcaoTypeCode = "B772" },
+		new() { Registration = "D-EFGH", Manufacturer = AircraftManufacturer.Airbus, Model = "A350-900", YearManufactured = 2021, PassengerCapacity = 325, IcaoTypeCode = "A359" },
+		new() { Registration = "JA1234", Manufacturer = AircraftManufacturer.Boeing, Model = "787-9", YearManufactured = 2022, PassengerCapacity = 290, IcaoTypeCode = "B789" }
+	};
+
+	private static IReadOnlyList<Flight> GetSeedFlights(IReadOnlyList<Airport> airports, IReadOnlyList<Aircraft> aircraft)
 	{
 		// Deterministic base time for tests (UTC)
 		var baseTime = new DateTime(2025, 01, 01, 08, 00, 00, DateTimeKind.Utc);
 		Airport A(string code) => airports.First(a => a.Code == code);
+		Aircraft Ac(string registration) => aircraft.First(a => a.Registration == registration);
 
 		return new List<Flight>
 		{
@@ -81,30 +100,35 @@ public static class SeedData
 			{
 				FlightNumber = "FT100", Status = FlightStatus.Scheduled,
 				DepartureAirportId = A("JFK").Id, ArrivalAirportId = A("LAX").Id,
+				AircraftId = Ac("N12345").Id,
 				DepartureTimeUtc = baseTime.AddHours(2), ArrivalTimeUtc = baseTime.AddHours(8)
 			},
 			new()
 			{
 				FlightNumber = "FT101", Status = FlightStatus.Scheduled,
 				DepartureAirportId = A("LAX").Id, ArrivalAirportId = A("JFK").Id,
+				AircraftId = Ac("N67890").Id,
 				DepartureTimeUtc = baseTime.AddHours(3), ArrivalTimeUtc = baseTime.AddHours(9)
 			},
 			new()
 			{
 				FlightNumber = "FT200", Status = FlightStatus.Delayed,
 				DepartureAirportId = A("LHR").Id, ArrivalAirportId = A("FRA").Id,
+				AircraftId = Ac("G-ABCD").Id,
 				DepartureTimeUtc = baseTime.AddHours(1), ArrivalTimeUtc = baseTime.AddHours(3)
 			},
 			new()
 			{
 				FlightNumber = "FT300", Status = FlightStatus.Scheduled,
 				DepartureAirportId = A("FRA").Id, ArrivalAirportId = A("NRT").Id,
+				AircraftId = Ac("D-EFGH").Id,
 				DepartureTimeUtc = baseTime.AddHours(5), ArrivalTimeUtc = baseTime.AddHours(17)
 			},
 			new()
 			{
 				FlightNumber = "FT400", Status = FlightStatus.Cancelled,
 				DepartureAirportId = A("NRT").Id, ArrivalAirportId = A("LHR").Id,
+				AircraftId = Ac("JA1234").Id,
 				DepartureTimeUtc = baseTime.AddHours(6), ArrivalTimeUtc = baseTime.AddHours(18)
 			}
 		};

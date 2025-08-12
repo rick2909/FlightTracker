@@ -30,4 +30,9 @@ public record UserFlightDto
     public string ArrivalAirportCode { get; init; } = string.Empty;
     public string ArrivalAirportName { get; init; } = string.Empty;
     public string ArrivalCity { get; init; } = string.Empty;
+    
+    // Aircraft details (optional)
+    public string? AircraftRegistration { get; init; }
+    public string? AircraftModel { get; init; }
+    public AircraftManufacturer? AircraftManufacturer { get; init; }
 }

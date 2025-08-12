@@ -27,9 +27,15 @@ public class Flight
     public int DepartureAirportId { get; set; }
     public int ArrivalAirportId { get; set; }
 
+    /// <summary>
+    /// The aircraft operating this flight (optional).
+    /// </summary>
+    public int? AircraftId { get; set; }
+
     // Navigation properties (optional in pure domain model; included for EF convenience)
     public Airport? DepartureAirport { get; set; }
     public Airport? ArrivalAirport { get; set; }
+    public Aircraft? Aircraft { get; set; }
 
     /// <summary>
     /// Collection of user flight experiences for this flight.
