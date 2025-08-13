@@ -15,9 +15,10 @@
         flightsJson = JsonSerializer.Serialize(list, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     }
 }
+
 <div class="flight-map" data-flight-map data-map-flight-count="@mapFlightCount">
     <div class="flight-map__header">
-        <h2 class="flight-map__title">Flight Overview</h2>
+    <h1 class="flight-map__title">Flight Overview</h1>
         <div class="flight-map__search">
             <script>window.flightMapFilter = window.flightMapFilter || function(){ /* stub until map script loads */ };</script>
             <component type="typeof(FlightTracker.Web.Components.FlightMapSearch)" 

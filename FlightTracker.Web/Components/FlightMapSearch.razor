@@ -7,6 +7,8 @@
     [Parameter] public IEnumerable<MapFlightDto> MapFlights { get; set; } = Array.Empty<MapFlightDto>();
     // Backing field for live-bound textbox value
     private string? _search;
+    private int _activeIndex = -1; // keyboard navigation index
+    private List<string> _currentFiltered = new();
     private string? Search
     {
         get => _search;
@@ -31,37 +33,71 @@
             .Distinct()
             .OrderBy(s => s)
             .ToList();
+    RebuildFiltered();
     }
 
     // Explicit input handler to avoid ChangeEventArgs->string mismatch issues seen earlier
     private Task OnInput(ChangeEventArgs e)
     {
         Search = e.Value?.ToString();
+    _activeIndex = -1;
+    RebuildFiltered();
         // Each input updates filter set (JS retains prior layers)
         return Task.CompletedTask;
     }
 
     private async Task OnKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter")
+        if (!_currentFiltered.Any()) return;
+        if (e.Key == "ArrowDown")
         {
-            await JS.InvokeVoidAsync("flightMapZoomToFiltered");
+            _activeIndex = (_activeIndex + 1) % _currentFiltered.Count;
+            StateHasChanged();
+        }
+        else if (e.Key == "ArrowUp")
+        {
+            _activeIndex = _activeIndex <= 0 ? _currentFiltered.Count - 1 : _activeIndex - 1;
+            StateHasChanged();
+        }
+        else if (e.Key == "Enter")
+        {
+            if (_activeIndex >= 0 && _activeIndex < _currentFiltered.Count)
+            {
+                await Select(_currentFiltered[_activeIndex]);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("flightMapZoomToFiltered");
+            }
         }
     }
 
     private IEnumerable<string> Filtered => string.IsNullOrWhiteSpace(_search)
         ? suggestions
         : suggestions.Where(s => s.Contains(_search!, StringComparison.OrdinalIgnoreCase)).Take(20);
+
+    private void RebuildFiltered()
+    {
+        _currentFiltered = Filtered.ToList();
+        if (_activeIndex >= _currentFiltered.Count) _activeIndex = -1;
+    }
 }
 
 <div class="flight-map-search" data-flight-map-search>
-    <RadzenTextBox Value="@_search" @oninput="OnInput" @onkeydown="OnKeyDown" Placeholder="Search flights" Style="width:100%;height:24px;padding:2px 6px;font-size:.75rem;line-height:1.1;" class="flight-map-search__textbox" />
+    <span class="flight-map-search__icon material-icons">search</span>
+    <RadzenTextBox Value="@_search" @oninput="OnInput" @onkeydown="OnKeyDown" Placeholder="Search flights" class="flight-map-search__textbox" Style="width:100%;font-size:.75rem;line-height:1.2;" />
+    @if (!string.IsNullOrEmpty(_search))
+    {
+        <button type="button" class="flight-map-search__clear" @onclick="Clear" aria-label="Clear search">&times;</button>
+    }
     @if (!string.IsNullOrWhiteSpace(_search) && Filtered.Any())
     {
         <ul class="flight-map-search__dropdown" role="listbox" aria-label="Flight matches">
-            @foreach (var item in Filtered)
+            @for (int i = 0; i < _currentFiltered.Count; i++)
             {
-                <li role="option" @onclick="(()=>Select(item))">@item</li>
+                var item = _currentFiltered[i];
+                var active = i == _activeIndex ? " active" : string.Empty;
+                <li role="option" class="@active" @onclick="(()=>Select(item))">@item</li>
             }
         </ul>
     }
@@ -75,12 +111,26 @@
             await JS.InvokeVoidAsync("flightMapFilter", _search);
             await JS.InvokeVoidAsync("flightMapZoomToSelection", _search);
         } catch (JSException) { }
+        _activeIndex = -1;
+        RebuildFiltered();
+    }
+
+    private async Task Clear()
+    {
+        _search = string.Empty;
+        _activeIndex = -1;
+        try { await JS.InvokeVoidAsync("flightMapFilter", (string?)null); } catch (JSException) { }
+        RebuildFiltered();
     }
 }
 
 <style>
-.flight-map-search{position:relative;}
-.flight-map-search__dropdown{position:absolute;z-index:5000;list-style:none;margin:4px 0 0;padding:4px;max-height:220px;overflow:auto;background:#fff;border:1px solid #ccc;border-radius:4px;width:100%;box-shadow:0 2px 6px rgba(0,0,0,.15);} 
-.flight-map-search__dropdown li{padding:4px 6px;cursor:pointer;font-size:.8rem;white-space:nowrap;} 
-.flight-map-search__dropdown li:hover{background:#eef4ff;} 
+.flight-map-search{position:relative;display:flex;align-items:center;flex:1;gap:.3rem;padding:0 .4rem 0 1.4rem;margin:0;background:transparent;border:0;min-width:0;}
+.flight-map-search__icon{position:absolute;left:.45rem;top:50%;transform:translateY(-50%);font-family:'Material Icons';font-size:16px;line-height:1;color:#666;opacity:.85;pointer-events:none;}
+.flight-map-search__clear{position:absolute;right:.35rem;top:50%;transform:translateY(-50%);border:0;background:transparent;color:#666;font-size:14px;line-height:1;padding:0;cursor:pointer;opacity:.7;}
+.flight-map-search__clear:hover{opacity:1;}
+.flight-map-search__textbox{border:none !important;box-shadow:none !important;background:transparent !important;padding:0 !important;height:20px;min-width:0;}
+.flight-map-search__dropdown{position:absolute;z-index:5000;list-style:none;top:100%;left:0;margin:2px 0 0;padding:4px;max-height:220px;overflow:auto;background:#fff;border:1px solid #ccc;border-radius:4px;width:100%;box-shadow:0 2px 6px rgba(0,0,0,.15);} 
+.flight-map-search__dropdown li{padding:4px 6px;cursor:pointer;font-size:.8rem;white-space:nowrap;border-radius:3px;} 
+.flight-map-search__dropdown li:hover,.flight-map-search__dropdown li.active{background:#eef4ff;} 
 </style>

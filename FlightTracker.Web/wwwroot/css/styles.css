@@ -369,7 +369,8 @@
 
 .flight-map__title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.6rem;
+  line-height: 1.2;
   font-weight: 600;
 }
 
@@ -380,16 +381,20 @@
   background: #FFFFFF;
   border: 1px solid #E0E0E0;
   border-radius: 999px;
-  padding: 0.25rem 0.75rem 0.25rem 2.25rem;
-  min-width: 240px;
+  padding: 0.4rem 0.85rem 0.4rem 0.85rem;
+  min-width: 260px;
+  line-height: 1.2;
+  font-size: 0.95rem;
 }
 
 .flight-map__search-icon {
   position: absolute;
-  left: 0.6rem;
-  font-size: 1.2rem;
+  left: 0.85rem;
+  font-size: 1.25rem;
   color: #424242;
   pointer-events: none;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .flight-map__search input {
@@ -399,6 +404,8 @@
   outline: none;
   background: transparent;
   color: #212121;
+  font-size: 0.95rem;
+  padding: 0;
 }
 
 .flight-map__map {
@@ -432,6 +439,12 @@
 
 .layout__header {
   padding: 1rem 1.25rem 0.5rem;
+}
+
+/* When a descendant or the header itself has .remove__header, strip header padding */
+.layout__header.remove__header,
+.layout__header:has(.remove__header) {
+  padding: 0 !important;
 }
 
 .layout__title {

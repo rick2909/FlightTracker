@@ -18,7 +18,14 @@
     </nav>
     <div class="layout__main">
         <header class="layout__header">
-            <h1 class="layout__title">@ViewData["Title"]</h1>
+            @if (IsSectionDefined("HeaderContent"))
+            {
+                @RenderSection("HeaderContent", required: false)
+            }
+            else
+            {
+                <p class="layout__subtitle">@ViewData["Title"]</p>
+            }
         </header>
         <main role="main" class="layout__content">
             @RenderBody()
