@@ -10,7 +10,7 @@
     gap: 1rem;
 
     // up-sm: 2 columns
-    @include up-xs {
+    @include up-sm {
         grid-template-columns: repeat(2, 1fr);
     }
 
@@ -34,10 +34,10 @@
         }
     }
 
-	&__header {
-		// spawn all column
-		grid-column: span 6;
-	}
+    &__header {
+        // span all available columns at any breakpoint
+        grid-column: 1 / -1;
+    }
 }
 
 // Utility: full-width column (Material row/col compatible)

@@ -13,19 +13,28 @@
     [Parameter] public string? Icon { get; set; }
     [Parameter] public string? Class { get; set; }
 
-    private string CssClass => string.IsNullOrWhiteSpace(Class)
-        ? "ft-card ft-card--stat material3"
-        : $"ft-card ft-card--stat material3 {Class}";
+    private bool InlinePrimary => string.IsNullOrWhiteSpace(DataLabel);
+
+    private string CssClass
+        => $"ft-card ft-card--stat material3{(InlinePrimary ? " ft-card--inline-primary" : string.Empty)}{(string.IsNullOrWhiteSpace(Class) ? string.Empty : $" {Class}")}";
 }
 
 <RadzenCard Class="@CssClass">
-    <div class="ft-card__header">
-        <div class="ft-card__title">
-            @if (!string.IsNullOrEmpty(Icon))
+    <div class="ft-card__header ft-card__header--stack">
+        <div class="ft-card__row">
+            <div class="ft-card__title">
+                @if (!string.IsNullOrEmpty(Icon))
+                {
+                    <span class="material-icons" aria-hidden="true">@Icon</span>
+                }
+                <span>@Title</span>
+            </div>
+            @if (InlinePrimary)
             {
-                <span class="material-icons" aria-hidden="true">@Icon</span>
+                <div class="ft-stat__value-inline">
+                    <span class="ft-stat__value">@Data</span>
+                </div>
             }
-            <span>@Title</span>
         </div>
         @if (!string.IsNullOrWhiteSpace(SubTitle))
         {
