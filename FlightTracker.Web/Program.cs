@@ -13,11 +13,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add MVC (Radzen/Blazor deferred until components added)
 builder.Services.AddControllersWithViews();
-// Configure known HTTPS port for HttpsRedirectionMiddleware
-builder.Services.AddHttpsRedirection(options =>
-{
-    options.HttpsPort = 7222; // matches launchSettings https profile
-});
 
 // Configure Entity Framework
 builder.Services.AddDbContext<FlightTrackerDbContext>(options =>
@@ -48,7 +43,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// Always redirect to HTTPS in dev & prod (after ensuring dev cert trusted)
 app.UseHttpsRedirection();
+
 app.UseRouting();
 
 app.UseAuthorization();
