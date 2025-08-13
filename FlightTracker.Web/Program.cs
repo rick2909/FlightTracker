@@ -1,5 +1,7 @@
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Application.Services.Implementation;
+using FlightTracker.Application.Services.Interfaces.Analytics;
+using FlightTracker.Application.Services.Implementation.Analytics;
 using FlightTracker.Application.Repositories.Interfaces;
 using FlightTracker.Infrastructure.Repositories.Implementation;
 using FlightTracker.Infrastructure.Data;
@@ -30,6 +32,11 @@ builder.Services.AddScoped<IUserFlightRepository, UserFlightRepository>();
 builder.Services.AddScoped<IAirportService, AirportService>();
 builder.Services.AddScoped<IFlightService, FlightService>();
 builder.Services.AddScoped<IUserFlightService, UserFlightService>();
+
+// Analytics services
+builder.Services.AddSingleton<IDistanceCalculator, DistanceCalculator>(); // stateless, safe as singleton
+builder.Services.AddSingleton<IEmissionCalculator, SimpleEmissionCalculator>(); // stateless
+builder.Services.AddScoped<IFlightAnalyticsService, FlightAnalyticsService>();
 
 var app = builder.Build();
 

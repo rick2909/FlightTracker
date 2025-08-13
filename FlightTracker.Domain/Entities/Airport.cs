@@ -13,6 +13,16 @@ public class Airport
     public string City { get; set; } = string.Empty;
     public string Country { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Latitude in decimal degrees (WGS84). Optional until data populated.
+    /// </summary>
+    public double? Latitude { get; set; }
+
+    /// <summary>
+    /// Longitude in decimal degrees (WGS84). Optional until data populated.
+    /// </summary>
+    public double? Longitude { get; set; }
+
     // Navigation collections
     public ICollection<Flight> DepartingFlights { get; set; } = new List<Flight>();
     public ICollection<Flight> ArrivingFlights { get; set; } = new List<Flight>();
