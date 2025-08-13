@@ -38,7 +38,7 @@
     <!-- Compile SCSS to CSS (expects 'sass' CLI available: npm install -g sass) -->
     <Target Name="CompileScss" DependsOnTargets="EnsureAssetDirs" BeforeTargets="Build">
       <Message Text="Compiling SCSS $(SassSourceDir)/$(SassEntry) -> $(CssOutputDir)/styles.css" Importance="high" />
-  <Exec Command="$(SassExecutable) --no-source-map $(SassSourceDir)/$(SassEntry):$(CssOutputDir)/styles.css" IgnoreExitCode="false" Condition="'$(SassExecutable)' != ''" />
+      <Exec Command="$(SassExecutable) --no-source-map $(SassSourceDir)/$(SassEntry):$(CssOutputDir)/styles.css" IgnoreExitCode="false" Condition="'$(SassExecutable)' != ''" />
     </Target>
 
     <!-- Process JS: basic whitespace/comment minify via PowerShell on Windows; fallback copy otherwise -->

@@ -1,68 +1,264 @@
+@use 'sass:color';
 @use 'variables' as *;
 
-/* Using global breakpoint mixins from _variables.scss (up-xs, up-sm, up-md, up-lg, up-xl, up-xx) */
+/* Sidebar */
+.sidebar {
+  /* positioning */
+  position: relative;
+  /* box model */
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  /* visual */
+  transition: width 220ms ease;
+}
 
-/* Sidebar styles extracted */
-.sidebar { display:flex; flex-direction:column; height:100vh; position:relative; transition:width 220ms ease; }
-.sidebar__scroll { flex:1; overflow-y:auto; scrollbar-width:thin; }
-.sidebar__logo { display:block; }
-.material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
-.sidebar__brand .material-symbols-outlined { font-size:28px; color:$color-primary; }
+.sidebar__scroll {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
 
-/* Collapse button (left aligned) */
-.sidebar__collapse-btn { position:absolute; bottom:.65rem; left:.65rem; width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:transparent; color:$color-text-secondary; border:1px solid $color-divider; border-radius:50%; cursor:pointer; transition: background $transition-fast,border-color $transition-fast,color $transition-fast; }
-.sidebar__collapse-btn:hover { background:$color-background; color:$color-text-primary; }
-.collapse-icon { font-size:26px; line-height:1; transition:opacity $transition-fast, transform $transition-fast; }
-.collapse-icon-close { position:absolute; opacity:0; }
+.sidebar__logo { display: block; }
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.sidebar__brand .material-symbols-outlined {
+  font-size: 28px;
+  color: $color-primary;
+}
+
+/* Collapse button */
+.sidebar__collapse-btn {
+  position: absolute;
+  bottom: .65rem;
+  left: .65rem;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: $color-text-secondary;
+  border: 1px solid $color-divider;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background $transition-fast, border-color $transition-fast, color $transition-fast;
+}
+.collapse-icon-wrapper {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  display: inline-block;
+}
+
+.collapse-icon {
+  font-size: 26px;
+  line-height: 1;
+  transition: opacity $transition-fast, transform $transition-fast;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.collapse-icon-close { opacity: 0; }
+
+/* Preserve avatar position: animate text width/opacity instead of removing layout */
+.sidebar__profile-text-transition {
+  opacity: 1;
+  width: auto;
+  transition: opacity $transition-fast, width 220ms ease;
+}
+
+.sidebar--collapsed .sidebar__profile-text-transition { opacity: 0; width: 0; overflow: hidden; }
+.sidebar--collapsed .sidebar__profile-card { gap: 0; }
 
 /* Profile card */
-.sidebar__profile-card { display:flex; align-items:center; padding:1rem 1rem .75rem; gap:.75rem; }
-.sidebar__avatar { width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,$color-primary,$color-primary-variant); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:1.05rem; letter-spacing:.5px; }
-.sidebar__profile-text { display:flex; flex-direction:column; min-width:0; }
-.sidebar__name { font-weight:600; font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.sidebar__role { font-size:.7rem; text-transform:uppercase; letter-spacing:.8px; color:$color-text-secondary; }
+.sidebar__profile-card {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1rem .75rem;
+  gap: .75rem;
+}
 
-/* Flight card */
-.sidebar__flight-card { margin:.25rem .9rem 1rem; padding:.75rem .85rem; background:$color-background; border:1px solid $color-divider; border-radius:10px; font-size:.75rem; display:flex; flex-direction:column; gap:.4rem; position:relative; }
-.flight-card__title { font-weight:600; font-size:.7rem; text-transform:uppercase; letter-spacing:.9px; color:$color-text-secondary; }
-.flight-card__item { display:flex; align-items:center; gap:.5rem; color:$color-text-secondary; }
-.flight-card__item .material-icons { font-size:18px; }
-.flight-card__label em { font-style:normal; color:$color-error; }
+.sidebar__avatar {
+  width: 48px;
+  flex-shrink: 0; /* prevent squashing during transition */
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $color-primary, $color-primary-variant);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: .5px;
+}
 
-/* Minimal placeholder indicator when collapsed (circle dot) */
-.sidebar--collapsed .sidebar__flight-card::after { content:""; position:absolute; top:.5rem; left:50%; transform:translateX(-50%); width:8px; height:8px; border-radius:50%; background:$color-primary; opacity:.65; }
+.sidebar__profile-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sidebar__name {
+  font-weight: 600;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar__role {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: $color-text-secondary;
+}
+
+/* Flight status indicator */
+.flight-status {
+  margin: .25rem .9rem 1rem;
+}
+
+.flight-status__link {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .6rem .9rem;
+  text-decoration: none;
+  font-size: .8rem;
+  background: $color-background;
+  border: 1px solid $color-divider;
+  border-radius: 10px;
+  color: $color-text-secondary;
+  line-height: 1.2;
+  transition: background $transition-fast, border-color $transition-fast, color $transition-fast;
+}
+
+.flight-status__link:hover {
+  background: rgba($color-primary, 0.06);
+  // Using module color.adjust (Sass modules API)
+  border-color: color.adjust($color-divider, $lightness: 5%);
+  color: $color-text-primary;
+}
+
+.flight-status__icon { font-size: 24px; }
+
+.status-none .flight-status__icon { color: $color-text-secondary; }
+.status-scheduled .flight-status__icon { color: $color-primary; }
+.status-delayed .flight-status__icon { color: $color-error; }
+.status-boarding .flight-status__icon { color: $color-secondary; }
+.status-departed .flight-status__icon { color: $color-primary; }
+.status-inflight .flight-status__icon { color: $color-primary; }
+.status-landed .flight-status__icon { color: $color-tertiary; }
+.status-cancelled .flight-status__icon { color: $color-error; }
+.status-diverted .flight-status__icon { color: $color-secondary-variant; }
+
+.sidebar--collapsed .flight-status__text { display: none; }
+.sidebar--collapsed .flight-status { text-align: center; }
 
 /* Collapsed state */
-.sidebar--collapsed { width:78px; }
-/* Expanded width baseline */
-.sidebar:not(.sidebar--collapsed) { width:260px; }
+.sidebar--collapsed { width: 90px; }
+
+/* Expanded base width */
+.sidebar:not(.sidebar--collapsed) { width: 260px; }
+
 .sidebar--collapsed .sidebar__profile-text,
-.sidebar--collapsed .sidebar__text { display:none; }
-.sidebar--collapsed .sidebar__flight-card { visibility:hidden; }
-.sidebar--collapsed .sidebar__collapse-btn { background:transparent; }
-.sidebar--collapsed .collapse-icon-open { opacity:1; }
-.sidebar--collapsed .collapse-icon-close { opacity:0; }
-.sidebar:not(.sidebar--collapsed) .collapse-icon-open { opacity:0; }
-.sidebar:not(.sidebar--collapsed) .collapse-icon-close { opacity:1; }
-.sidebar--collapsed .sidebar__nav { padding:0 .4rem 1rem; }
-.sidebar--collapsed .sidebar__link { justify-content:center; padding:.65rem 0; }
-.sidebar--collapsed .sidebar__link.is-active:before { left:0; }
-.sidebar__nav { display:flex; flex-direction:column; gap:.2rem; padding:0 .75rem 1.5rem; }
-.sidebar__link { position:relative; display:flex; align-items:center; gap:.9rem; padding:.65rem 1rem; border-radius:10px; color:$color-text-primary; text-decoration:none; font-size:1rem; font-weight:500; transition:background $transition-fast,color $transition-fast; }
-.sidebar__link .material-icons, .sidebar__link .material-symbols-outlined { font-size:24px; }
-.sidebar__link:hover { background:$color-highlight; color:#000; }
-.sidebar__link.is-active { background:rgba($color-primary,0.08); color:$color-primary; }
-.sidebar__link.is-active:before { content:""; position:absolute; left:-.75rem; top:8%; bottom:8%; width:4px; border-radius:2px; background:$color-primary; }
+.sidebar--collapsed .sidebar__text { display: none; }
 
-/* Responsive adjustments using new mixins (only when expanded) */
-@include up-md { .sidebar:not(.sidebar--collapsed) { width:280px; } }
-@include up-lg { .sidebar:not(.sidebar--collapsed) { width:300px; } }
-@include up-xl { .sidebar:not(.sidebar--collapsed) { width:320px; } }
-@include up-xx { .sidebar:not(.sidebar--collapsed) { width:340px; } }
+.sidebar--collapsed .sidebar__flight-card { visibility: hidden; }
 
-@media (max-width: 900px) { /* legacy mobile rule, can refactor later */
+.sidebar--collapsed .sidebar__collapse-btn { background: transparent; }
+
+.sidebar--collapsed .collapse-icon-open { opacity: 1; }
+.sidebar--collapsed .collapse-icon-close { opacity: 0; }
+.sidebar:not(.sidebar--collapsed) .collapse-icon-open { opacity: 0; }
+.sidebar:not(.sidebar--collapsed) .collapse-icon-close { opacity: 1; }
+
+.sidebar--collapsed .sidebar__nav { padding: 0 .4rem 1rem; }
+
+.sidebar--collapsed .sidebar__link {
+  justify-content: center;
+  padding: .65rem 0;
+}
+
+/* Icons keep consistent size collapsed & expanded */
+// (Removed prior enlargement to 28px for consistent layout)
+
+/* Center profile card content when collapsed to avoid avatar squash */
+/* Removed center alignment to avoid horizontal jump when expanding */
+/* .sidebar--collapsed .sidebar__profile-card { justify-content: center; } */
+
+.sidebar--collapsed .sidebar__link.is-active:before { left: 0; }
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  padding: 0 .75rem 1.5rem;
+}
+
+.sidebar__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: .65rem 1rem;
+  border-radius: 10px;
+  color: $color-text-primary;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background $transition-fast, color $transition-fast;
+}
+
+.sidebar__link .material-icons,
+.sidebar__link .material-symbols-outlined { font-size: 24px; }
+
+.sidebar__link:hover {
+  background: $color-highlight;
+  color: #000;
+}
+
+.sidebar__link.is-active {
+  background: rgba($color-primary, 0.08);
+  color: $color-primary;
+}
+
+.sidebar__link.is-active:before {
+  content: "";
+  position: absolute;
+  left: -.75rem;
+  top: 8%;
+  bottom: 8%;
+  width: 4px;
+  border-radius: 2px;
+  background: $color-primary;
+}
+
+/* Responsive adjustments (expanded only) */
+@include up-md { .sidebar:not(.sidebar--collapsed) { width: 280px; } }
+@include up-lg { .sidebar:not(.sidebar--collapsed) { width: 300px; } }
+@include up-xl { .sidebar:not(.sidebar--collapsed) { width: 320px; } }
+@include up-xx { .sidebar:not(.sidebar--collapsed) { width: 340px; } }
+
+@media (max-width: 900px) {
+  /* legacy mobile rule, can refactor later */
   .layout { flex-direction: column; }
-  .sidebar { flex-direction:row; height:auto; overflow-x:auto; }
+  .sidebar {
+    flex-direction: row;
+    height: auto;
+    overflow-x: auto;
+  }
   .sidebar__brand { padding: .75rem 1rem; }
-  .sidebar__nav { flex-direction:row; padding:0 .5rem .5rem; }
+  .sidebar__nav {
+    flex-direction: row;
+    padding: 0 .5rem .5rem;
+  }
 }

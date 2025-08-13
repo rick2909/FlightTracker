@@ -1,4 +1,3 @@
-@use 'variables';
 @use 'variables' as *;
 @use 'sidebar';
 
@@ -17,9 +16,9 @@
 
 body {
   margin: 0;
-  background: variables.$color-background;
-  font-family: variables.$font-stack;
-  color: variables.$color-text-primary;
+  background: $color-background;
+  font-family: $font-stack;
+  color: $color-text-primary;
   -webkit-font-smoothing: antialiased;
 }
 
