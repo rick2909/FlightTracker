@@ -7,6 +7,8 @@
     "doc": "doc"
   },
   "scripts": {
+    "build:css": "sass FlightTracker.Web/Styling/scss/styles.scss FlightTracker.Web/wwwroot/css/styles.css --no-source-map",
+    "watch:css": "sass --watch FlightTracker.Web/Styling/scss/styles.scss:FlightTracker.Web/wwwroot/css/styles.css --no-source-map",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
