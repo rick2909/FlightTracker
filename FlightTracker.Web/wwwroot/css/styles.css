@@ -144,7 +144,7 @@
   font-size: 0.8rem;
   background: #FAFAFA;
   border: 1px solid #E0E0E0;
-  border-radius: 10px;
+  border-radius: 23px;
   color: #424242;
   line-height: 1.2;
   transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
@@ -346,6 +346,100 @@
     padding: 0 0.5rem 0.5rem;
   }
 }
+.ft-card.material3 {
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: #FFFFFF;
+  color: #212121;
+}
+.ft-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1rem 0.5rem;
+}
+.ft-card__title {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-weight: 600;
+}
+.ft-card__subtitle {
+  color: #424242;
+  font-size: 0.85rem;
+}
+.ft-card__content {
+  padding: 0.25rem 1rem 1rem;
+}
+.ft-card__actions {
+  padding: 0 1rem 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ft-card--flight .ft-flight__route {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.75rem;
+  align-items: center;
+}
+.ft-card--flight .ft-flight__airport {
+  display: grid;
+  gap: 0.15rem;
+}
+.ft-card--flight .ft-flight__airport .ft-flight__code {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.ft-card--flight .ft-flight__airport .ft-flight__city {
+  color: #424242;
+  font-size: 0.85rem;
+}
+.ft-card--flight .ft-flight__airport .ft-flight__time {
+  font-feature-settings: "tnum";
+}
+.ft-card--flight .ft-flight__divider {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.15rem;
+  color: #424242;
+}
+.ft-card--flight .ft-flight__duration {
+  font-size: 0.8rem;
+}
+.ft-card--flight .ft-flight__aircraft {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  color: #424242;
+  font-size: 0.85rem;
+}
+
+.ft-card--stat .ft-card__content--stat {
+  display: grid;
+  gap: 0.35rem;
+}
+.ft-card--stat .ft-stat__primary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+.ft-card--stat .ft-stat__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.ft-card--stat .ft-stat__label {
+  color: #424242;
+  font-size: 0.85rem;
+}
+.ft-card--stat .ft-stat__secondary {
+  color: #424242;
+  font-size: 0.85rem;
+}
+
 :root {
   --flight-map-past-line: #1565C0;
   --flight-map-upcoming-marker: #FFB300;
@@ -468,6 +562,42 @@
 }
 .flight-map__map.leaflet-container {
   font: inherit;
+}
+
+.ft-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+@media (min-width: 576px) {
+  .ft-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .ft-stats-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+.ft-stats-grid__item {
+  grid-column: span 1;
+}
+@media (min-width: 1024px) {
+  .ft-stats-grid__item {
+    grid-column: span 2;
+  }
+}
+.ft-stats-grid__item .rz-card {
+  height: 100%;
+}
+.ft-stats-grid__header {
+  grid-column: span 6;
+}
+
+.col-all {
+  width: 100%;
+  max-width: 100%;
+  flex: 0 0 100%;
 }
 
 .layout {

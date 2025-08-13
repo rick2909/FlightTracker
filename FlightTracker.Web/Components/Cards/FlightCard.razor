@@ -1,0 +1,78 @@
+@using FlightTracker.Application.Dtos
+@using FlightTracker.Domain.Enums
+@using Radzen
+@using Radzen.Blazor
+
+@inherits ComponentBase
+
+@code {
+    [Parameter] public UserFlightDto Flight { get; set; } = default!;
+    [Parameter] public EventCallback<UserFlightDto> OnSelect { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+
+    private string StatusIcon => Flight.FlightStatus switch
+    {
+        FlightStatus.Scheduled => "event",
+        FlightStatus.Delayed => "schedule",
+        FlightStatus.Boarding => "boarding",
+        FlightStatus.Departed => "flight_takeoff",
+        FlightStatus.InFlight => "flight",
+        FlightStatus.Landed => "flight_land",
+        FlightStatus.Cancelled => "cancel",
+        FlightStatus.Diverted => "alt_route",
+        _ => "airplanemode_inactive"
+    };
+
+    private string DurationText
+        => $"{(Flight.ArrivalTimeUtc - Flight.DepartureTimeUtc).TotalHours:0}h {(Flight.ArrivalTimeUtc - Flight.DepartureTimeUtc).Minutes:00}m";
+}
+
+<RadzenCard Class="ft-card ft-card--flight material3">
+    <div class="ft-card__header">
+        <div class="ft-card__title">
+            <span class="material-icons" aria-hidden="true">@StatusIcon</span>
+            <span>@Flight.FlightNumber</span>
+        </div>
+        <div class="ft-card__subtitle">@Flight.FlightClass</div>
+    </div>
+
+    <div class="ft-card__content">
+        <div class="ft-flight__route">
+            <div class="ft-flight__airport">
+                <div class="ft-flight__code">@Flight.DepartureAirportCode</div>
+                <div class="ft-flight__city">@Flight.DepartureCity</div>
+                <div class="ft-flight__time">@Flight.DepartureTimeUtc.ToLocalTime().ToString("HH:mm")</div>
+            </div>
+            <div class="ft-flight__divider">
+                <span class="material-icons" aria-hidden="true">trending_flat</span>
+                <span class="ft-flight__duration">@DurationText</span>
+            </div>
+            <div class="ft-flight__airport">
+                <div class="ft-flight__code">@Flight.ArrivalAirportCode</div>
+                <div class="ft-flight__city">@Flight.ArrivalCity</div>
+                <div class="ft-flight__time">@Flight.ArrivalTimeUtc.ToLocalTime().ToString("HH:mm")</div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Flight.AircraftModel))
+        {
+            <div class="ft-flight__aircraft">
+                <span class="material-icons" aria-hidden="true">airplane_ticket</span>
+                <span>@Flight.AircraftManufacturer?.ToString() @Flight.AircraftModel @Flight.AircraftRegistration</span>
+            </div>
+        }
+    </div>
+
+    @if (Actions is not null)
+    {
+        <div class="ft-card__actions">
+            @Actions
+        </div>
+    }
+    else
+    {
+        <div class="ft-card__actions">
+            <RadzenButton ButtonStyle="ButtonStyle.Primary" Icon="visibility" Size="ButtonSize.Small" Text="Details" Click="@(()=> OnSelect.InvokeAsync(Flight))" />
+        </div>
+    }
+</RadzenCard>

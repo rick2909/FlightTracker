@@ -1,6 +1,8 @@
 @use 'variables' as *;
 @use 'sidebar';
+@use 'cards';
 @use 'flight-map';
+@use 'flight-stats';
 
 .layout {
   display: flex;

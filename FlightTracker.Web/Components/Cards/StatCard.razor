@@ -1,0 +1,55 @@
+@using Radzen
+@using Radzen.Blazor
+
+@inherits ComponentBase
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Data { get; set; } = string.Empty;
+    [Parameter] public string? DataLabel { get; set; } // e.g., KM, KG
+    [Parameter] public string? SubData { get; set; }
+    [Parameter] public string? SubDataLabel { get; set; }
+    [Parameter] public string? SubTitle { get; set; }
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private string CssClass => string.IsNullOrWhiteSpace(Class)
+        ? "ft-card ft-card--stat material3"
+        : $"ft-card ft-card--stat material3 {Class}";
+}
+
+<RadzenCard Class="@CssClass">
+    <div class="ft-card__header">
+        <div class="ft-card__title">
+            @if (!string.IsNullOrEmpty(Icon))
+            {
+                <span class="material-icons" aria-hidden="true">@Icon</span>
+            }
+            <span>@Title</span>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(SubTitle))
+        {
+            <div class="ft-card__subtitle">@SubTitle</div>
+        }
+    </div>
+
+    <div class="ft-card__content ft-card__content--stat">
+        <div class="ft-stat__primary">
+            <span class="ft-stat__value">@Data</span>
+            @if (!string.IsNullOrWhiteSpace(DataLabel))
+            {
+                <span class="ft-stat__label">@DataLabel</span>
+            }
+        </div>
+        @if (!string.IsNullOrWhiteSpace(SubData))
+        {
+            <div class="ft-stat__secondary">
+                <span>@SubData</span>
+                @if (!string.IsNullOrWhiteSpace(SubDataLabel))
+                {
+                    <span class="ft-stat__label">@SubDataLabel</span>
+                }
+            </div>
+        }
+    </div>
+</RadzenCard>

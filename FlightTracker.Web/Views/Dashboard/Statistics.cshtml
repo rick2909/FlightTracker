@@ -3,6 +3,40 @@
     ViewData["Title"] = "Flight Statistics";
 }
 
+<div class="ft-stats-grid">
+    <div class="ft-stats-grid__header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Flight Statistics</h1>
+            <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary">← Back to Dashboard</a>
+        </div>
+    </div>
+    <div class="ft-stats-grid__item">
+        @(await Html.RenderComponentAsync<FlightTracker.Web.Components.Cards.StatCard>(RenderMode.ServerPrerendered, new {
+            Title = "Total Flights",
+            Data = Model.TotalFlights.ToString(),
+            Icon = "flight",
+            SubTitle = "Lifetime"
+        }))
+    </div>
+
+    <div class="ft-stats-grid__item">
+        @(await Html.RenderComponentAsync<FlightTracker.Web.Components.Cards.StatCard>(RenderMode.ServerPrerendered, new {
+            Title = "Total Airports Visited",
+            Data = Model.UniqueAirports.ToString(),
+            Icon = "flight_land",
+            SubTitle = "Lifetime"
+        }))
+    </div>
+
+    <div class="ft-stats-grid__item">
+        @(await Html.RenderComponentAsync<FlightTracker.Web.Components.Cards.StatCard>(RenderMode.ServerPrerendered, new {
+            Title = "Countries Visited",
+            Data = Model.UniqueCountries.ToString(),
+            Icon = "public",
+            SubTitle = "Lifetime"
+        }))
+    </div>
+</div>
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
