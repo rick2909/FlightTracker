@@ -18,16 +18,13 @@
 <div class="flight-map" data-flight-map data-map-flight-count="@mapFlightCount">
     <div class="flight-map__header">
         <h2 class="flight-map__title">Flight Overview</h2>
-        <form class="flight-map__search" role="search" onsubmit="return false;">
-            <span class="material-icons flight-map__search-icon" aria-hidden="true">search</span>
-            <input id="flightSearch" type="text" placeholder="Search flights" aria-label="Search flights" />
-        </form>
+        <div class="flight-map__search">
+            <script>window.flightMapFilter = window.flightMapFilter || function(){ /* stub until map script loads */ };</script>
+            <component type="typeof(FlightTracker.Web.Components.FlightMapSearch)" 
+                       render-mode="ServerPrerendered" 
+                       param-MapFlights="((FlightTracker.Web.Models.ViewModels.DashboardViewModel)Model).MapFlights" />
+        </div>
     </div>
     <div id="flightMap" class="flight-map__map" style="min-height:@mapHeight;" aria-label="Flight map" role="region"></div>
     <script type="application/json" id="flightMapData">@Html.Raw(flightsJson)</script>
-    <script>
-        console.log('[flight-map] view embedded mapFlightCount=@mapFlightCount');
-        const _fmd = document.getElementById('flightMapData');
-        console.log('[flight-map] script tag length', _fmd ? (_fmd.textContent||'').length : 'missing');
-    </script>
 </div>

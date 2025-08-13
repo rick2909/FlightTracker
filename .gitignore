@@ -66,3 +66,10 @@ Thumbs.db
 node_modules/
 wwwroot/css/
 wwwroot/js/
+
+# database
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sql

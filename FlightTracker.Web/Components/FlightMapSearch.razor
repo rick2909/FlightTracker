@@ -1,0 +1,86 @@
+@using FlightTracker.Application.Dtos
+@using Radzen
+@namespace FlightTracker.Web.Components
+@inject IJSRuntime JS
+
+@code {
+    [Parameter] public IEnumerable<MapFlightDto> MapFlights { get; set; } = Array.Empty<MapFlightDto>();
+    // Backing field for live-bound textbox value
+    private string? _search;
+    private string? Search
+    {
+        get => _search;
+        set
+        {
+            if (_search == value) return;
+            _search = value;
+            // Fire filtering immediately as user types
+            _ = InvokeAsync(async () =>
+            {
+                await JS.InvokeVoidAsync("flightMapFilter", _search);
+                StateHasChanged();
+            });
+        }
+    }
+    private List<string> suggestions = new();
+
+    protected override void OnParametersSet()
+    {
+        suggestions = MapFlights
+            .Select(f => $"{f.FlightNumber} {f.DepartureAirportCode}->{f.ArrivalAirportCode}")
+            .Distinct()
+            .OrderBy(s => s)
+            .ToList();
+    }
+
+    // Explicit input handler to avoid ChangeEventArgs->string mismatch issues seen earlier
+    private Task OnInput(ChangeEventArgs e)
+    {
+        Search = e.Value?.ToString();
+        // Each input updates filter set (JS retains prior layers)
+        return Task.CompletedTask;
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await JS.InvokeVoidAsync("flightMapZoomToFiltered");
+        }
+    }
+
+    private IEnumerable<string> Filtered => string.IsNullOrWhiteSpace(_search)
+        ? suggestions
+        : suggestions.Where(s => s.Contains(_search!, StringComparison.OrdinalIgnoreCase)).Take(20);
+}
+
+<div class="flight-map-search" data-flight-map-search>
+    <RadzenTextBox Value="@_search" @oninput="OnInput" @onkeydown="OnKeyDown" Placeholder="Search flights" Style="width:100%;height:24px;padding:2px 6px;font-size:.75rem;line-height:1.1;" class="flight-map-search__textbox" />
+    @if (!string.IsNullOrWhiteSpace(_search) && Filtered.Any())
+    {
+        <ul class="flight-map-search__dropdown" role="listbox" aria-label="Flight matches">
+            @foreach (var item in Filtered)
+            {
+                <li role="option" @onclick="(()=>Select(item))">@item</li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    private async Task Select(string item)
+    {
+        _search = item;
+        try {
+            await JS.InvokeVoidAsync("flightMapFilter", _search);
+            await JS.InvokeVoidAsync("flightMapZoomToSelection", _search);
+        } catch (JSException) { }
+    }
+}
+
+<style>
+.flight-map-search{position:relative;}
+.flight-map-search__dropdown{position:absolute;z-index:5000;list-style:none;margin:4px 0 0;padding:4px;max-height:220px;overflow:auto;background:#fff;border:1px solid #ccc;border-radius:4px;width:100%;box-shadow:0 2px 6px rgba(0,0,0,.15);} 
+.flight-map-search__dropdown li{padding:4px 6px;cursor:pointer;font-size:.8rem;white-space:nowrap;} 
+.flight-map-search__dropdown li:hover{background:#eef4ff;} 
+</style>

@@ -1,95 +1,60 @@
-// Leaflet flight map initialization with mock data; ready for future API integration
-(function() {
-    const mapEl = document.getElementById('flightMap');
-    if (!mapEl || !window.L) { return; }
+// Leaflet flight map using embedded JSON (script#flightMapData)
+(function(){
+    const mapEl=document.getElementById('flightMap');
+    if(!mapEl||!window.L){console.warn('[flight-map] map element or Leaflet missing');return;}
 
-    const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    const colorPast = cssVar('--flight-map-past-line') || '#1565C0';
-    const colorUpcoming = cssVar('--flight-map-upcoming-marker') || '#FFB300';
+    const cssVar=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const colorPast=cssVar('--flight-map-past-line')||'#1565C0';
+    const colorUpcoming=cssVar('--flight-map-upcoming-marker')||'#FFB300';
 
-    // Mock data (replace with API calls later)
-    const pastFlights = [
-        { id: 'FT1001', path: [ [52.3086, 4.7639], [51.4700, -0.4543], [40.6413, -73.7781] ] }, // AMS -> LHR -> JFK
-        { id: 'FT1002', path: [ [48.3538, 11.7861], [41.9786, -87.9048], [33.9416, -118.4085] ] }, // MUC -> ORD -> LAX
-        { id: 'FT1003', path: [ [35.5494, 139.7798], [37.6213, -122.3790] ] } // HND -> SFO
-    ];
-
-    const upcomingFlights = [
-        { id: 'FT2001', number: 'LH123', departure: '2025-08-14T09:30:00Z', coord: [50.0379, 8.5622] }, // FRA
-        { id: 'FT2002', number: 'BA456', departure: '2025-08-14T11:15:00Z', coord: [51.4700, -0.4543] }, // LHR
-        { id: 'FT2003', number: 'DL789', departure: '2025-08-14T13:00:00Z', coord: [33.6407, -84.4277] } // ATL
-    ];
-
-    const map = L.map('flightMap', {
-        center: [50, 10], // Europe
-        zoom: 4,
-        worldCopyJump: true
-    });
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    const layerGroups = {
-        past: L.layerGroup().addTo(map),
-        upcoming: L.layerGroup().addTo(map)
-    };
-
-    const polylineList = [];
-    pastFlights.forEach(f => {
-        const line = L.polyline(f.path, {
-            color: colorPast,
-            weight: 3,
-            opacity: 0.75
-        }).addTo(layerGroups.past);
-        polylineList.push(line);
-    });
-
-    const markerList = [];
-    upcomingFlights.forEach(f => {
-        const marker = L.circleMarker(f.coord, {
-            radius: 7,
-            color: colorUpcoming,
-            fillColor: colorUpcoming,
-            fillOpacity: 0.9,
-            weight: 2
-        }).addTo(layerGroups.upcoming);
-        marker.bindPopup(`<strong>${f.number}</strong><br/>Departs: ${new Date(f.departure).toUTCString()}`);
-        markerList.push(marker);
-    });
-
-    // Fit bounds to all geometry
-    let bounds = null;
-    polylineList.forEach(pl => {
-        bounds = bounds ? bounds.extend(pl.getBounds()) : pl.getBounds();
-    });
-    markerList.forEach(m => {
-        const ll = m.getLatLng();
-        bounds = bounds ? bounds.extend(ll) : L.latLngBounds(ll, ll);
-    });
-    if (bounds) {
-        map.fitBounds(bounds.pad(0.15));
+    function readFlights(){
+        const el=document.getElementById('flightMapData');
+        if(!el){console.warn('[flight-map] #flightMapData not found');return [];}    
+        const raw=el.textContent||'[]';
+        try{const parsed=JSON.parse(raw);return parsed;}catch(e){console.warn('[flight-map] JSON parse error',e);return [];}
     }
 
-    // Lightweight search filter (client-side mock)
-    const searchInput = document.getElementById('flightSearch');
-    if (searchInput) {
-        searchInput.addEventListener('input', e => {
-            const q = e.target.value.toLowerCase();
-            markerList.forEach(m => {
-                const content = (m.getPopup()?.getContent() || '').toLowerCase();
-                const match = content.includes(q);
-                m.setStyle({ opacity: match || !q ? 1 : 0.25, fillOpacity: match || !q ? 0.9 : 0.25 });
-            });
+    const map=L.map('flightMap',{center:[20,0],zoom:2,worldCopyJump:true});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+
+    const layers={past:L.layerGroup().addTo(map),upcoming:L.layerGroup().addTo(map)};
+    const flightIndex=new Map();
+    let lastFilterKeys=[];
+    const highlight={
+        past:{color:'#ff4081',weight:5,opacity:0.95},
+        upcoming:{radius:9,color:'#ff4081',fillColor:'#ff4081',fillOpacity:1,weight:2}
+    };
+    const normal={
+        past:{color:colorPast,weight:3,opacity:0.75},
+        upcoming:{radius:7,color:colorUpcoming,fillColor:colorUpcoming,fillOpacity:0.9,weight:2}
+    };
+
+    function render(){
+        layers.past.clearLayers();layers.upcoming.clearLayers();flightIndex.clear();
+        const flights=readFlights();
+        if(!flights.length){console.log('[flight-map] no flights');return;}
+        const polys=[];const markers=[];
+        flights.forEach(f=>{
+            const depOk=typeof f.departureLat==='number'&&typeof f.departureLon==='number';
+            const arrOk=typeof f.arrivalLat==='number'&&typeof f.arrivalLon==='number';
+            const key=`${f.flightNumber} ${f.departureAirportCode}->${f.arrivalAirportCode}`;
+            if(f.isUpcoming){ if(depOk){ const m=L.circleMarker([f.departureLat,f.departureLon],normal.upcoming).addTo(layers.upcoming); m.bindPopup(`<strong>${f.flightNumber}</strong><br/>Departs ${f.departureAirportCode}<br/>${new Date(f.departureTimeUtc).toUTCString()}`); markers.push(m); flightIndex.set(key,{flight:f,type:'upcoming',layer:m}); } }
+            else if(depOk&&arrOk){ const pl=L.polyline([[f.departureLat,f.departureLon],[f.arrivalLat,f.arrivalLon]],normal.past).addTo(layers.past); polys.push(pl); flightIndex.set(key,{flight:f,type:'past',layer:pl}); }
         });
+        let bounds=null;polys.forEach(pl=>bounds=bounds?bounds.extend(pl.getBounds()):pl.getBounds());markers.forEach(m=>{const ll=m.getLatLng();bounds=bounds?bounds.extend(ll):L.latLngBounds(ll,ll);});if(bounds)map.fitBounds(bounds.pad(0.15));
     }
 
-    // Public hook for future dynamic refresh
-    window.flightMap = {
-        refresh: function({ past = [], upcoming = [] } = {}) {
-            layerGroups.past.clearLayers();
-            layerGroups.upcoming.clearLayers();
-            // TODO: implement dynamic update using provided arrays
-        }
+    window.flightMapClearFilter=function(){};
+    window.flightMapFilter=function(term){
+        if(lastFilterKeys.length){ lastFilterKeys.forEach(k=>{ const e=flightIndex.get(k); if(!e) return; if(e.type==='past'){ e.layer.setStyle(normal.past);} else { e.layer.setStyle(normal.upcoming);} }); }
+        if(!term){ lastFilterKeys=[]; return; }
+        const termLc=term.toLowerCase();
+        lastFilterKeys=Array.from(flightIndex.keys()).filter(k=>k.toLowerCase().includes(termLc));
+        lastFilterKeys.forEach(k=>{ const e=flightIndex.get(k); if(!e)return; if(e.type==='past'){ e.layer.setStyle(highlight.past);} else { e.layer.setStyle(highlight.upcoming);} });
     };
+    window.flightMapZoomToSelection=function(key){ const e=flightIndex.get(key); if(!e)return; if(e.type==='past'){ map.fitBounds(e.layer.getBounds().pad(0.3)); } else { const ll=e.layer.getLatLng(); map.setView(ll, Math.max(map.getZoom(),6)); e.layer.openPopup(); } };
+    window.flightMapZoomToFiltered=function(){ if(!lastFilterKeys.length)return; let b=null; lastFilterKeys.forEach(k=>{ const e=flightIndex.get(k); if(!e)return; if(e.type==='past'){ b=b?b.extend(e.layer.getBounds()):e.layer.getBounds(); } else { const ll=e.layer.getLatLng(); b=b?b.extend(ll):L.latLngBounds(ll,ll); } }); if(b) map.fitBounds(b.pad(0.2)); };
+
+    render();
+    window.flightMap={reload:render,zoomToSelection:window.flightMapZoomToSelection,zoomToFiltered:window.flightMapZoomToFiltered};
 })();

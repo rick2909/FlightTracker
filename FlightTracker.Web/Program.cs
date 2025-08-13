@@ -14,6 +14,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add MVC (Radzen/Blazor deferred until components added)
 builder.Services.AddControllersWithViews();
+builder.Services.AddServerSideBlazor().AddCircuitOptions(o =>
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        o.DetailedErrors = true; // enable detailed circuit exception info
+    }
+});
 
 // Configure Entity Framework (SQLite for local inspection)
 builder.Services.AddDbContext<FlightTrackerDbContext>(options =>
@@ -85,6 +92,9 @@ app.MapControllerRoute(
         name: "default",
         pattern: "{controller=Dashboard}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+// Blazor hub (needed for Radzen components used via component tag helper)
+app.MapBlazorHub();
 
 // (Radzen/Blazor root removed – no interactive components yet)
 
