@@ -54,11 +54,11 @@
             </div>
         </div>
 
-        @if (!string.IsNullOrWhiteSpace(Flight.AircraftModel))
+        @if (!string.IsNullOrWhiteSpace(Flight.Aircraft?.Model))
         {
             <div class="ft-flight__aircraft">
                 <span class="material-icons" aria-hidden="true">airplane_ticket</span>
-                <span>@Flight.AircraftManufacturer?.ToString() @Flight.AircraftModel @Flight.AircraftRegistration</span>
+                <span>@Flight.Aircraft?.Manufacturer.ToString() @Flight.Aircraft?.Model @Flight.Aircraft?.Registration</span>
             </div>
         }
     </div>
