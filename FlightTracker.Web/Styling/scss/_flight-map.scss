@@ -4,6 +4,7 @@
 :root {
   --flight-map-past-line: #{$color-primary};
   --flight-map-upcoming-marker: #{$color-secondary};
+  --flight-map-highlight: #{$color-highlight};
 }
 
 .flight-map {

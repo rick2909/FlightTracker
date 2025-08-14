@@ -6,6 +6,7 @@
     const cssVar=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
     const colorPast=cssVar('--flight-map-past-line')||'#1565C0';
     const colorUpcoming=cssVar('--flight-map-upcoming-marker')||'#FFB300';
+    const colorHighlight=cssVar('--flight-map-highlight')||'#ff4081';
 
     function readFlights(){
         const el=document.getElementById('flightMapData');
@@ -21,8 +22,8 @@
     const flightIndex=new Map();
     let lastFilterKeys=[];
     const highlight={
-        past:{color:'#ff4081',weight:5,opacity:0.95},
-        upcoming:{radius:9,color:'#ff4081',fillColor:'#ff4081',fillOpacity:1,weight:2}
+        past:{color:colorHighlight,weight:5,opacity:0.95},
+        upcoming:{radius:9,color:colorHighlight,fillColor:colorHighlight,fillOpacity:1,weight:2}
     };
     const normal={
         past:{color:colorPast,weight:3,opacity:0.75},
@@ -34,12 +35,51 @@
         const flights=readFlights();
         if(!flights.length){console.log('[flight-map] no flights');return;}
         const polys=[];const markers=[];
+        // Utility: create a geodesic (great-circle) arc as a polyline between two lat/lon points
+        function createGeodesic(from, to, style){
+            // Haversine-based interpolation along great-circle
+            const lat1=from[0]*Math.PI/180, lon1=from[1]*Math.PI/180;
+            const lat2=to[0]*Math.PI/180, lon2=to[1]*Math.PI/180;
+            const d=2*Math.asin(Math.sqrt(
+                Math.sin((lat2-lat1)/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin((lon2-lon1)/2)**2
+            )) || 0;
+            const segments=Math.max(8, Math.min(128, Math.ceil(d*30))); // more distance -> more segments
+            if(d===0){ return L.polyline([from,to], style); }
+            const coords=[];
+            for(let i=0;i<=segments;i++){
+                const f=i/segments;
+                // Spherical linear interpolation
+                const A=Math.sin((1-f)*d)/Math.sin(d);
+                const B=Math.sin(f*d)/Math.sin(d);
+                const x=A*Math.cos(lat1)*Math.cos(lon1)+B*Math.cos(lat2)*Math.cos(lon2);
+                const y=A*Math.cos(lat1)*Math.sin(lon1)+B*Math.cos(lat2)*Math.sin(lon2);
+                const z=A*Math.sin(lat1)+B*Math.sin(lat2);
+                const lat=Math.atan2(z, Math.sqrt(x*x+y*y));
+                const lon=Math.atan2(y,x);
+                coords.push([lat*180/Math.PI, lon*180/Math.PI]);
+            }
+            return L.polyline(coords, style);
+        }
+
         flights.forEach(f=>{
             const depOk=typeof f.departureLat==='number'&&typeof f.departureLon==='number';
             const arrOk=typeof f.arrivalLat==='number'&&typeof f.arrivalLon==='number';
             const key=`${f.flightNumber} ${f.departureAirportCode}->${f.arrivalAirportCode}`;
-            if(f.isUpcoming){ if(depOk){ const m=L.circleMarker([f.departureLat,f.departureLon],normal.upcoming).addTo(layers.upcoming); m.bindPopup(`<strong>${f.flightNumber}</strong><br/>Departs ${f.departureAirportCode}<br/>${new Date(f.departureTimeUtc).toUTCString()}`); markers.push(m); flightIndex.set(key,{flight:f,type:'upcoming',layer:m}); } }
-            else if(depOk&&arrOk){ const pl=L.polyline([[f.departureLat,f.departureLon],[f.arrivalLat,f.arrivalLon]],normal.past).addTo(layers.past); polys.push(pl); flightIndex.set(key,{flight:f,type:'past',layer:pl}); }
+            if(f.isUpcoming){
+                if(depOk){
+                    const m=L.circleMarker([f.departureLat,f.departureLon],normal.upcoming).addTo(layers.upcoming);
+                    m.bindPopup(`<strong>${f.flightNumber}</strong><br/>Departs ${f.departureAirportCode}<br/>${new Date(f.departureTimeUtc).toUTCString()}`);
+                    markers.push(m);
+                    flightIndex.set(key,{flight:f,type:'upcoming',layer:m});
+                }
+            }
+            else if(depOk&&arrOk){
+                const from=[f.departureLat,f.departureLon];
+                const to=[f.arrivalLat,f.arrivalLon];
+                const pl=createGeodesic(from,to,normal.past).addTo(layers.past);
+                polys.push(pl);
+                flightIndex.set(key,{flight:f,type:'past',layer:pl});
+            }
         });
         let bounds=null;polys.forEach(pl=>bounds=bounds?bounds.extend(pl.getBounds()):pl.getBounds());markers.forEach(m=>{const ll=m.getLatLng();bounds=bounds?bounds.extend(ll):L.latLngBounds(ll,ll);});if(bounds)map.fitBounds(bounds.pad(0.15));
     }
