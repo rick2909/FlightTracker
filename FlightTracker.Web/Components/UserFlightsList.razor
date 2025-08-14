@@ -18,7 +18,8 @@ else
                     ShowPagingSummary="true"
                     WrapItems="false">
         <Template Context="flight">
-            <RadzenCard Variant="Variant.Outlined" class="rz-mb-3 rz-p-3" Style="width: 100%; overflow: hidden;">
+            <RadzenCard Variant="Variant.Outlined" class="rz-mb-3 rz-p-3 user-flights-list" Style="width: 100%; overflow: hidden;">
+                <div class="desktop-content">
                 <RadzenRow Gap="0">
                     <!-- Left block: Date + Flight on left, Seat/Class/Position on right -->
             <RadzenColumn Size="12" SizeMD="4" SizeLG="4" class="rz-p-4" Style="background-color: var(--rz-secondary-lighter); border-radius: 12px;">
@@ -117,6 +118,58 @@ else
                         </div>
                     </RadzenColumn>
                 </RadzenRow>
+                </div>
+
+                <div class="mobile-content">
+                    <div class="flight-mobile">
+                        <div class="top">
+                            <span class="date">@flight.DepartureTimeUtc.ToString("MMM dd")</span>
+                            <span class="number">@flight.FlightNumber</span>
+                            <span class="status">
+                                <RadzenBadge Pill="true" BadgeStyle="@GetStatusBadgeStyle(flight.DidFly)" Text="@(didFlyText(flight.DidFly))" />
+                            </span>
+                        </div>
+                        <div class="route"><strong>@flight.DepartureAirportCode</strong> &rarr; <strong>@flight.ArrivalAirportCode</strong></div>
+                        <div class="times rz-text-secondary">
+                            <span>@ToLocalString(flight.DepartureTimeUtc, flight.DepartureTimeZoneId)</span>
+                            <span class="sep"> · </span>
+                            <span>@ToLocalString(flight.ArrivalTimeUtc, flight.ArrivalTimeZoneId)</span>
+                        </div>
+                        <div class="meta">
+                            <RadzenBadge Shade="Shade.Lighter" BadgeStyle="BadgeStyle.Secondary" Text="@(string.IsNullOrWhiteSpace(flight.SeatNumber) ? "-" : flight.SeatNumber)" />
+                            <RadzenBadge Pill="true" class="rz-ml-2" BadgeStyle="@GetClassBadgeStyle(flight.FlightClass)" Text="@flight.FlightClass.ToString()" />
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(flight.Notes))
+                        {
+                            <div class="notes rz-text-secondary rz-mt-1"><i class="fas fa-comment-alt" style="color:#17a2b8"></i> @flight.Notes</div>
+                        }
+                        <details class="more rz-mt-2">
+                            <summary>More</summary>
+                            <div class="rz-mt-2">
+                                <div class="rz-mb-1"><strong>Departure:</strong> @flight.DepartureAirportName, @flight.DepartureCity</div>
+                                <div class="rz-mb-1"><strong>Arrival:</strong> @flight.ArrivalAirportName, @flight.ArrivalCity</div>
+                                <div class="rz-mb-1"><strong>Booked:</strong> @flight.BookedOnUtc.ToString("MMM dd, yyyy")</div>
+                                <div class="rz-mb-1"><strong>Seat pos.:</strong> @GetSeatPositionLabel(flight.SeatNumber)</div>
+                                <div class="rz-mb-1"><strong>Aircraft:</strong>
+                                    @if (flight.Aircraft is not null)
+                                    {
+                                        <span>
+                                            @(string.Join(" · ", new[] {
+                                                string.IsNullOrWhiteSpace(flight.Aircraft.Registration) ? null : $"Reg {flight.Aircraft.Registration}",
+                                                string.IsNullOrWhiteSpace(flight.Aircraft.Model) ? null : flight.Aircraft.Model,
+                                                flight.Aircraft.Manufacturer.ToString()
+                                            }.Where(x => x is not null)))
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </div>
             </RadzenCard>
         </Template>
     </RadzenDataList>
@@ -199,3 +252,4 @@ else
         }
     }
 }
+
