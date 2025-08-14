@@ -13,4 +13,6 @@ public record UserFlightStatsDto
     public int FirstClassFlights { get; init; }
     public int UniqueAirports { get; init; }
     public int UniqueCountries { get; init; }
+    public int TotalTravelTimeInMinutes { get; init; }
+    public IEnumerable<TravelTimeDto> TravelTimes { get; init; } = Enumerable.Empty<TravelTimeDto>();
 }

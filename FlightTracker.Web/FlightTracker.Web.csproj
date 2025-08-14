@@ -41,10 +41,13 @@
       <Exec Command="$(SassExecutable) --no-source-map $(SassSourceDir)/$(SassEntry):$(CssOutputDir)/styles.css" IgnoreExitCode="false" Condition="'$(SassExecutable)' != ''" />
     </Target>
 
-    <!-- Process JS: basic whitespace/comment minify via PowerShell on Windows; fallback copy otherwise -->
+    <!-- JS processing: safe copy (previous naive minify broke URLs with //). Optional future: integrate esbuild. -->
+    <ItemGroup>
+      <JsSource Include="$(JsSourceDir)/*.js" />
+    </ItemGroup>
     <Target Name="ProcessJs" DependsOnTargets="EnsureAssetDirs" BeforeTargets="Build">
-      <Message Text="Processing JS from $(JsSourceDir) -> $(JsOutputDir)" Importance="high" />
-      <Exec Condition="'$(OS)' == 'Windows_NT'" Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;Get-ChildItem -Path '$(JsSourceDir)' -Filter *.js | ForEach-Object { $raw = (Get-Content $_.FullName -Raw); $min = $raw -replace '(?s)/\*.*?\*/','' -replace '//.*','' -replace '\s+',' '; Set-Content -Path (Join-Path '$(JsOutputDir)' $_.Name) -Value $min -Encoding utf8 }&quot;" />
+      <Message Text="Copying JS from $(JsSourceDir) -> $(JsOutputDir)" Importance="high" />
+      <Exec Condition="'$(OS)' == 'Windows_NT'" Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;Get-ChildItem -Path '$(JsSourceDir)' -Filter *.js | ForEach-Object { Copy-Item $_.FullName -Destination (Join-Path '$(JsOutputDir)' $_.Name) }&quot;" />
       <Copy Condition="'$(OS)' != 'Windows_NT'" SourceFiles="@(JsSource)" DestinationFolder="$(JsOutputDir)" SkipUnchangedFiles="true" />
     </Target>
 

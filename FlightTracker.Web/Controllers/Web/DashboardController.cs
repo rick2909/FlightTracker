@@ -15,17 +15,20 @@ public class DashboardController : Controller
     private readonly IUserFlightService _userFlightService;
     private readonly IFlightService _flightService;
     private readonly IAirportService _airportService;
+    private readonly IMapFlightService _mapFlightService;
 
     public DashboardController(
         ILogger<DashboardController> logger,
         IUserFlightService userFlightService,
         IFlightService flightService,
-        IAirportService airportService)
+    IAirportService airportService,
+    IMapFlightService mapFlightService)
     {
         _logger = logger;
         _userFlightService = userFlightService;
         _flightService = flightService;
         _airportService = airportService;
+        _mapFlightService = mapFlightService;
     }
 
     /// <summary>
@@ -38,7 +41,7 @@ public class DashboardController : Controller
         {
             // TODO: Get actual user ID from authentication context
             // For now, using a hardcoded user ID (1 = admin user from seed data)
-            var userId = 1;
+            var userId = 2;
 
             // Get user flight statistics
             var stats = await _userFlightService.GetUserFlightStatsAsync(userId);
@@ -49,11 +52,13 @@ public class DashboardController : Controller
                 .ToList();
 
             // Create view model
+            var mapFlights = await _mapFlightService.GetUserMapFlightsAsync(userId);
             var viewModel = new DashboardViewModel
             {
                 Stats = stats,
                 RecentFlights = recentFlights,
-                UserId = userId
+                UserId = userId,
+                MapFlights = mapFlights
             };
 
             return View(viewModel);

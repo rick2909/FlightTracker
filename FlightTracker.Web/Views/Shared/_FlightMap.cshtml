@@ -1,0 +1,31 @@
+@* Reusable flight map component with header + search.
+   Configure height by passing ViewData["FlightMapHeight"] (e.g. "70vh", "500px"). *@
+@{
+    var mapHeight = (ViewData["FlightMapHeight"] as string)?.Trim();
+    if (string.IsNullOrWhiteSpace(mapHeight)) { mapHeight = "50vh"; }
+}
+@using System.Text.Json
+@{
+    var flightsJson = "[]";
+    int mapFlightCount = 0;
+    if (Model is FlightTracker.Web.Models.ViewModels.DashboardViewModel dvm && dvm.MapFlights != null)
+    {
+        var list = dvm.MapFlights.ToList();
+        mapFlightCount = list.Count;
+        flightsJson = JsonSerializer.Serialize(list, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
+}
+
+<div class="flight-map" data-flight-map data-map-flight-count="@mapFlightCount">
+    <div class="flight-map__header">
+    <h1 class="flight-map__title">Flight Overview</h1>
+        <div class="flight-map__search">
+            <script>window.flightMapFilter = window.flightMapFilter || function(){ /* stub until map script loads */ };</script>
+            <component type="typeof(FlightTracker.Web.Components.FlightMapSearch)" 
+                       render-mode="ServerPrerendered" 
+                       param-MapFlights="((FlightTracker.Web.Models.ViewModels.DashboardViewModel)Model).MapFlights" />
+        </div>
+    </div>
+    <div id="flightMap" class="flight-map__map" style="min-height:@mapHeight;" aria-label="Flight map" role="region"></div>
+    <script type="application/json" id="flightMapData">@Html.Raw(flightsJson)</script>
+</div>

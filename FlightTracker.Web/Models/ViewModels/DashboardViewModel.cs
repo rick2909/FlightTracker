@@ -29,6 +29,11 @@ public class DashboardViewModel
     public string? ErrorMessage { get; set; }
 
     /// <summary>
+    /// Flights (past + upcoming) formatted for map (origin/destination pairs).
+    /// </summary>
+    public IEnumerable<MapFlightDto> MapFlights { get; set; } = Array.Empty<MapFlightDto>();
+
+    /// <summary>
     /// Indicates if user has any flight data.
     /// </summary>
     public bool HasFlights => Stats.TotalFlights > 0;

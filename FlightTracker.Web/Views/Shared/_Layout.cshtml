@@ -4,11 +4,12 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>@ViewData["Title"] - FlightTracker</title>
+    <base href="/" />
     <script type="importmap"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
-    <link rel="stylesheet" href="_content/Radzen.Blazor/css/standard-base.css" />
-    <link rel="stylesheet" href="_content/Radzen.Blazor/css/themes/default.css" />
+    <link rel="stylesheet" href="/_content/Radzen.Blazor/css/material3.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="~/css/styles.css" asp-append-version="true"/>
 </head>
 <body class="layout">
@@ -17,14 +18,24 @@
     </nav>
     <div class="layout__main">
         <header class="layout__header">
-            <h1 class="layout__title">@ViewData["Title"]</h1>
+            @if (IsSectionDefined("HeaderContent"))
+            {
+                @RenderSection("HeaderContent", required: false)
+            }
+            else
+            {
+                <p class="layout__subtitle">@ViewData["Title"]</p>
+            }
         </header>
         <main role="main" class="layout__content">
             @RenderBody()
         </main>
         <footer class="layout__footer">&copy; 2025 - FlightTracker.Web - <a asp-controller="Home" asp-action="Privacy">Privacy</a></footer>
     </div>
-    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+    <!-- Blazor server script needed for interactive components rendered inside MVC views -->
+    <script src="/_framework/blazor.server.js"></script>
     <script>
         (function(){
             const sidebar=document.querySelector('[data-sidebar]');

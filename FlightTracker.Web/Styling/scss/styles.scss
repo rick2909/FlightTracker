@@ -1,5 +1,8 @@
 @use 'variables' as *;
 @use 'sidebar';
+@use 'cards';
+@use 'flight-map';
+@use 'flight-stats';
 
 .layout {
   display: flex;
@@ -10,6 +13,9 @@
 
 .layout__main { flex: 1; display: flex; flex-direction: column; }
 .layout__header { padding: 1rem 1.25rem .5rem; }
+/* When a descendant or the header itself has .remove__header, strip header padding */
+.layout__header.remove__header,
+.layout__header:has(.remove__header) { padding: 0 !important; }
 .layout__title { margin: 0; font-size: 1.25rem; font-weight: 600; }
 .layout__content { padding: .5rem 1.25rem 2rem; }
 .layout__footer { margin-top: auto; padding: 1rem 1.25rem; font-size: .8rem; color: $color-text-secondary; border-top: 1px solid $color-divider; }
@@ -25,3 +31,4 @@ body {
 main {
   padding: 1rem;
 }
+

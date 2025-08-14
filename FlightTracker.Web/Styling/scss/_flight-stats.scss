@@ -1,0 +1,51 @@
+@use 'sass:color';
+@use 'variables' as *;
+
+.ft-stats-grid {
+    // positioning
+    display: grid;
+
+    // box model
+    grid-template-columns: 1fr;
+    gap: 1rem;
+
+    // up-sm: 2 columns
+    @include up-sm {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    // up-md: 6 columns, items span 2 -> 3 per row
+    @include up-md {
+        grid-template-columns: repeat(6, 1fr);
+    }
+
+    &__item {
+        // box model
+        grid-column: span 1;
+
+        // up-md: each card spans 2 columns (3 per row)
+        @include up-md {
+            grid-column: span 2;
+        }
+
+        // make the card fill the grid cell height
+        .rz-card {
+            height: 100%;
+        }
+    }
+
+    &__header {
+        // span all available columns at any breakpoint
+        grid-column: 1 / -1;
+    }
+}
+
+// Utility: full-width column (Material row/col compatible)
+.col-all {
+    // box model
+    width: 100%;
+    max-width: 100%;
+
+    // positioning
+    flex: 0 0 100%;
+}
