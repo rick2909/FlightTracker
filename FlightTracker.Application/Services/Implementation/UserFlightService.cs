@@ -126,7 +126,21 @@ public class UserFlightService : IUserFlightService
                 .SelectMany(uf => new[] { uf.Flight?.DepartureAirport?.Country, uf.Flight?.ArrivalAirport?.Country })
                 .Where(country => !string.IsNullOrEmpty(country))
                 .Distinct()
-                .Count()
+                .Count(),
+            TotalTravelTimeInMinutes = flownFlights
+                .Where(uf => uf.DidFly)
+                .Sum(uf => GetFlightTimeInMinutes(uf)),
+            TravelTimes = Enum
+                .GetValues(typeof(FlightClass))
+                .Cast<FlightClass>()
+                .Select(fc => new TravelTimeDto
+                {
+                    FlightClass = fc,
+                    TotalTravelTimeInMinutes = flownFlights
+                        .Where(uf => uf.FlightClass == fc)
+                        .Sum(uf => GetFlightTimeInMinutes(uf))
+                })
+                .ToList()
         };
 
         return stats;
@@ -135,6 +149,20 @@ public class UserFlightService : IUserFlightService
     public async Task<bool> HasUserFlownFlightAsync(int userId, int flightId, CancellationToken cancellationToken = default)
     {
         return await _userFlightRepository.HasUserFlownFlightAsync(userId, flightId, cancellationToken);
+    }
+
+    private int GetFlightTimeInMinutes(UserFlight userFlight)
+    {
+        var DepartureTimeUtc = userFlight.Flight?.DepartureTimeUtc;
+        var ArrivalTimeUtc = userFlight.Flight?.ArrivalTimeUtc;
+
+        if (DepartureTimeUtc.HasValue && ArrivalTimeUtc.HasValue)
+        {
+            var time = (ArrivalTimeUtc.Value - DepartureTimeUtc.Value).TotalMinutes;
+            return (int)Math.Round(time, MidpointRounding.AwayFromZero);
+        }
+
+        return 0;
     }
 
     private static UserFlightDto MapToDto(UserFlight userFlight)
