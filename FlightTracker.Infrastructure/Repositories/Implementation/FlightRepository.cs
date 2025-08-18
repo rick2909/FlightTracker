@@ -16,6 +16,19 @@ public class FlightRepository(FlightTrackerDbContext db) : IFlightRepository
             .Include(f => f.ArrivalAirport)
             .FirstOrDefaultAsync(f => f.Id == id, cancellationToken);
 
+    public async Task<Flight?> GetByFlightNumberAndDateAsync(string flightNumber, DateOnly date, CancellationToken cancellationToken = default)
+    {
+        var start = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var end = date.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
+
+        return await db.Flights
+            .Include(f => f.DepartureAirport)
+            .Include(f => f.ArrivalAirport)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(f => f.FlightNumber == flightNumber
+                && f.DepartureTimeUtc >= start && f.DepartureTimeUtc <= end, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Flight>> GetAllAsync(CancellationToken cancellationToken = default) =>
         await db.Flights
             .Include(f => f.DepartureAirport)

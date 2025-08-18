@@ -4,6 +4,8 @@
 @use 'flight-map';
 @use 'flight-stats';
 @use 'user-flights-list';
+@use 'dialog';
+@use 'flight-form';
 
 .layout {
   display: flex;

@@ -1,0 +1,36 @@
+@using FlightTracker.Application.Dtos
+@using FlightTracker.Web.Components.Flights
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+<button type="button" class="btn btn-primary" @onclick="Open">Add New Flight</button>
+
+<AddFlightDialog IsOpen="isOpen" Value="draft" OnSave="HandleSave" OnClose="Close" />
+
+@code {
+    private bool isOpen;
+    private CreateUserFlightDto draft = new();
+
+    private void Open()
+    {
+        isOpen = true;
+    }
+
+    private void Close()
+    {
+        isOpen = false;
+    }
+
+    private async Task HandleSave(CreateUserFlightDto dto)
+    {
+        // Temporary: print to browser console
+        await JS.InvokeVoidAsync("console.log", new
+        {
+            dto.FlightId,
+            FlightClass = dto.FlightClass.ToString(),
+            dto.SeatNumber,
+            dto.Notes,
+            dto.DidFly
+        });
+        Close();
+    }
+}

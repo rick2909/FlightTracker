@@ -1,0 +1,59 @@
+@use 'variables' as *;
+
+// BEM: .ft-form, .ft-form__field, .ft-form__actions
+.ft-form {
+  &__field {
+    margin-bottom: $spacing-4;
+
+    label {
+      display: block;
+      margin-bottom: $spacing-1;
+      font-weight: 600;
+    }
+
+  .ft-input {
+      width: 100%;
+      border: 1px solid $color-border;
+      border-radius: $radius-2;
+      padding: $spacing-2 $spacing-3;
+      font-size: .95rem;
+      background: $color-surface;
+      color: $color-text-primary;
+    }
+
+    .ft-checkbox {
+      width: auto;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: $spacing-2;
+    padding-top: $spacing-2;
+  }
+
+  // Validation message styling
+  .validation-message {
+    color: $color-error;
+    font-size: .85rem;
+    margin-top: $spacing-1;
+  }
+}
+
+// Buttons (Material-like)
+.md-button {
+  border: none;
+  background: $color-surface-variant;
+  color: $color-text-primary;
+  padding: $spacing-2 $spacing-3;
+  border-radius: $radius-2;
+  cursor: pointer;
+
+  &:hover { filter: brightness(0.98); }
+
+  &.md-primary {
+    background: $color-primary;
+    color: #fff;
+  }
+}
