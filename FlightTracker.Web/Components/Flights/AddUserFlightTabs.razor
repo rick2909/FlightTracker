@@ -5,6 +5,7 @@
 @using Radzen
 @using Radzen.Blazor
 @using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
 
 <EditForm Model="validation" OnValidSubmit="HandleSave" class="ft-form">
     <DataAnnotationsValidator />
@@ -98,27 +99,32 @@
                 </div>
                 <div class="ft-form__field">
                     <label>Flight number</label>
-                    <RadzenTextBox @bind-Value="manualFlightNumber" Style="width:100%" />
+                    <RadzenTextBox @bind-Value="validation.FlightNumber" Style="width:100%" />
+                    <ValidationMessage For="() => validation.FlightNumber" />
                 </div>
                 <div class="ft-form__row">
                     <div>
                         <div class="ft-form__field">
                             <label>Departure airport</label>
-                            <RadzenTextBox @bind-Value="manualDepCode" Style="width:100%" />
+                            <RadzenTextBox @bind-Value="validation.DepartureAirportCode" Style="width:100%" />
+                            <ValidationMessage For="() => validation.DepartureAirportCode" />
                         </div>
                         <div class="ft-form__field">
                             <label>Departure (UTC)</label>
-                            <RadzenDatePicker @bind-Value="manualDepartureUtc" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                            <RadzenDatePicker @bind-Value="validation.DepartureTimeUtc" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                            <ValidationMessage For="() => validation.DepartureTimeUtc" />
                         </div>
                     </div>
                     <div>
                         <div class="ft-form__field">
                             <label>Arrival airport</label>
-                            <RadzenTextBox @bind-Value="manualArrCode" Style="width:100%" />
+                            <RadzenTextBox @bind-Value="validation.ArrivalAirportCode" Style="width:100%" />
+                            <ValidationMessage For="() => validation.ArrivalAirportCode" />
                         </div>
                         <div class="ft-form__field">
                             <label>Arrival (UTC)</label>
-                            <RadzenDatePicker @bind-Value="manualArrivalUtc" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                            <RadzenDatePicker @bind-Value="validation.ArrivalTimeUtc" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                            <ValidationMessage For="() => validation.ArrivalTimeUtc" />
                         </div>
                     </div>
                 </div>
@@ -130,7 +136,7 @@
         <div class="ft-form__row">
             <div class="ft-form__field">
                 <label>Seat number</label>
-                <RadzenTextBox @bind-Value="seatNumber" Name="SeatNumber" Style="width:100%" />
+                <RadzenTextBox @bind-Value="validation.SeatNumber" Name="SeatNumber" Style="width:100%" />
                 <ValidationMessage For="() => validation.SeatNumber" />
             </div>
             <div class="ft-form__field">
@@ -149,7 +155,7 @@
         </div>
         @if (!CanSave)
         {
-            <div class="rz-text-secondary" style="margin-top:.25rem">Enter seat and select a flight with date/time (or provide manual date/time) to enable Save.</div>
+            <div class="rz-text-secondary" style="margin-top:.25rem">Enter seat, flight number, from/to airports, and both times to enable Save.</div>
         }
     </div>
 </EditForm>
@@ -167,14 +173,32 @@
     [Inject]
     public IFlightLookupService Lookup { get; set; } = default!;
 
-    private class ValidationModel { [System.ComponentModel.DataAnnotations.Required] public string? SeatNumber { get; set; } }
+    private class ValidationModel
+    {
+        [Required, MinLength(2)]
+        public string? SeatNumber { get; set; }
+
+        [Required, MinLength(3)]
+        public string? FlightNumber { get; set; }
+
+        [Required, MinLength(3), MaxLength(4)]
+        public string? DepartureAirportCode { get; set; }
+
+        [Required, MinLength(3), MaxLength(4)]
+        public string? ArrivalAirportCode { get; set; }
+
+        [Required]
+        public DateTime? DepartureTimeUtc { get; set; }
+
+        [Required]
+        public DateTime? ArrivalTimeUtc { get; set; }
+    }
     private ValidationModel validation = new();
 
     // Local mutable fields
     private int flightId;
     private string? flightNumber;
     private DateOnly? flightDate;
-    private string seatNumber = string.Empty;
     private FlightClass flightClass = FlightClass.Economy;
     private string? notes;
 
@@ -185,26 +209,28 @@
             flightId = Value.FlightId;
             flightNumber = Value.FlightNumber;
             flightDate = Value.FlightDate;
-            seatNumber = Value.SeatNumber;
+            validation.SeatNumber = Value.SeatNumber;
             flightClass = Value.FlightClass;
             notes = Value.Notes;
-            validation.SeatNumber = seatNumber;
         }
         else
         {
             flightId = 0;
             flightNumber = null;
             flightDate = null;
-            seatNumber = string.Empty;
+            validation.SeatNumber = null;
             flightClass = FlightClass.Economy;
             notes = null;
-            validation.SeatNumber = null;
         }
     }
 
     private int _tabIndex = 0;
-    private bool HasTimes => (flightId > 0 && flightDate.HasValue) || (manualDepartureUtc.HasValue && manualArrivalUtc.HasValue);
-    private bool CanSave => !string.IsNullOrWhiteSpace(seatNumber) && HasTimes;
+    private bool HasTimes => validation.DepartureTimeUtc.HasValue && validation.ArrivalTimeUtc.HasValue;
+    private bool HasRouteAndNumber =>
+        !string.IsNullOrWhiteSpace(validation.FlightNumber)
+        && !string.IsNullOrWhiteSpace(validation.DepartureAirportCode)
+        && !string.IsNullOrWhiteSpace(validation.ArrivalAirportCode);
+    private bool CanSave => !string.IsNullOrWhiteSpace(validation.SeatNumber) && HasRouteAndNumber && HasTimes;
 
     // Number search state
     private string? numberSearchNumber;
@@ -220,11 +246,7 @@
     private List<Flight> routeResults = new();
 
     // Manual fields (prefilled from selected flight)
-    private string? manualFlightNumber;
-    private string? manualDepCode;
-    private string? manualArrCode;
-    private DateTime? manualDepartureUtc;
-    private DateTime? manualArrivalUtc;
+    // Manual fields bound through validation model
 
     private async Task SearchByNumber()
     {
@@ -279,11 +301,11 @@
         flightNumber = f.FlightNumber;
         flightDate = DateOnly.FromDateTime(f.DepartureTimeUtc.Date);
         // Prefill manual tab
-        manualFlightNumber = f.FlightNumber;
-        manualDepCode = f.DepartureAirport?.Code;
-        manualArrCode = f.ArrivalAirport?.Code;
-        manualDepartureUtc = f.DepartureTimeUtc;
-        manualArrivalUtc = f.ArrivalTimeUtc;
+    validation.FlightNumber = f.FlightNumber;
+    validation.DepartureAirportCode = f.DepartureAirport?.Code;
+    validation.ArrivalAirportCode = f.ArrivalAirport?.Code;
+    validation.DepartureTimeUtc = f.DepartureTimeUtc;
+    validation.ArrivalTimeUtc = f.ArrivalTimeUtc;
     _tabIndex = 2; // switch to Manual tab
         StateHasChanged();
     }
@@ -294,11 +316,11 @@
         flightId = f.Id;
         flightNumber = f.FlightNumber;
         flightDate = null;
-        manualFlightNumber = f.FlightNumber;
-        manualDepCode = f.DepartureAirport?.Code;
-        manualArrCode = f.ArrivalAirport?.Code;
-        manualDepartureUtc = null;
-        manualArrivalUtc = null;
+    validation.FlightNumber = f.FlightNumber;
+    validation.DepartureAirportCode = f.DepartureAirport?.Code;
+    validation.ArrivalAirportCode = f.ArrivalAirport?.Code;
+    validation.DepartureTimeUtc = null;
+    validation.ArrivalTimeUtc = null;
     _tabIndex = 2; // switch to Manual tab
         StateHasChanged();
     }
@@ -311,10 +333,10 @@
             var dto = new CreateUserFlightDto
             {
                 FlightId = flightId,
-                FlightNumber = flightNumber,
-                FlightDate = flightDate,
+                FlightNumber = validation.FlightNumber,
+                FlightDate = validation.DepartureTimeUtc.HasValue ? DateOnly.FromDateTime(validation.DepartureTimeUtc.Value.Date) : null,
                 FlightClass = flightClass,
-                SeatNumber = seatNumber,
+                SeatNumber = validation.SeatNumber!,
                 Notes = notes
             };
             await OnSave.InvokeAsync(dto);
