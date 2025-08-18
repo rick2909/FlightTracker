@@ -10,7 +10,7 @@
     <DataAnnotationsValidator />
     <ValidationSummary />
 
-    <RadzenTabs>
+    <RadzenTabs @bind-SelectedIndex="_tabIndex">
         <Tabs>
             <RadzenTabsItem Text="By number">
                 <div class="ft-form__row">
@@ -202,6 +202,7 @@
         }
     }
 
+    private int _tabIndex = 0;
     private bool HasTimes => (flightId > 0 && flightDate.HasValue) || (manualDepartureUtc.HasValue && manualArrivalUtc.HasValue);
     private bool CanSave => !string.IsNullOrWhiteSpace(seatNumber) && HasTimes;
 
@@ -283,6 +284,7 @@
         manualArrCode = f.ArrivalAirport?.Code;
         manualDepartureUtc = f.DepartureTimeUtc;
         manualArrivalUtc = f.ArrivalTimeUtc;
+    _tabIndex = 2; // switch to Manual tab
         StateHasChanged();
     }
 
@@ -297,6 +299,7 @@
         manualArrCode = f.ArrivalAirport?.Code;
         manualDepartureUtc = null;
         manualArrivalUtc = null;
+    _tabIndex = 2; // switch to Manual tab
         StateHasChanged();
     }
 
