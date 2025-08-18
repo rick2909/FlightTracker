@@ -18,8 +18,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Radzen.Blazor" Version="4.29.6" />
-  <PackageReference Include="TimeZoneConverter" Version="6.1.0" />
+      <PackageReference Include="Radzen.Blazor" Version="7.2.2" />
+  <PackageReference Include="TimeZoneConverter" Version="7.0.0" />
     </ItemGroup>
 
     <!-- SCSS / JS build configuration -->
@@ -39,7 +39,7 @@
 
     <!-- Compile SCSS to CSS (expects 'sass' CLI available: npm install -g sass) -->
     <Target Name="CompileScss" DependsOnTargets="EnsureAssetDirs" BeforeTargets="Build">
-      <Message Text="Compiling SCSS $(SassSourceDir)/$(SassEntry) -> $(CssOutputDir)/styles.css" Importance="high" />
+      <Message Text="Compiling SCSS $(SassSourceDir)/$(SassEntry) -&gt; $(CssOutputDir)/styles.css" Importance="high" />
       <Exec Command="$(SassExecutable) --no-source-map $(SassSourceDir)/$(SassEntry):$(CssOutputDir)/styles.css" IgnoreExitCode="false" Condition="'$(SassExecutable)' != ''" />
     </Target>
 
@@ -48,7 +48,7 @@
       <JsSource Include="$(JsSourceDir)/*.js" />
     </ItemGroup>
     <Target Name="ProcessJs" DependsOnTargets="EnsureAssetDirs" BeforeTargets="Build">
-      <Message Text="Copying JS from $(JsSourceDir) -> $(JsOutputDir)" Importance="high" />
+      <Message Text="Copying JS from $(JsSourceDir) -&gt; $(JsOutputDir)" Importance="high" />
       <Exec Condition="'$(OS)' == 'Windows_NT'" Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;Get-ChildItem -Path '$(JsSourceDir)' -Filter *.js | ForEach-Object { Copy-Item $_.FullName -Destination (Join-Path '$(JsOutputDir)' $_.Name) }&quot;" />
       <Copy Condition="'$(OS)' != 'Windows_NT'" SourceFiles="@(JsSource)" DestinationFolder="$(JsOutputDir)" SkipUnchangedFiles="true" />
     </Target>

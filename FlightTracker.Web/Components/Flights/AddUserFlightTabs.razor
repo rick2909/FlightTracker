@@ -150,8 +150,8 @@
         </div>
 
         <div class="ft-form__actions">
-            <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Click="OnCancelClicked" />
-            <RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Save" ButtonType="ButtonType.Submit" Disabled="@(!CanSave)" />
+            <RadzenButton Variant="Variant.Flat" ButtonStyle="ButtonStyle.Light" Text="Cancel" Click="OnCancelClicked" />
+            <RadzenButton Variant="Variant.Flat" ButtonStyle="ButtonStyle.Primary" Text="Save" ButtonType="ButtonType.Submit" Disabled="@(!CanSave)" />
         </div>
         @if (!CanSave)
         {

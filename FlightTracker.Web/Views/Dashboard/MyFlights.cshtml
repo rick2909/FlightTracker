@@ -62,9 +62,15 @@
 
 @section Scripts {
     <script>
-        // Initialize tooltips
-        $(document).ready(function() {
-            $('[data-bs-toggle="tooltip"]').tooltip();
+        // Initialize Bootstrap tooltips without jQuery (Bootstrap 5+)
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                // If Bootstrap JS is present globally, init via its API; otherwise skip
+                if (window.bootstrap && window.bootstrap.Tooltip) {
+                    new window.bootstrap.Tooltip(tooltipTriggerEl);
+                }
+            });
         });
     </script>
 }

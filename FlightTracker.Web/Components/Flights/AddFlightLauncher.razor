@@ -2,7 +2,8 @@
 @using FlightTracker.Web.Components.Flights
 @inject Microsoft.JSInterop.IJSRuntime JS
 
-<button type="button" class="btn btn-primary" @onclick="Open">Add New Flight</button>
+
+<RadzenButton Click=Open Text="Add New Flight" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" />
 
 <AddFlightDialog IsOpen="isOpen" Value="draft" OnSave="HandleSave" OnClose="Close" />
 

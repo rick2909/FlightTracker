@@ -81,7 +81,7 @@
     <div class="desktop-content">
         <RadzenRow Gap="0">
             <!-- Left block: Date + Flight on left, Seat/Class/Position on right -->
-            <RadzenColumn Size="12" SizeMD="4" SizeLG="4" class="rz-p-4" Style="background-color: var(--rz-secondary-lighter); border-radius: 12px;">
+            <RadzenColumn Size="12" SizeMD="4" SizeLG="4" class="rz-p-4" Style="background-color: color-mix(in srgb, var(--rz-secondary-lighter) 75%, transparent); border-radius: 12px;">
                 <RadzenRow>
                     <RadzenColumn Size="12" SizeSM="6" SizeMD="6">
                         <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5">@Flight.DepartureTimeUtc.ToString("MMM dd, yyyy")</RadzenText>
@@ -93,7 +93,7 @@
                         <div class="rz-mb-2">
                             <RadzenText TextStyle="TextStyle.Caption">Seat</RadzenText>
                             <div>
-                                <RadzenBadge Shade="Shade.Lighter" BadgeStyle="BadgeStyle.Secondary" Text="@(string.IsNullOrWhiteSpace(Flight.SeatNumber) ? "-" : Flight.SeatNumber)" />
+                                <RadzenBadge Shade="Shade.Dark" BadgeStyle="BadgeStyle.Secondary" Text="@(string.IsNullOrWhiteSpace(Flight.SeatNumber) ? "-" : Flight.SeatNumber)" />
                             </div>
                         </div>
                         <div class="rz-mb-2">
@@ -105,7 +105,7 @@
                         <div>
                             <RadzenText TextStyle="TextStyle.Caption">Seat pos.</RadzenText>
                             <div>
-                                <RadzenBadge Shade="Shade.Lighter" BadgeStyle="BadgeStyle.Info" Text="@GetSeatPositionLabel(Flight.SeatNumber)" />
+                                <RadzenBadge Shade="Shade.Dark" BadgeStyle="BadgeStyle.Info" Text="@GetSeatPositionLabel(Flight.SeatNumber)" />
                             </div>
                         </div>
                     </RadzenColumn>
