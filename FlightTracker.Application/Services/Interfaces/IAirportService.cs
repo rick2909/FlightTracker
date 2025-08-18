@@ -15,4 +15,5 @@ public interface IAirportService
     Task<Airport> AddAirportAsync(Airport airport, CancellationToken cancellationToken = default);
     Task UpdateAirportAsync(Airport airport, CancellationToken cancellationToken = default);
     Task DeleteAirportAsync(int id, CancellationToken cancellationToken = default);
+    Task<string?> GetTimeZoneIdByAirportCodeAsync(string airportCode, CancellationToken cancellationToken = default);
 }

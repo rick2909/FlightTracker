@@ -1,0 +1,34 @@
+@using FlightTracker.Application.Dtos
+@using FlightTracker.Domain.Enums
+@using Radzen
+@using Radzen.Blazor
+
+@if (Flights is null || !Flights.Any())
+{
+    <div class="rz-p-4 rz-text-center rz-text-secondary">No flights.</div>
+}
+else
+{
+    <RadzenDataList Data="@FlightsOrdered"
+                    TItem="UserFlightDto"
+                    AllowPaging="true"
+                    PageSize="20"
+                    PagerHorizontalAlign="HorizontalAlign.Left"
+                    ShowPagingSummary="true"
+                    WrapItems="false">
+        <Template Context="flight">
+            <FlightTracker.Web.Components.Cards.FlightCard Flight="@flight" />
+        </Template>
+    </RadzenDataList>
+}
+
+@code {
+    [Parameter]
+    public IEnumerable<UserFlightDto>? Flights { get; set; }
+
+    private IEnumerable<UserFlightDto> FlightsOrdered =>
+        (Flights ?? Enumerable.Empty<UserFlightDto>())
+            .OrderByDescending(f => f.DepartureTimeUtc);
+
+}
+

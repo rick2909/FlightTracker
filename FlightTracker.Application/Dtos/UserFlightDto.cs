@@ -16,13 +16,13 @@ public record UserFlightDto
     public DateTime BookedOnUtc { get; init; }
     public string? Notes { get; init; }
     public bool DidFly { get; init; }
-    
+
     // Flight details (flattened for easier display)
     public string FlightNumber { get; init; } = string.Empty;
     public FlightStatus FlightStatus { get; init; }
     public DateTime DepartureTimeUtc { get; init; }
     public DateTime ArrivalTimeUtc { get; init; }
-    
+
     // Airport details
     public string DepartureAirportCode { get; init; } = string.Empty;
     public string DepartureAirportName { get; init; } = string.Empty;
@@ -30,9 +30,9 @@ public record UserFlightDto
     public string ArrivalAirportCode { get; init; } = string.Empty;
     public string ArrivalAirportName { get; init; } = string.Empty;
     public string ArrivalCity { get; init; } = string.Empty;
-    
+    public string? DepartureTimeZoneId { get; init; }
+    public string? ArrivalTimeZoneId { get; init; }
+
     // Aircraft details (optional)
-    public string? AircraftRegistration { get; init; }
-    public string? AircraftModel { get; init; }
-    public AircraftManufacturer? AircraftManufacturer { get; init; }
+    public AircraftDto? Aircraft { get; init; }
 }

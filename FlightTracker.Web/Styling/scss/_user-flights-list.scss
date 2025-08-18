@@ -1,0 +1,25 @@
+@use 'variables' as *;
+
+/* Default: show desktop, hide mobile */
+.user-flights-list {
+  .mobile-content { display: none; }
+  .desktop-content { display: block; }
+}
+
+/* Small screens: show mobile, hide desktop */
+@media (max-width: $bp-sm) {
+  .user-flights-list {
+    .mobile-content { display: block; }
+    .desktop-content { display: none; }
+
+    .flight-mobile { display: flex; flex-direction: column; gap: .35rem; }
+    .flight-mobile .top { display: flex; align-items: center; gap: .5rem; }
+    .flight-mobile .top .date { font-weight: 600; }
+    .flight-mobile .top .number { color: var(--rz-text-secondary); }
+    .flight-mobile .route { font-size: 0.95rem; }
+    .flight-mobile .times { font-size: 0.85rem; display: flex; flex-wrap: wrap; align-items: center; }
+    .flight-mobile .times .sep { margin: 0 .25rem; opacity: .6; }
+    .flight-mobile .meta { margin-top: .25rem; }
+    .flight-mobile summary { cursor: pointer; color: var(--rz-primary); }
+  }
+}

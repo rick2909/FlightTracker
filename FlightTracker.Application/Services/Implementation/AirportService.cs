@@ -13,10 +13,12 @@ namespace FlightTracker.Application.Services.Implementation;
 public class AirportService : IAirportService
 {
     private readonly IAirportRepository _airportRepository;
+    private readonly ITimeApiService _timeApiService;
 
-    public AirportService(IAirportRepository airportRepository)
+    public AirportService(IAirportRepository airportRepository, ITimeApiService timeApiService)
     {
         _airportRepository = airportRepository;
+        _timeApiService = timeApiService;
     }
 
     public async Task<Airport?> GetAirportByCodeAsync(string code, CancellationToken cancellationToken = default)
@@ -42,5 +44,15 @@ public class AirportService : IAirportService
     public async Task DeleteAirportAsync(int id, CancellationToken cancellationToken = default)
     {
         await _airportRepository.DeleteAsync(id, cancellationToken);
+    }
+
+    public async Task<string?> GetTimeZoneIdByAirportCodeAsync(string airportCode, CancellationToken cancellationToken = default)
+    {
+        var airport = await _airportRepository.GetByCodeAsync(airportCode, cancellationToken);
+        if (airport?.Latitude is double lat && airport.Longitude is double lon)
+        {
+            return await _timeApiService.GetTimeZoneIdAsync(lat, lon, cancellationToken);
+        }
+        return null;
     }
 }

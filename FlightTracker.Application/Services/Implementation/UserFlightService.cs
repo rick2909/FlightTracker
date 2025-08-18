@@ -13,31 +13,44 @@ public class UserFlightService : IUserFlightService
 {
     private readonly IUserFlightRepository _userFlightRepository;
     private readonly IFlightRepository _flightRepository;
+    private readonly IAirportService _airportService;
 
     public UserFlightService(
         IUserFlightRepository userFlightRepository,
-        IFlightRepository flightRepository)
+        IFlightRepository flightRepository,
+        IAirportService airportService)
     {
         _userFlightRepository = userFlightRepository;
         _flightRepository = flightRepository;
+        _airportService = airportService;
     }
 
     public async Task<IEnumerable<UserFlightDto>> GetUserFlightsAsync(int userId, CancellationToken cancellationToken = default)
     {
         var userFlights = await _userFlightRepository.GetUserFlightsAsync(userId, cancellationToken);
-        return userFlights.Select(MapToDto);
+        var list = new List<UserFlightDto>();
+        foreach (var uf in userFlights)
+        {
+            list.Add(await MapToDtoAsync(uf, cancellationToken));
+        }
+        return list;
     }
 
     public async Task<UserFlightDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var userFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
-        return userFlight != null ? MapToDto(userFlight) : null;
+    return userFlight != null ? await MapToDtoAsync(userFlight, cancellationToken) : null;
     }
 
     public async Task<IEnumerable<UserFlightDto>> GetUserFlightsByClassAsync(int userId, FlightClass flightClass, CancellationToken cancellationToken = default)
     {
         var userFlights = await _userFlightRepository.GetUserFlightsByClassAsync(userId, flightClass, cancellationToken);
-        return userFlights.Select(MapToDto);
+        var list = new List<UserFlightDto>();
+        foreach (var uf in userFlights)
+        {
+            list.Add(await MapToDtoAsync(uf, cancellationToken));
+        }
+        return list;
     }
 
     public async Task<UserFlightDto> AddUserFlightAsync(int userId, CreateUserFlightDto createDto, CancellationToken cancellationToken = default)
@@ -71,7 +84,7 @@ public class UserFlightService : IUserFlightService
         
         // Reload to get navigation properties
         var reloadedUserFlight = await _userFlightRepository.GetByIdAsync(savedUserFlight.Id, cancellationToken);
-        return MapToDto(reloadedUserFlight!);
+    return await MapToDtoAsync(reloadedUserFlight!, cancellationToken);
     }
 
     public async Task<UserFlightDto?> UpdateUserFlightAsync(int id, CreateUserFlightDto updateDto, CancellationToken cancellationToken = default)
@@ -89,7 +102,7 @@ public class UserFlightService : IUserFlightService
         existingUserFlight.DidFly = updateDto.DidFly;
 
         var updatedUserFlight = await _userFlightRepository.UpdateAsync(existingUserFlight, cancellationToken);
-        return MapToDto(updatedUserFlight);
+    return await MapToDtoAsync(updatedUserFlight, cancellationToken);
     }
 
     public async Task<bool> DeleteUserFlightAsync(int id, CancellationToken cancellationToken = default)
@@ -165,8 +178,31 @@ public class UserFlightService : IUserFlightService
         return 0;
     }
 
-    private static UserFlightDto MapToDto(UserFlight userFlight)
+    private async Task<UserFlightDto> MapToDtoAsync(UserFlight userFlight, CancellationToken cancellationToken = default)
     {
+        // get aircraft details from flight.
+        var aircraft = userFlight.Flight?.Aircraft != null
+            ? new AircraftDto
+            {
+                Id = userFlight.Flight.Aircraft.Id,
+                Registration = userFlight.Flight.Aircraft.Registration,
+                Model = userFlight.Flight.Aircraft.Model,
+                Manufacturer = userFlight.Flight.Aircraft.Manufacturer
+            }
+            : null;
+
+        // Resolve time zones via airport codes if available
+        string? depTz = null;
+        string? arrTz = null;
+        if (!string.IsNullOrWhiteSpace(userFlight.Flight?.DepartureAirport?.Code))
+        {
+            depTz = await _airportService.GetTimeZoneIdByAirportCodeAsync(userFlight.Flight!.DepartureAirport!.Code, cancellationToken);
+        }
+        if (!string.IsNullOrWhiteSpace(userFlight.Flight?.ArrivalAirport?.Code))
+        {
+            arrTz = await _airportService.GetTimeZoneIdByAirportCodeAsync(userFlight.Flight!.ArrivalAirport!.Code, cancellationToken);
+        }
+
         return new UserFlightDto
         {
             Id = userFlight.Id,
@@ -186,7 +222,10 @@ public class UserFlightService : IUserFlightService
             DepartureCity = userFlight.Flight?.DepartureAirport?.City ?? string.Empty,
             ArrivalAirportCode = userFlight.Flight?.ArrivalAirport?.Code ?? string.Empty,
             ArrivalAirportName = userFlight.Flight?.ArrivalAirport?.Name ?? string.Empty,
-            ArrivalCity = userFlight.Flight?.ArrivalAirport?.City ?? string.Empty
+            ArrivalCity = userFlight.Flight?.ArrivalAirport?.City ?? string.Empty,
+            DepartureTimeZoneId = depTz,
+            ArrivalTimeZoneId = arrTz,
+            Aircraft = aircraft
         };
     }
 }

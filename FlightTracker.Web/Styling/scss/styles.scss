@@ -3,6 +3,7 @@
 @use 'cards';
 @use 'flight-map';
 @use 'flight-stats';
+@use 'user-flights-list';
 
 .layout {
   display: flex;
