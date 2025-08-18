@@ -2,6 +2,12 @@
 
 // BEM: .ft-form, .ft-form__field, .ft-form__actions
 .ft-form {
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-4;
+  }
+
   &__field {
     margin-bottom: $spacing-4;
 

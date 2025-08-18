@@ -66,21 +66,17 @@
         </div>
     </details>
 
-    <div class="ft-form__field">
-        <label for="flightClass">Class</label>
-    <RadzenDropDown TValue="FlightClass" Data="@_flightClassValues" @bind-Value="model.FlightClass" Name="FlightClass" Style="width:100%" />
-        <ValidationMessage For="(() => model.FlightClass)" />
-    </div>
-
-    <div class="ft-form__field">
-        <label for="seatNumber">Seat number</label>
-        <RadzenTextBox id="seatNumber" @bind-Value="model.SeatNumber" Name="SeatNumber" />
-        <ValidationMessage For="(() => model.SeatNumber)" />
-    </div>
-
-    <div class="ft-form__field">
-        <label for="didFly">Did fly</label>
-        <RadzenCheckBox TriState="false" @bind-Value="model.DidFly" Name="DidFly" />
+    <div class="ft-form__row">
+        <div class="ft-form__field">
+            <label for="seatNumber">Seat number</label>
+            <RadzenTextBox id="seatNumber" @bind-Value="model.SeatNumber" Name="SeatNumber" />
+            <ValidationMessage For="(() => model.SeatNumber)" />
+        </div>
+        <div class="ft-form__field">
+            <label for="flightClass">Class</label>
+            <RadzenDropDown TValue="FlightClass" Data="@_flightClassValues" @bind-Value="model.FlightClass" Name="FlightClass" Style="width:100%" />
+            <ValidationMessage For="(() => model.FlightClass)" />
+        </div>
     </div>
 
     <div class="ft-form__field">
@@ -122,8 +118,7 @@
                 FlightDate = Value.FlightDate.HasValue ? Value.FlightDate.Value.ToDateTime(TimeOnly.MinValue) : null,
                 FlightClass = Value.FlightClass,
                 SeatNumber = Value.SeatNumber,
-                Notes = Value.Notes,
-                DidFly = Value.DidFly
+                Notes = Value.Notes
             };
         }
     }
@@ -140,7 +135,6 @@
                 FlightClass = model.FlightClass,
                 SeatNumber = model.SeatNumber ?? string.Empty,
                 Notes = model.Notes,
-                DidFly = model.DidFly
             };
 
             await OnSave.InvokeAsync(dto);
@@ -207,7 +201,6 @@
         [MinLength(2)]
         public string? SeatNumber { get; set; } = string.Empty;
         public string? Notes { get; set; }
-        public bool DidFly { get; set; } = true;
 
         // Manual flight creation fields
         public string? DepartureAirportCode { get; set; }

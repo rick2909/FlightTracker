@@ -76,7 +76,6 @@ public class UserFlightService : IUserFlightService
             FlightClass = createDto.FlightClass,
             SeatNumber = createDto.SeatNumber,
             Notes = createDto.Notes,
-            DidFly = createDto.DidFly,
             BookedOnUtc = DateTime.UtcNow
         };
 
@@ -99,7 +98,6 @@ public class UserFlightService : IUserFlightService
         existingUserFlight.FlightClass = updateDto.FlightClass;
         existingUserFlight.SeatNumber = updateDto.SeatNumber;
         existingUserFlight.Notes = updateDto.Notes;
-        existingUserFlight.DidFly = updateDto.DidFly;
 
         var updatedUserFlight = await _userFlightRepository.UpdateAsync(existingUserFlight, cancellationToken);
     return await MapToDtoAsync(updatedUserFlight, cancellationToken);

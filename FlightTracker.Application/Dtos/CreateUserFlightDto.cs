@@ -14,5 +14,4 @@ public record CreateUserFlightDto
     public FlightClass FlightClass { get; init; } = FlightClass.Economy;
     public string SeatNumber { get; init; } = string.Empty;
     public string? Notes { get; init; }
-    public bool DidFly { get; init; } = true;
 }
