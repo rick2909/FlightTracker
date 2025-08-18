@@ -34,12 +34,17 @@
                 }
                 @if (numberResults.Any())
                 {
-                    <RadzenDataList Data="@numberResults" TItem="Flight" WrapItems="false" AllowPaging="true" PageSize="5">
+                    <RadzenDataList Data="@numberResults" TItem="Flight" WrapItems="false" AllowPaging="true" PageSize="6">
                         <Template Context="f">
-                            <div class="ft-result" @onclick="() => SelectFlight(f)">
-                                <div><strong>@f.FlightNumber</strong></div>
-                                <div>@f.DepartureAirport?.Code → @f.ArrivalAirport?.Code</div>
-                                <div>@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
+                            <div class="ft-result">
+                                <div class="ft-result__main">
+                                    <div class="ft-result__title"><strong>@f.FlightNumber</strong> @f.DepartureAirport?.Code → @f.ArrivalAirport?.Code</div>
+                                    <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
+                                </div>
+                                <div class="ft-result__actions">
+                                    <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectFlightFull(f)" />
+                                    <RadzenButton Size="ButtonSize.Small" Icon="event_busy" Text="No date" Click="() => SelectFlightNoDate(f)" ButtonStyle="ButtonStyle.Light" />
+                                </div>
                             </div>
                         </Template>
                     </RadzenDataList>
@@ -71,12 +76,17 @@
                 }
                 @if (routeResults.Any())
                 {
-                    <RadzenDataList Data="@routeResults" TItem="Flight" WrapItems="false" AllowPaging="true" PageSize="5">
+                    <RadzenDataList Data="@routeResults" TItem="Flight" WrapItems="false" AllowPaging="true" PageSize="6">
                         <Template Context="f">
-                            <div class="ft-result" @onclick="() => SelectFlight(f)">
-                                <div><strong>@f.FlightNumber</strong></div>
-                                <div>@f.DepartureAirport?.Code → @f.ArrivalAirport?.Code</div>
-                                <div>@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
+                            <div class="ft-result">
+                                <div class="ft-result__main">
+                                    <div class="ft-result__title">@f.FlightNumber @f.DepartureAirport?.Code → @f.ArrivalAirport?.Code</div>
+                                    <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
+                                </div>
+                                <div class="ft-result__actions">
+                                    <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectFlightFull(f)" />
+                                    <RadzenButton Size="ButtonSize.Small" Icon="event_busy" Text="No date" Click="() => SelectFlightNoDate(f)" ButtonStyle="ButtonStyle.Light" />
+                                </div>
                             </div>
                         </Template>
                     </RadzenDataList>
@@ -139,7 +149,7 @@
         </div>
         @if (!CanSave)
         {
-            <div class="rz-text-secondary" style="margin-top:.25rem">Enter seat and select a flight (or provide manual date/time) to enable Save.</div>
+            <div class="rz-text-secondary" style="margin-top:.25rem">Enter seat and select a flight with date/time (or provide manual date/time) to enable Save.</div>
         }
     </div>
 </EditForm>
@@ -192,7 +202,7 @@
         }
     }
 
-    private bool HasTimes => flightId > 0 || (manualDepartureUtc.HasValue && manualArrivalUtc.HasValue);
+    private bool HasTimes => (flightId > 0 && flightDate.HasValue) || (manualDepartureUtc.HasValue && manualArrivalUtc.HasValue);
     private bool CanSave => !string.IsNullOrWhiteSpace(seatNumber) && HasTimes;
 
     // Number search state
@@ -261,18 +271,32 @@
         routeResults = results.ToList();
     }
 
-    private void SelectFlight(Flight f)
+    private void SelectFlightFull(Flight f)
     {
         // Populate draft for saving
-    flightId = f.Id;
-    flightNumber = f.FlightNumber;
-    flightDate = DateOnly.FromDateTime(f.DepartureTimeUtc.Date);
+        flightId = f.Id;
+        flightNumber = f.FlightNumber;
+        flightDate = DateOnly.FromDateTime(f.DepartureTimeUtc.Date);
         // Prefill manual tab
         manualFlightNumber = f.FlightNumber;
         manualDepCode = f.DepartureAirport?.Code;
         manualArrCode = f.ArrivalAirport?.Code;
         manualDepartureUtc = f.DepartureTimeUtc;
         manualArrivalUtc = f.ArrivalTimeUtc;
+        StateHasChanged();
+    }
+
+    private void SelectFlightNoDate(Flight f)
+    {
+        // Select flight and route, clear dates
+        flightId = f.Id;
+        flightNumber = f.FlightNumber;
+        flightDate = null;
+        manualFlightNumber = f.FlightNumber;
+        manualDepCode = f.DepartureAirport?.Code;
+        manualArrCode = f.ArrivalAirport?.Code;
+        manualDepartureUtc = null;
+        manualArrivalUtc = null;
         StateHasChanged();
     }
 

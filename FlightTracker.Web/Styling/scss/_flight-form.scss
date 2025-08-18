@@ -69,3 +69,51 @@
     color: #fff;
   }
 }
+
+// Compact search result rows
+.ft-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-3;
+  padding: $spacing-2 $spacing-3;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  margin-bottom: 0;
+  border-bottom: 1px solid $color-divider;
+
+  &__main {
+    min-width: 0;
+  }
+
+  &__title {
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  &__meta {
+    color: $color-text-secondary;
+    font-size: .85rem;
+  }
+
+  &__actions {
+    display: inline-flex;
+    gap: $spacing-2;
+    flex-shrink: 0;
+  }
+}
+
+// Radzen DataList: widen results and remove default gray li box
+.rz-datalist {
+  .rz-datalist-data { padding: 0; }
+  .rz-datalist-data > ul {
+    padding: 0;
+    margin: 0;
+  }
+  .rz-datalist-data > ul > li {
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
+}
