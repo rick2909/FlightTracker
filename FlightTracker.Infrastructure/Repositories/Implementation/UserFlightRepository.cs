@@ -31,6 +31,8 @@ public class UserFlightRepository : IUserFlightRepository
                 .ThenInclude(f => f!.DepartureAirport)
             .Include(uf => uf.Flight)
                 .ThenInclude(f => f!.ArrivalAirport)
+            .Include(uf => uf.Flight)
+                .ThenInclude(f => f!.Aircraft)
             .OrderByDescending(uf => uf.BookedOnUtc)
             .ToListAsync(cancellationToken);
     }
