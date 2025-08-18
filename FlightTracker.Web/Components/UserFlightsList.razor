@@ -138,6 +138,7 @@ else
                         <div class="meta">
                             <RadzenBadge Shade="Shade.Lighter" BadgeStyle="BadgeStyle.Secondary" Text="@(string.IsNullOrWhiteSpace(flight.SeatNumber) ? "-" : flight.SeatNumber)" />
                             <RadzenBadge Pill="true" class="rz-ml-2" BadgeStyle="@GetClassBadgeStyle(flight.FlightClass)" Text="@flight.FlightClass.ToString()" />
+                            <RadzenBadge Shade="Shade.Lighter" Pill="true" class="rz-ml-2" BadgeStyle="BadgeStyle.Info" Text="@GetSeatPositionLabel(flight.SeatNumber)" />
                         </div>
                         @if (!string.IsNullOrWhiteSpace(flight.Notes))
                         {
@@ -149,7 +150,6 @@ else
                                 <div class="rz-mb-1"><strong>Departure:</strong> @flight.DepartureAirportName, @flight.DepartureCity</div>
                                 <div class="rz-mb-1"><strong>Arrival:</strong> @flight.ArrivalAirportName, @flight.ArrivalCity</div>
                                 <div class="rz-mb-1"><strong>Booked:</strong> @flight.BookedOnUtc.ToString("MMM dd, yyyy")</div>
-                                <div class="rz-mb-1"><strong>Seat pos.:</strong> @GetSeatPositionLabel(flight.SeatNumber)</div>
                                 <div class="rz-mb-1"><strong>Aircraft:</strong>
                                     @if (flight.Aircraft is not null)
                                     {
