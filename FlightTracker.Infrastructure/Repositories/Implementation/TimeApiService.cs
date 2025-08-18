@@ -25,7 +25,8 @@ public class TimeApiService : ITimeApiService
     public TimeApiService(HttpClient http)
     {
         _http = http;
-        _http.Timeout = TimeSpan.FromSeconds(10);
+    // Keep external calls snappy; on timeout we return null and degrade gracefully
+    _http.Timeout = TimeSpan.FromSeconds(3);
     }
 
     public async Task<string?> GetTimeZoneIdAsync(double latitude, double longitude, CancellationToken cancellationToken = default)
@@ -38,7 +39,8 @@ public class TimeApiService : ITimeApiService
         }
         catch (OperationCanceledException)
         {
-            throw;
+            // Includes HttpClient timeouts; treat as unavailable and return null
+            return null;
         }
         catch
         {

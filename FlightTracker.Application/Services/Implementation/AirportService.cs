@@ -51,7 +51,15 @@ public class AirportService : IAirportService
         var airport = await _airportRepository.GetByCodeAsync(airportCode, cancellationToken);
         if (airport?.Latitude is double lat && airport.Longitude is double lon)
         {
-            return await _timeApiService.GetTimeZoneIdAsync(lat, lon, cancellationToken);
+            try
+            {
+                return await _timeApiService.GetTimeZoneIdAsync(lat, lon, cancellationToken);
+            }
+            catch
+            {
+                // Degrade gracefully: unavailable or timed out
+                return null;
+            }
         }
         return null;
     }

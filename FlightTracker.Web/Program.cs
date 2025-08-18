@@ -37,7 +37,11 @@ builder.Services.AddScoped<IAirportService, AirportService>();
 builder.Services.AddScoped<IFlightService, FlightService>();
 builder.Services.AddScoped<IUserFlightService, UserFlightService>();
 builder.Services.AddScoped<IMapFlightService, MapFlightService>();
-builder.Services.AddHttpClient<ITimeApiService, TimeApiService>();
+builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(3);
+});
+builder.Services.AddScoped<IFlightLookupService, FlightLookupService>();
 
 // Identity (basic, for seeding users)
 builder.Services
