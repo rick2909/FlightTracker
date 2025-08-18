@@ -43,8 +43,46 @@ See `.github/copilot-instructions.md` for full rules.
 | UI (planned) | Blazor WebAssembly + Radzen + ApexCharts |
 | Realtime (planned) | SignalR |
 | Mapping (planned) | AutoMapper |
-| External Flight Data (planned) | OpenSky first, later FR24 / Aviationstack |
+| External Flight Data (planned) | OpenSky first, later FR24 / Aviationstack / ADSBdb (aircraft registry) |
 | Caching (planned) | MemoryCache / Redis (later) |
+
+## External APIs and Data Providers
+This project integrates with external services via Application-layer interfaces, implemented in Infrastructure. Current and planned providers:
+
+- Current
+    - timeapi.io (Time zone by coordinates)
+        - Endpoint: `GET https://timeapi.io/api/timezone/coordinate?latitude={lat}&longitude={lon}`
+        - Purpose: Resolve IANA time zone for departure/arrival airports when rendering user flights.
+        - Integration: `ITimeApiService` (Application) with `TimeApiService` (Infrastructure). Registered via `AddHttpClient` with a short timeout for resiliency. Failures return `null` and the UI degrades gracefully.
+
+- Planned (under evaluation)
+    - OpenSky Network
+        - Use cases: live positions, recent flights, basic schedule/window queries for known ICAO/IATA.
+        - Notes: Public endpoints have limits; authenticated access recommended. Data completeness varies by region/altitude.
+        - C# client: steveberdy/OpenSky (https://github.com/steveberdy/OpenSky) — may be used in Infrastructure behind our provider interface if it fits needs; Domain/Application remain SDK-free.
+    - Flightradar24 (FR24)
+        - Use cases: schedules, status, historical tracks. FR24 APIs are not officially documented; terms and access must be carefully reviewed before use.
+    - Aviationstack
+        - Use cases: schedules, flight status, basic enrichment (airline/aircraft). API key required; rate limits apply.
+    - ADSBdb
+        - Use cases: aircraft registry lookup and enrichment (registration/tail, ICAO24/hex, type/model/manufacturer; possibly age/photos when available).
+        - Notes: Useful to enrich flights and user aircraft with reliable metadata. Check API key requirements, rate limits, and ToS before use.
+
+### Integration approach
+- Abstractions live inward (Application): e.g., `ITimeApiService`, future `IFlightDataProvider` (name TBD).
+- Implementations live outward (Infrastructure), injected via DI.
+- No external SDKs referenced by Domain or Application.
+- Responses are mapped to Application DTOs before crossing to Presentation.
+
+### Configuration & resiliency
+- Timeouts kept short (few seconds) to avoid blocking pages; timeouts/errors return `null` and callers proceed without enrichment.
+- Consider caching (memory) for stable lookups like airport time zones and static references.
+- Provider credentials (when added) will be read from configuration and user secrets; never commit keys.
+- Add retries/backoff only where providers recommend it; respect rate limits and terms.
+
+### Legal/usage notes
+- Verify provider terms (OpenSky/FR24/Aviationstack) before enabling in production.
+- Attribute sources where required and avoid retaining PII.
 
 ## Seed Data
 `SeedData` provides deterministic airports, sample flights, and optional users.
