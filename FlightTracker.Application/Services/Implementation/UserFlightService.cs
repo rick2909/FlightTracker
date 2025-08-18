@@ -14,15 +14,18 @@ public class UserFlightService : IUserFlightService
     private readonly IUserFlightRepository _userFlightRepository;
     private readonly IFlightRepository _flightRepository;
     private readonly IAirportService _airportService;
+    private readonly IAircraftRepository _aircraftRepository;
 
     public UserFlightService(
         IUserFlightRepository userFlightRepository,
         IFlightRepository flightRepository,
-        IAirportService airportService)
+        IAirportService airportService,
+        IAircraftRepository aircraftRepository)
     {
         _userFlightRepository = userFlightRepository;
         _flightRepository = flightRepository;
         _airportService = airportService;
+        _aircraftRepository = aircraftRepository;
     }
 
     public async Task<IEnumerable<UserFlightDto>> GetUserFlightsAsync(int userId, CancellationToken cancellationToken = default)
@@ -181,13 +184,21 @@ public class UserFlightService : IUserFlightService
     private async Task<UserFlightDto> MapToDtoAsync(UserFlight userFlight, CancellationToken cancellationToken = default)
     {
         // get aircraft details from flight.
-        var aircraft = userFlight.Flight?.Aircraft != null
+        var aircraft = userFlight.Flight?.AircraftId is int aircraftId
+            ? await _aircraftRepository.GetByIdAsync(aircraftId, cancellationToken)
+            : null;
+
+        var aircraftDto = aircraft != null
             ? new AircraftDto
             {
-                Id = userFlight.Flight.Aircraft.Id,
-                Registration = userFlight.Flight.Aircraft.Registration,
-                Model = userFlight.Flight.Aircraft.Model,
-                Manufacturer = userFlight.Flight.Aircraft.Manufacturer
+                Id = aircraft.Id,
+                Registration = aircraft.Registration,
+                Manufacturer = aircraft.Manufacturer,
+                Model = aircraft.Model,
+                YearManufactured = aircraft.YearManufactured,
+                PassengerCapacity = aircraft.PassengerCapacity,
+                IcaoTypeCode = aircraft.IcaoTypeCode,
+                Notes = aircraft.Notes
             }
             : null;
 
@@ -225,7 +236,7 @@ public class UserFlightService : IUserFlightService
             ArrivalCity = userFlight.Flight?.ArrivalAirport?.City ?? string.Empty,
             DepartureTimeZoneId = depTz,
             ArrivalTimeZoneId = arrTz,
-            Aircraft = aircraft
+            Aircraft = aircraftDto
         };
     }
 }

@@ -30,6 +30,7 @@ builder.Services.AddDbContext<FlightTrackerDbContext>(options =>
 builder.Services.AddScoped<IAirportRepository, AirportRepository>();
 builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 builder.Services.AddScoped<IUserFlightRepository, UserFlightRepository>();
+builder.Services.AddScoped<IAircraftRepository, AircraftRepository>();
 
 // Register application services
 builder.Services.AddScoped<IAirportService, AirportService>();
