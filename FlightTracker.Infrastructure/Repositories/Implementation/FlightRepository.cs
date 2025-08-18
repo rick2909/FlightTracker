@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Domain.Entities;
@@ -35,6 +36,70 @@ public class FlightRepository(FlightTrackerDbContext db) : IFlightRepository
             .Include(f => f.ArrivalAirport)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Flight>> SearchByFlightNumberAsync(string flightNumber, DateOnly? date = null, CancellationToken cancellationToken = default)
+    {
+        var normalized = (flightNumber ?? string.Empty).Trim().ToUpperInvariant();
+        var query = db.Flights
+            .Include(f => f.DepartureAirport)
+            .Include(f => f.ArrivalAirport)
+            .AsNoTracking()
+            .Where(f => f.FlightNumber == normalized);
+
+        if (date.HasValue)
+        {
+            var start = date.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var end = date.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
+            query = query.Where(f => f.DepartureTimeUtc >= start && f.DepartureTimeUtc <= end);
+        }
+
+        return await query
+            .OrderBy(f => f.DepartureTimeUtc)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Flight>> SearchByRouteAsync(string? departure, string? arrival, DateOnly? date = null, CancellationToken cancellationToken = default)
+    {
+        var dep = departure?.Trim();
+        var arr = arrival?.Trim();
+
+        var query = db.Flights
+            .Include(f => f.DepartureAirport)
+            .Include(f => f.ArrivalAirport)
+            .AsNoTracking()
+            .AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(dep))
+        {
+            var depUpper = dep.ToUpperInvariant();
+            query = query.Where(f => f.DepartureAirport != null && (
+        (f.DepartureAirport.Code != null && f.DepartureAirport.Code.ToUpper() == depUpper) ||
+                EF.Functions.Like(f.DepartureAirport.City, $"%{dep}%") ||
+                EF.Functions.Like(f.DepartureAirport.Name, $"%{dep}%")
+            ));
+        }
+
+    if (!string.IsNullOrWhiteSpace(arr))
+        {
+            var arrUpper = arr.ToUpperInvariant();
+            query = query.Where(f => f.ArrivalAirport != null && (
+        (f.ArrivalAirport.Code != null && f.ArrivalAirport.Code.ToUpper() == arrUpper) ||
+                EF.Functions.Like(f.ArrivalAirport.City, $"%{arr}%") ||
+                EF.Functions.Like(f.ArrivalAirport.Name, $"%{arr}%")
+            ));
+        }
+
+        if (date.HasValue)
+        {
+            var start = date.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var end = date.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
+            query = query.Where(f => f.DepartureTimeUtc >= start && f.DepartureTimeUtc <= end);
+        }
+
+        return await query
+            .OrderBy(f => f.DepartureTimeUtc)
+            .ToListAsync(cancellationToken);
+    }
 
     public async Task<Flight> AddAsync(Flight flight, CancellationToken cancellationToken = default)
     {

@@ -1,0 +1,306 @@
+@using FlightTracker.Application.Dtos
+@using FlightTracker.Application.Services.Interfaces
+@using FlightTracker.Domain.Entities
+@using FlightTracker.Domain.Enums
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.AspNetCore.Components.Forms
+
+<EditForm Model="validation" OnValidSubmit="HandleSave" class="ft-form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <RadzenTabs>
+        <Tabs>
+            <RadzenTabsItem Text="By number">
+                <div class="ft-form__row">
+                    <div class="ft-form__field">
+                        <label>Flight number</label>
+                        <RadzenTextBox @bind-Value="numberSearchNumber" Style="width:100%" />
+                    </div>
+                    <div class="ft-form__field">
+                        <label>Date (UTC)</label>
+                        <RadzenDatePicker @bind-Value="numberSearchDate" DateFormat="yyyy-MM-dd" />
+                    </div>
+                    <div class="ft-form__field" style="align-self:end;">
+                        <RadzenButton Text="Search" Icon="search" Click="SearchByNumber" />
+                    </div>
+                </div>
+                @if (numberNoDateMatches)
+                {
+                    <div class="rz-message rz-message-warning" style="margin:.5rem 0;">
+                        No flights found for that date. Showing all matches for this flight number.
+                    </div>
+                }
+                @if (numberResults.Any())
+                {
+                    <RadzenDataList Data="@numberResults" TItem="Flight" WrapItems="false" AllowPaging="true" PageSize="5">
+                        <Template Context="f">
+                            <div class="ft-result" @onclick="() => SelectFlight(f)">
+                                <div><strong>@f.FlightNumber</strong></div>
+                                <div>@f.DepartureAirport?.Code → @f.ArrivalAirport?.Code</div>
+                                <div>@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
+                            </div>
+                        </Template>
+                    </RadzenDataList>
+                }
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="By route">
+                <div class="ft-form__row">
+                    <div class="ft-form__field">
+                        <label>From (code or city)</label>
+                        <RadzenTextBox @bind-Value="routeDep" Style="width:100%" />
+                    </div>
+                    <div class="ft-form__field">
+                        <label>To (code or city)</label>
+                        <RadzenTextBox @bind-Value="routeArr" Style="width:100%" />
+                    </div>
+                    <div class="ft-form__field">
+                        <label>Date (UTC)</label>
+                        <RadzenDatePicker @bind-Value="routeDate" DateFormat="yyyy-MM-dd" />
+                    </div>
+                    <div class="ft-form__field" style="align-self:end;">
+                        <RadzenButton Text="Search" Icon="search" Click="SearchByRoute" />
+                    </div>
+                </div>
+                @if (routeNoDateMatches)
+                {
+                    <div class="rz-message rz-message-warning" style="margin:.5rem 0;">
+                        No flights found for that date. Showing all matches for this route.
+                    </div>
+                }
+                @if (routeResults.Any())
+                {
+                    <RadzenDataList Data="@routeResults" TItem="Flight" WrapItems="false" AllowPaging="true" PageSize="5">
+                        <Template Context="f">
+                            <div class="ft-result" @onclick="() => SelectFlight(f)">
+                                <div><strong>@f.FlightNumber</strong></div>
+                                <div>@f.DepartureAirport?.Code → @f.ArrivalAirport?.Code</div>
+                                <div>@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
+                            </div>
+                        </Template>
+                    </RadzenDataList>
+                }
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Manual">
+                <div class="rz-message rz-message-info" style="margin:.5rem 0;">
+                    Prefilled from selected search result. Manual fields are for review/editing.
+                </div>
+                <div class="ft-form__field">
+                    <label>Flight number</label>
+                    <RadzenTextBox @bind-Value="manualFlightNumber" Style="width:100%" />
+                </div>
+                <div class="ft-form__row">
+                    <div>
+                        <div class="ft-form__field">
+                            <label>Departure airport</label>
+                            <RadzenTextBox @bind-Value="manualDepCode" Style="width:100%" />
+                        </div>
+                        <div class="ft-form__field">
+                            <label>Departure (UTC)</label>
+                            <RadzenDatePicker @bind-Value="manualDepartureUtc" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                        </div>
+                    </div>
+                    <div>
+                        <div class="ft-form__field">
+                            <label>Arrival airport</label>
+                            <RadzenTextBox @bind-Value="manualArrCode" Style="width:100%" />
+                        </div>
+                        <div class="ft-form__field">
+                            <label>Arrival (UTC)</label>
+                            <RadzenDatePicker @bind-Value="manualArrivalUtc" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                        </div>
+                    </div>
+                </div>
+        </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+
+    <div class="ft-form__section">
+        <div class="ft-form__row">
+            <div class="ft-form__field">
+                <label>Seat number</label>
+                <RadzenTextBox @bind-Value="seatNumber" Name="SeatNumber" Style="width:100%" />
+                <ValidationMessage For="() => validation.SeatNumber" />
+            </div>
+            <div class="ft-form__field">
+                <label>Class</label>
+                <RadzenDropDown TValue="FlightClass" Data="@_classes" @bind-Value="flightClass" Style="width:100%" />
+            </div>
+            <div class="ft-form__field">
+                <label>Notes</label>
+                <RadzenTextArea @bind-Value="notes" Rows="2" Style="width:100%" />
+            </div>
+        </div>
+
+        <div class="ft-form__actions">
+            <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Click="OnCancelClicked" />
+            <RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Save" ButtonType="ButtonType.Submit" Disabled="@(!CanSave)" />
+        </div>
+        @if (!CanSave)
+        {
+            <div class="rz-text-secondary" style="margin-top:.25rem">Enter seat and select a flight (or provide manual date/time) to enable Save.</div>
+        }
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public CreateUserFlightDto? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<CreateUserFlightDto> OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Inject]
+    public IFlightLookupService Lookup { get; set; } = default!;
+
+    private class ValidationModel { [System.ComponentModel.DataAnnotations.Required] public string? SeatNumber { get; set; } }
+    private ValidationModel validation = new();
+
+    // Local mutable fields
+    private int flightId;
+    private string? flightNumber;
+    private DateOnly? flightDate;
+    private string seatNumber = string.Empty;
+    private FlightClass flightClass = FlightClass.Economy;
+    private string? notes;
+
+    protected override void OnParametersSet()
+    {
+        if (Value is not null)
+        {
+            flightId = Value.FlightId;
+            flightNumber = Value.FlightNumber;
+            flightDate = Value.FlightDate;
+            seatNumber = Value.SeatNumber;
+            flightClass = Value.FlightClass;
+            notes = Value.Notes;
+            validation.SeatNumber = seatNumber;
+        }
+        else
+        {
+            flightId = 0;
+            flightNumber = null;
+            flightDate = null;
+            seatNumber = string.Empty;
+            flightClass = FlightClass.Economy;
+            notes = null;
+            validation.SeatNumber = null;
+        }
+    }
+
+    private bool HasTimes => flightId > 0 || (manualDepartureUtc.HasValue && manualArrivalUtc.HasValue);
+    private bool CanSave => !string.IsNullOrWhiteSpace(seatNumber) && HasTimes;
+
+    // Number search state
+    private string? numberSearchNumber;
+    private DateTime? numberSearchDate;
+    private bool numberNoDateMatches;
+    private List<Flight> numberResults = new();
+
+    // Route search state
+    private string? routeDep;
+    private string? routeArr;
+    private DateTime? routeDate;
+    private bool routeNoDateMatches;
+    private List<Flight> routeResults = new();
+
+    // Manual fields (prefilled from selected flight)
+    private string? manualFlightNumber;
+    private string? manualDepCode;
+    private string? manualArrCode;
+    private DateTime? manualDepartureUtc;
+    private DateTime? manualArrivalUtc;
+
+    private async Task SearchByNumber()
+    {
+        numberNoDateMatches = false;
+        numberResults.Clear();
+        if (string.IsNullOrWhiteSpace(numberSearchNumber)) return;
+        IReadOnlyList<Flight> results;
+        if (numberSearchDate.HasValue)
+        {
+            var dateOnly = DateOnly.FromDateTime(numberSearchDate.Value.Date);
+            results = await Lookup.SearchByFlightNumberAsync(numberSearchNumber!, dateOnly);
+            if (results.Count == 0)
+            {
+                numberNoDateMatches = true;
+                results = await Lookup.SearchByFlightNumberAsync(numberSearchNumber!, null);
+            }
+        }
+        else
+        {
+            results = await Lookup.SearchByFlightNumberAsync(numberSearchNumber!, null);
+        }
+        numberResults = results.ToList();
+    }
+
+    private async Task SearchByRoute()
+    {
+        routeNoDateMatches = false;
+        routeResults.Clear();
+        if (string.IsNullOrWhiteSpace(routeDep) && string.IsNullOrWhiteSpace(routeArr)) return;
+        IReadOnlyList<Flight> results;
+        if (routeDate.HasValue)
+        {
+            var dateOnly = DateOnly.FromDateTime(routeDate.Value.Date);
+            results = await Lookup.SearchByRouteAsync(routeDep, routeArr, dateOnly);
+            if (results.Count == 0)
+            {
+                routeNoDateMatches = true;
+                results = await Lookup.SearchByRouteAsync(routeDep, routeArr, null);
+            }
+        }
+        else
+        {
+            results = await Lookup.SearchByRouteAsync(routeDep, routeArr, null);
+        }
+        routeResults = results.ToList();
+    }
+
+    private void SelectFlight(Flight f)
+    {
+        // Populate draft for saving
+    flightId = f.Id;
+    flightNumber = f.FlightNumber;
+    flightDate = DateOnly.FromDateTime(f.DepartureTimeUtc.Date);
+        // Prefill manual tab
+        manualFlightNumber = f.FlightNumber;
+        manualDepCode = f.DepartureAirport?.Code;
+        manualArrCode = f.ArrivalAirport?.Code;
+        manualDepartureUtc = f.DepartureTimeUtc;
+        manualArrivalUtc = f.ArrivalTimeUtc;
+        StateHasChanged();
+    }
+
+    private async Task HandleSave()
+    {
+        if (!CanSave) return;
+        if (OnSave.HasDelegate)
+        {
+            var dto = new CreateUserFlightDto
+            {
+                FlightId = flightId,
+                FlightNumber = flightNumber,
+                FlightDate = flightDate,
+                FlightClass = flightClass,
+                SeatNumber = seatNumber,
+                Notes = notes
+            };
+            await OnSave.InvokeAsync(dto);
+        }
+    }
+
+    private async Task OnCancelClicked()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+
+    private readonly FlightClass[] _classes = Enum.GetValues<FlightClass>();
+}

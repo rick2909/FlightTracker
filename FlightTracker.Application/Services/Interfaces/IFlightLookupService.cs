@@ -13,4 +13,14 @@ public interface IFlightLookupService
 {
     Task<Flight?> ResolveFlightAsync(string flightNumber, DateOnly date,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns matching flights by exact flight number; optional date narrows to that day.
+    /// </summary>
+    Task<IReadOnlyList<Flight>> SearchByFlightNumberAsync(string flightNumber, DateOnly? date = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns matching flights by route (departure/arrival airport code or city); optional date narrows to that day.
+    /// </summary>
+    Task<IReadOnlyList<Flight>> SearchByRouteAsync(string? departure, string? arrival, DateOnly? date = null, CancellationToken cancellationToken = default);
 }

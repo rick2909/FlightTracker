@@ -39,6 +39,12 @@
     padding-top: $spacing-2;
   }
 
+  &__section {
+    margin-top: $spacing-3; // ~0.75rem
+    padding-top: $spacing-3;
+    border-top: 1px solid $color-divider;
+  }
+
   // Validation message styling
   .validation-message {
     color: $color-error;

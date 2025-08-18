@@ -19,4 +19,14 @@ public class FlightLookupService(IFlightRepository flights) : IFlightLookupServi
         // TODO: External API lookup (OpenSky/FR24) via abstraction when available
         return null;
     }
+
+    public Task<IReadOnlyList<Flight>> SearchByFlightNumberAsync(string flightNumber, DateOnly? date = null, CancellationToken cancellationToken = default)
+    {
+        return flights.SearchByFlightNumberAsync(flightNumber, date, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<Flight>> SearchByRouteAsync(string? departure, string? arrival, DateOnly? date = null, CancellationToken cancellationToken = default)
+    {
+        return flights.SearchByRouteAsync(departure, arrival, date, cancellationToken);
+    }
 }
