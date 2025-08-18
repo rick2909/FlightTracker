@@ -4,11 +4,13 @@
 /* Sidebar */
 .sidebar {
   /* positioning */
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 10; /* keep above main scrolling content */
   /* box model */
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100dvh; /* full viewport height; handles mobile UI better */
   /* visual */
   transition: width 220ms ease;
 }
@@ -252,7 +254,8 @@
   /* legacy mobile rule, can refactor later */
   .layout { flex-direction: column; }
   .sidebar {
-    flex-direction: row;
+  position: static; /* disable sticky in mobile layout */
+  flex-direction: row;
     height: auto;
     overflow-x: auto;
   }
