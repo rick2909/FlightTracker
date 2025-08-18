@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace FlightTracker.Infrastructure.Migrations
+namespace FlightTracker.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -15,15 +15,15 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "Aircraft",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Registration = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: false),
-                    Manufacturer = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Model = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                    YearManufactured = table.Column<int>(type: "int", nullable: true),
-                    PassengerCapacity = table.Column<int>(type: "int", nullable: true),
-                    IcaoTypeCode = table.Column<string>(type: "nvarchar(4)", maxLength: 4, nullable: true),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Registration = table.Column<string>(type: "TEXT", maxLength: 8, nullable: false),
+                    Manufacturer = table.Column<string>(type: "TEXT", nullable: false),
+                    Model = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false),
+                    YearManufactured = table.Column<int>(type: "INTEGER", nullable: true),
+                    PassengerCapacity = table.Column<int>(type: "INTEGER", nullable: true),
+                    IcaoTypeCode = table.Column<string>(type: "TEXT", maxLength: 4, nullable: true),
+                    Notes = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -34,13 +34,13 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "Airlines",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    IataCode = table.Column<string>(type: "nvarchar(2)", maxLength: 2, nullable: true),
-                    IcaoCode = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    Country = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                    Active = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    IataCode = table.Column<string>(type: "TEXT", maxLength: 2, nullable: true),
+                    IcaoCode = table.Column<string>(type: "TEXT", maxLength: 3, nullable: false),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 128, nullable: false),
+                    Country = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false),
+                    Active = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -51,14 +51,15 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "Airports",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Code = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
-                    City = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                    Country = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                    Latitude = table.Column<double>(type: "float", nullable: true),
-                    Longitude = table.Column<double>(type: "float", nullable: true)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    IataCode = table.Column<string>(type: "TEXT", maxLength: 3, nullable: true),
+                    IcaoCode = table.Column<string>(type: "TEXT", maxLength: 4, nullable: true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 128, nullable: false),
+                    City = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false),
+                    Country = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false),
+                    Latitude = table.Column<double>(type: "REAL", nullable: true),
+                    Longitude = table.Column<double>(type: "REAL", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -69,11 +70,11 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "AspNetRoles",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    NormalizedName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -84,22 +85,22 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "AspNetUsers",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SecurityStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                    TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    LockoutEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    LockoutEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    AccessFailedCount = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    UserName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    NormalizedUserName = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    Email = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    NormalizedEmail = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    EmailConfirmed = table.Column<bool>(type: "INTEGER", nullable: false),
+                    PasswordHash = table.Column<string>(type: "TEXT", nullable: true),
+                    SecurityStamp = table.Column<string>(type: "TEXT", nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "TEXT", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "TEXT", nullable: true),
+                    PhoneNumberConfirmed = table.Column<bool>(type: "INTEGER", nullable: false),
+                    TwoFactorEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
+                    LockoutEnd = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
+                    LockoutEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
+                    AccessFailedCount = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -110,23 +111,23 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "Flights",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    FlightNumber = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DepartureTimeUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ArrivalTimeUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DepartureAirportId = table.Column<int>(type: "int", nullable: false),
-                    ArrivalAirportId = table.Column<int>(type: "int", nullable: false),
-                    AircraftId = table.Column<int>(type: "int", nullable: true),
-                    OperatingAirlineId = table.Column<int>(type: "int", nullable: true),
-                    DepartureTerminal = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: true),
-                    DepartureGate = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: true),
-                    ArrivalTerminal = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: true),
-                    ArrivalGate = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: true),
-                    BoardingStartUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    BoardingEndUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Tags = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    FlightNumber = table.Column<string>(type: "TEXT", maxLength: 16, nullable: false),
+                    Status = table.Column<string>(type: "TEXT", nullable: false),
+                    DepartureTimeUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ArrivalTimeUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    DepartureAirportId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ArrivalAirportId = table.Column<int>(type: "INTEGER", nullable: false),
+                    AircraftId = table.Column<int>(type: "INTEGER", nullable: true),
+                    OperatingAirlineId = table.Column<int>(type: "INTEGER", nullable: true),
+                    DepartureTerminal = table.Column<string>(type: "TEXT", maxLength: 8, nullable: true),
+                    DepartureGate = table.Column<string>(type: "TEXT", maxLength: 8, nullable: true),
+                    ArrivalTerminal = table.Column<string>(type: "TEXT", maxLength: 8, nullable: true),
+                    ArrivalGate = table.Column<string>(type: "TEXT", maxLength: 8, nullable: true),
+                    BoardingStartUtc = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    BoardingEndUtc = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Tags = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -161,11 +162,11 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    RoleId = table.Column<int>(type: "int", nullable: false),
-                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    RoleId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ClaimType = table.Column<string>(type: "TEXT", nullable: true),
+                    ClaimValue = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -182,11 +183,11 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "AspNetUserClaims",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    UserId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ClaimType = table.Column<string>(type: "TEXT", nullable: true),
+                    ClaimValue = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -203,10 +204,10 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "AspNetUserLogins",
                 columns: table => new
                 {
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UserId = table.Column<int>(type: "int", nullable: false)
+                    LoginProvider = table.Column<string>(type: "TEXT", nullable: false),
+                    ProviderKey = table.Column<string>(type: "TEXT", nullable: false),
+                    ProviderDisplayName = table.Column<string>(type: "TEXT", nullable: true),
+                    UserId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -223,8 +224,8 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "AspNetUserRoles",
                 columns: table => new
                 {
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    RoleId = table.Column<int>(type: "int", nullable: false)
+                    UserId = table.Column<int>(type: "INTEGER", nullable: false),
+                    RoleId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -247,10 +248,10 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "AspNetUserTokens",
                 columns: table => new
                 {
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    UserId = table.Column<int>(type: "INTEGER", nullable: false),
+                    LoginProvider = table.Column<string>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Value = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -267,15 +268,15 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "UserFlights",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    FlightId = table.Column<int>(type: "int", nullable: false),
-                    FlightClass = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SeatNumber = table.Column<string>(type: "nvarchar(8)", maxLength: 8, nullable: false),
-                    BookedOnUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    DidFly = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    UserId = table.Column<int>(type: "INTEGER", nullable: false),
+                    FlightId = table.Column<int>(type: "INTEGER", nullable: false),
+                    FlightClass = table.Column<string>(type: "TEXT", nullable: false),
+                    SeatNumber = table.Column<string>(type: "TEXT", maxLength: 8, nullable: false),
+                    BookedOnUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Notes = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    DidFly = table.Column<bool>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -314,10 +315,18 @@ namespace FlightTracker.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Airports_Code",
+                name: "IX_Airports_IataCode",
                 table: "Airports",
-                column: "Code",
-                unique: true);
+                column: "IataCode",
+                unique: true,
+                filter: "[IataCode] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Airports_IcaoCode",
+                table: "Airports",
+                column: "IcaoCode",
+                unique: true,
+                filter: "[IcaoCode] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -328,8 +337,7 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "RoleNameIndex",
                 table: "AspNetRoles",
                 column: "NormalizedName",
-                unique: true,
-                filter: "[NormalizedName] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetUserClaims_UserId",
@@ -355,8 +363,7 @@ namespace FlightTracker.Infrastructure.Migrations
                 name: "UserNameIndex",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
-                unique: true,
-                filter: "[NormalizedUserName] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Flights_AircraftId",

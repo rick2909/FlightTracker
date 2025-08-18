@@ -73,7 +73,10 @@ public class FlightRepository(FlightTrackerDbContext db) : IFlightRepository
         {
             var depUpper = dep.ToUpperInvariant();
             query = query.Where(f => f.DepartureAirport != null && (
-        (f.DepartureAirport.Code != null && f.DepartureAirport.Code.ToUpper() == depUpper) ||
+    (f.DepartureAirport.IataCode != null && f.DepartureAirport.IataCode.ToUpper() == depUpper) ||
+    (f.DepartureAirport.IcaoCode != null && f.DepartureAirport.IcaoCode.ToUpper() == depUpper) ||
+        (f.DepartureAirport.IataCode != null && f.DepartureAirport.IataCode.ToUpper() == depUpper) ||
+        (f.DepartureAirport.IcaoCode != null && f.DepartureAirport.IcaoCode.ToUpper() == depUpper) ||
                 EF.Functions.Like(f.DepartureAirport.City, $"%{dep}%") ||
                 EF.Functions.Like(f.DepartureAirport.Name, $"%{dep}%")
             ));
@@ -83,7 +86,10 @@ public class FlightRepository(FlightTrackerDbContext db) : IFlightRepository
         {
             var arrUpper = arr.ToUpperInvariant();
             query = query.Where(f => f.ArrivalAirport != null && (
-        (f.ArrivalAirport.Code != null && f.ArrivalAirport.Code.ToUpper() == arrUpper) ||
+    (f.ArrivalAirport.IataCode != null && f.ArrivalAirport.IataCode.ToUpper() == arrUpper) ||
+    (f.ArrivalAirport.IcaoCode != null && f.ArrivalAirport.IcaoCode.ToUpper() == arrUpper) ||
+        (f.ArrivalAirport.IataCode != null && f.ArrivalAirport.IataCode.ToUpper() == arrUpper) ||
+        (f.ArrivalAirport.IcaoCode != null && f.ArrivalAirport.IcaoCode.ToUpper() == arrUpper) ||
                 EF.Functions.Like(f.ArrivalAirport.City, $"%{arr}%") ||
                 EF.Functions.Like(f.ArrivalAirport.Name, $"%{arr}%")
             ));

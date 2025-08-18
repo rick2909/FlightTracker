@@ -196,13 +196,15 @@ public class UserFlightService : IUserFlightService
         // Resolve time zones via airport codes if available
         string? depTz = null;
         string? arrTz = null;
-        if (!string.IsNullOrWhiteSpace(userFlight.Flight?.DepartureAirport?.Code))
+        if (!string.IsNullOrWhiteSpace(userFlight.Flight?.DepartureAirport?.IataCode) || !string.IsNullOrWhiteSpace(userFlight.Flight?.DepartureAirport?.IcaoCode))
         {
-            depTz = await _airportService.GetTimeZoneIdByAirportCodeAsync(userFlight.Flight!.DepartureAirport!.Code, cancellationToken);
+            var code = userFlight.Flight!.DepartureAirport!.IataCode ?? userFlight.Flight!.DepartureAirport!.IcaoCode!;
+            depTz = await _airportService.GetTimeZoneIdByAirportCodeAsync(code, cancellationToken);
         }
-        if (!string.IsNullOrWhiteSpace(userFlight.Flight?.ArrivalAirport?.Code))
+        if (!string.IsNullOrWhiteSpace(userFlight.Flight?.ArrivalAirport?.IataCode) || !string.IsNullOrWhiteSpace(userFlight.Flight?.ArrivalAirport?.IcaoCode))
         {
-            arrTz = await _airportService.GetTimeZoneIdByAirportCodeAsync(userFlight.Flight!.ArrivalAirport!.Code, cancellationToken);
+            var code = userFlight.Flight!.ArrivalAirport!.IataCode ?? userFlight.Flight!.ArrivalAirport!.IcaoCode!;
+            arrTz = await _airportService.GetTimeZoneIdByAirportCodeAsync(code, cancellationToken);
         }
 
         return new UserFlightDto
@@ -219,10 +221,10 @@ public class UserFlightService : IUserFlightService
             FlightStatus = userFlight.Flight?.Status ?? FlightStatus.Scheduled,
             DepartureTimeUtc = userFlight.Flight?.DepartureTimeUtc ?? DateTime.MinValue,
             ArrivalTimeUtc = userFlight.Flight?.ArrivalTimeUtc ?? DateTime.MinValue,
-            DepartureAirportCode = userFlight.Flight?.DepartureAirport?.Code ?? string.Empty,
+            DepartureAirportCode = userFlight.Flight?.DepartureAirport?.IataCode ?? userFlight.Flight?.DepartureAirport?.IcaoCode ?? string.Empty,
             DepartureAirportName = userFlight.Flight?.DepartureAirport?.Name ?? string.Empty,
             DepartureCity = userFlight.Flight?.DepartureAirport?.City ?? string.Empty,
-            ArrivalAirportCode = userFlight.Flight?.ArrivalAirport?.Code ?? string.Empty,
+            ArrivalAirportCode = userFlight.Flight?.ArrivalAirport?.IataCode ?? userFlight.Flight?.ArrivalAirport?.IcaoCode ?? string.Empty,
             ArrivalAirportName = userFlight.Flight?.ArrivalAirport?.Name ?? string.Empty,
             ArrivalCity = userFlight.Flight?.ArrivalAirport?.City ?? string.Empty,
             DepartureTimeZoneId = depTz,

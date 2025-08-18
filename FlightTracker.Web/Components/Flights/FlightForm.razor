@@ -171,8 +171,8 @@
         }
     // Populate known fields and open details
     model.FlightId = flight.Id;
-    model.DepartureAirportCode = flight.DepartureAirport?.Code;
-    model.ArrivalAirportCode = flight.ArrivalAirport?.Code;
+    model.DepartureAirportCode = flight.DepartureAirport?.IataCode ?? flight.DepartureAirport?.IcaoCode;
+    model.ArrivalAirportCode = flight.ArrivalAirport?.IataCode ?? flight.ArrivalAirport?.IcaoCode;
     model.DepartureTimeUtc = flight.DepartureTimeUtc;
     model.ArrivalTimeUtc = flight.ArrivalTimeUtc;
     model.DepartureTerminal = flight.DepartureTerminal;

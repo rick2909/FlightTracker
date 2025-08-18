@@ -80,13 +80,15 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
 
 		builder.Entity<Airport>(entity =>
 		{
-			entity.Property(a => a.Code).HasMaxLength(8).IsRequired();
+			entity.Property(a => a.IataCode).HasMaxLength(3);
+			entity.Property(a => a.IcaoCode).HasMaxLength(4);
 			entity.Property(a => a.Name).HasMaxLength(128).IsRequired();
 			entity.Property(a => a.City).HasMaxLength(64).IsRequired();
 			entity.Property(a => a.Country).HasMaxLength(64).IsRequired();
 			entity.Property(a => a.Latitude);
 			entity.Property(a => a.Longitude);
-			entity.HasIndex(a => a.Code).IsUnique();
+			entity.HasIndex(a => a.IataCode).IsUnique().HasFilter("[IataCode] IS NOT NULL");
+			entity.HasIndex(a => a.IcaoCode).IsUnique().HasFilter("[IcaoCode] IS NOT NULL");
 		});
 
 		// Configure UserFlight entity

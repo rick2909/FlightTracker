@@ -39,7 +39,7 @@
                         <Template Context="f">
                             <div class="ft-result">
                                 <div class="ft-result__main">
-                                    <div class="ft-result__title"><strong>@f.FlightNumber</strong> @f.DepartureAirport?.Code → @f.ArrivalAirport?.Code</div>
+                                    <div class="ft-result__title"><strong>@f.FlightNumber</strong> @(f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode) → @(f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode)</div>
                                     <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
                                 </div>
                                 <div class="ft-result__actions">
@@ -81,7 +81,7 @@
                         <Template Context="f">
                             <div class="ft-result">
                                 <div class="ft-result__main">
-                                    <div class="ft-result__title">@f.FlightNumber @f.DepartureAirport?.Code → @f.ArrivalAirport?.Code</div>
+                                    <div class="ft-result__title">@f.FlightNumber @(f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode) → @(f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode)</div>
                                     <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
                                 </div>
                                 <div class="ft-result__actions">
@@ -302,8 +302,8 @@
         flightDate = DateOnly.FromDateTime(f.DepartureTimeUtc.Date);
         // Prefill manual tab
     validation.FlightNumber = f.FlightNumber;
-    validation.DepartureAirportCode = f.DepartureAirport?.Code;
-    validation.ArrivalAirportCode = f.ArrivalAirport?.Code;
+    validation.DepartureAirportCode = f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode;
+    validation.ArrivalAirportCode = f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode;
     validation.DepartureTimeUtc = f.DepartureTimeUtc;
     validation.ArrivalTimeUtc = f.ArrivalTimeUtc;
     _tabIndex = 2; // switch to Manual tab
@@ -317,8 +317,8 @@
         flightNumber = f.FlightNumber;
         flightDate = null;
     validation.FlightNumber = f.FlightNumber;
-    validation.DepartureAirportCode = f.DepartureAirport?.Code;
-    validation.ArrivalAirportCode = f.ArrivalAirport?.Code;
+    validation.DepartureAirportCode = f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode;
+    validation.ArrivalAirportCode = f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode;
     validation.DepartureTimeUtc = null;
     validation.ArrivalTimeUtc = null;
     _tabIndex = 2; // switch to Manual tab
