@@ -26,10 +26,15 @@
         // Temporary: print to browser console
         await JS.InvokeVoidAsync("console.log", new
         {
+            dto.FlightNumber,
             dto.FlightId,
             FlightClass = dto.FlightClass.ToString(),
             dto.SeatNumber,
-            dto.Notes
+            dto.Notes,
+            dto.DepartureAirportCode,
+            dto.ArrivalAirportCode,
+            dto.DepartureTimeUtc,
+            dto.ArrivalTimeUtc,
         });
         Close();
     }

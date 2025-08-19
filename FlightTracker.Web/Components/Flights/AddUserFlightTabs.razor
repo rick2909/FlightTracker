@@ -337,7 +337,11 @@
                 FlightDate = validation.DepartureTimeUtc.HasValue ? DateOnly.FromDateTime(validation.DepartureTimeUtc.Value.Date) : null,
                 FlightClass = flightClass,
                 SeatNumber = validation.SeatNumber!,
-                Notes = notes
+                Notes = notes,
+                DepartureAirportCode = validation.DepartureAirportCode,
+                ArrivalAirportCode = validation.ArrivalAirportCode,
+                DepartureTimeUtc = validation.DepartureTimeUtc,
+                ArrivalTimeUtc = validation.ArrivalTimeUtc
             };
             await OnSave.InvokeAsync(dto);
         }

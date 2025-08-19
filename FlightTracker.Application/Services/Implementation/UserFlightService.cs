@@ -14,15 +14,18 @@ public class UserFlightService : IUserFlightService
     private readonly IUserFlightRepository _userFlightRepository;
     private readonly IFlightRepository _flightRepository;
     private readonly IAirportService _airportService;
+    private readonly IFlightService _flightService;
 
     public UserFlightService(
         IUserFlightRepository userFlightRepository,
         IFlightRepository flightRepository,
-        IAirportService airportService)
+        IAirportService airportService,
+        IFlightService flightService)
     {
         _userFlightRepository = userFlightRepository;
         _flightRepository = flightRepository;
         _airportService = airportService;
+        _flightService = flightService;
     }
 
     public async Task<IEnumerable<UserFlightDto>> GetUserFlightsAsync(int userId, CancellationToken cancellationToken = default)
@@ -55,24 +58,57 @@ public class UserFlightService : IUserFlightService
 
     public async Task<UserFlightDto> AddUserFlightAsync(int userId, CreateUserFlightDto createDto, CancellationToken cancellationToken = default)
     {
-        // Validate that the flight exists
-        var flight = await _flightRepository.GetByIdAsync(createDto.FlightId, cancellationToken);
-        if (flight == null)
+        Flight? flight = null;
+        // If FlightId provided, use it; otherwise attempt to create a Flight from provided fields
+        if (createDto.FlightId > 0)
         {
-            throw new ArgumentException($"Flight with ID {createDto.FlightId} not found.", nameof(createDto.FlightId));
+            flight = await _flightRepository.GetByIdAsync(createDto.FlightId, cancellationToken);
+
+            if (flight == null)
+            {
+                throw new ArgumentException($"Flight with ID {createDto.FlightId} not found.", nameof(createDto.FlightId));
+            }
         }
 
+        if (string.IsNullOrWhiteSpace(createDto.FlightNumber)
+            || string.IsNullOrWhiteSpace(createDto.DepartureAirportCode)
+            || string.IsNullOrWhiteSpace(createDto.ArrivalAirportCode)
+            || !createDto.DepartureTimeUtc.HasValue
+            || !createDto.ArrivalTimeUtc.HasValue)
+        {
+            throw new ArgumentException("Missing fields to create a new Flight. Provide FlightNumber, departure/arrival airport codes, and both times.");
+        }
+
+        var depAirport = await _airportService.GetAirportByCodeAsync(createDto.DepartureAirportCode!, cancellationToken);
+        var arrAirport = await _airportService.GetAirportByCodeAsync(createDto.ArrivalAirportCode!, cancellationToken);
+        if (depAirport is null || arrAirport is null)
+        {
+            throw new ArgumentException("Invalid airport code(s) provided.");
+        }
+
+        flight = new Flight
+        {
+            FlightNumber = createDto.FlightNumber!,
+            Status = FlightStatus.Scheduled,
+            DepartureAirportId = depAirport.Id,
+            ArrivalAirportId = arrAirport.Id,
+            DepartureTimeUtc = createDto.DepartureTimeUtc!.Value,
+            ArrivalTimeUtc = createDto.ArrivalTimeUtc!.Value
+        };
+
+        flight = await _flightService.AddFlightAsync(flight, cancellationToken);
+
         // Check if user has already recorded this flight
-        var hasFlown = await _userFlightRepository.HasUserFlownFlightAsync(userId, createDto.FlightId, cancellationToken);
+        var hasFlown = await _userFlightRepository.HasUserFlownFlightAsync(userId, flight.Id, cancellationToken);
         if (hasFlown)
         {
-            throw new InvalidOperationException($"User {userId} has already recorded flight {createDto.FlightId}.");
+            throw new InvalidOperationException($"User {userId} has already recorded flight {flight.Id}.");
         }
 
         var userFlight = new UserFlight
         {
             UserId = userId,
-            FlightId = createDto.FlightId,
+            FlightId = flight.Id,
             FlightClass = createDto.FlightClass,
             SeatNumber = createDto.SeatNumber,
             Notes = createDto.Notes,
