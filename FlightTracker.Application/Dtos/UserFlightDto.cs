@@ -31,9 +31,13 @@ public record UserFlightDto
 
     // Airport details
     public string DepartureAirportCode { get; init; } = string.Empty;
+    public string? DepartureIataCode { get; init; }
+    public string? DepartureIcaoCode { get; init; }
     public string DepartureAirportName { get; init; } = string.Empty;
     public string DepartureCity { get; init; } = string.Empty;
     public string ArrivalAirportCode { get; init; } = string.Empty;
+    public string? ArrivalIataCode { get; init; }
+    public string? ArrivalIcaoCode { get; init; }
     public string ArrivalAirportName { get; init; } = string.Empty;
     public string ArrivalCity { get; init; } = string.Empty;
     public string? DepartureTimeZoneId { get; init; }

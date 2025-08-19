@@ -8,6 +8,14 @@
 
 @code {
     [Parameter] public UserFlightDto Flight { get; set; } = default!;
+    private bool expanded;
+    private void ToggleExpanded() => expanded = !expanded;
+    private string CardClass => $"rz-mb-2 rz-p-2 flight-card-compact {(expanded ? "expanded" : string.Empty)}";
+
+    [Parameter] public EventCallback<UserFlightDto> OnEdit { get; set; }
+    [Parameter] public EventCallback<UserFlightDto> OnDelete { get; set; }
+    private async Task HandleEdit() => await OnEdit.InvokeAsync(Flight);
+    private async Task HandleDelete() => await OnDelete.InvokeAsync(Flight);
 
     private static BadgeStyle GetClassBadgeStyle(FlightClass flightClass)
     {
@@ -77,162 +85,76 @@
     }
 }
 
-<RadzenCard Variant="Variant.Outlined" class="rz-mb-3 rz-p-3 user-flights-list" Style="width: 100%; overflow: hidden;">
-    <div class="desktop-content">
-        <RadzenRow Gap="0">
-            <!-- Left block: Date + Flight on left, Seat/Class/Position on right -->
-            <RadzenColumn Size="12" SizeMD="4" SizeLG="4" class="rz-p-3" Style="background-color: color-mix(in srgb, var(--rz-secondary-lighter) 75%, transparent); border-radius: var(--md3-radius-md);">
-                <RadzenRow>
-                    <RadzenColumn Size="12" SizeSM="6" SizeMD="6">
-                        <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5">@Flight.DepartureTimeUtc.ToString("MMM dd, yyyy")</RadzenText>
-                        <div class="rz-mt-1">
-                            <RadzenText TextStyle="TextStyle.Body1">@Flight.FlightNumber</RadzenText>
-                        </div>
-                    </RadzenColumn>
-                    <RadzenColumn Size="12" SizeSM="6" SizeMD="6" class="rz-text-align-start rz-text-align-md-end">
-                        <div class="rz-mb-1">
-                            <RadzenText TextStyle="TextStyle.Caption">Seat</RadzenText>
-                            <div>
-                                <RadzenBadge Shade="Shade.Dark" BadgeStyle="BadgeStyle.Secondary" Text="@(string.IsNullOrWhiteSpace(Flight.SeatNumber) ? "-" : Flight.SeatNumber)" />
-                            </div>
-                        </div>
-                        <div class="rz-mb-1">
-                            <RadzenText TextStyle="TextStyle.Caption">Class</RadzenText>
-                            <div>
-                                <RadzenBadge Pill="true" BadgeStyle="@GetClassBadgeStyle(Flight.FlightClass)" Text="@Flight.FlightClass.ToString()" />
-                            </div>
-                        </div>
-                        <div>
-                            <RadzenText TextStyle="TextStyle.Caption">Seat pos.</RadzenText>
-                            <div>
-                                <RadzenBadge Shade="Shade.Dark" BadgeStyle="BadgeStyle.Info" Text="@GetSeatPositionLabel(Flight.SeatNumber)" />
-                            </div>
-                        </div>
-                    </RadzenColumn>
-                </RadzenRow>
-            </RadzenColumn>
-
-            <!-- Middle: Route details -->
-            <RadzenColumn Size="12" SizeMD="5" SizeLG="5" class="rz-p-1">
-                <RadzenRow Gap="0">
-                    <RadzenColumn Size="12" SizeSM="6" SizeMD="6">
-                        <RadzenText TextStyle="TextStyle.Overline">Departure</RadzenText>
-                        <div><strong>@Flight.DepartureAirportCode</strong> @(" ") <span>@Flight.DepartureAirportName</span></div>
-                        <div class="rz-text-secondary">@Flight.DepartureCity</div>
-                        <div class="rz-text-secondary rz-mt-1">@Flight.DepartureTimeUtc.ToString("MMM dd, yyyy HH:mm") UTC</div>
-                        <div class="rz-text-secondary">Local: @ToLocalString(Flight.DepartureTimeUtc, Flight.DepartureTimeZoneId)</div>
-                    </RadzenColumn>
-                    <RadzenColumn Size="12" SizeSM="6" SizeMD="6">
-                        <RadzenText TextStyle="TextStyle.Overline">Arrival</RadzenText>
-                        <div><strong>@Flight.ArrivalAirportCode</strong> @(" ") <span>@Flight.ArrivalAirportName</span></div>
-                        <div class="rz-text-secondary">@Flight.ArrivalCity</div>
-                        <div class="rz-text-secondary rz-mt-1">@Flight.ArrivalTimeUtc.ToString("MMM dd, yyyy HH:mm") UTC</div>
-                        <div class="rz-text-secondary">Local: @ToLocalString(Flight.ArrivalTimeUtc, Flight.ArrivalTimeZoneId)</div>
-                    </RadzenColumn>
-                </RadzenRow>
-            </RadzenColumn>
-
-            <!-- Booked/Created separate column -->
-            <RadzenColumn Size="12" SizeMD="2" SizeLG="2" class="rz-p-1">
-                <RadzenText TextStyle="TextStyle.Overline">Booked/Created</RadzenText>
-                <div class="rz-mt-1">
-                    <RadzenText TextStyle="TextStyle.Body2">Booked</RadzenText>
-                    <div class="rz-text-secondary">@Flight.BookedOnUtc.ToString("MMM dd, yyyy")</div>
-                </div>
-            </RadzenColumn>
-
-            <!-- Right: Status + notes icon -->
-            <RadzenColumn Size="12" SizeMD="1" SizeLG="1" class="rz-p-1 rz-text-align-start rz-text-align-lg-end">
-                <div class="rz-mb-2">
-                    <RadzenBadge Pill="true" BadgeStyle="@GetStatusBadgeStyle(Flight.DidFly)" Text="@(didFlyText(Flight.DidFly))" />
-                </div>
-                <div>
-                    @if (!string.IsNullOrWhiteSpace(Flight.Notes))
+<RadzenCard Variant="Variant.Outlined" class="@CardClass" Style="width: 100%; overflow: hidden;">
+    <!-- Header: top meta row and route row; click anywhere on left to open (no close) -->
+    <div class="header-row">
+    <div class="left" @onclick="ToggleExpanded" role="button" tabindex="0" title="Toggle details">
+            <RadzenIcon Icon="flight" class="rz-mr-1" />
+            @if (!string.IsNullOrWhiteSpace(Flight.OperatingAirlineIataCode) || !string.IsNullOrWhiteSpace(Flight.OperatingAirlineIcaoCode) || !string.IsNullOrWhiteSpace(Flight.OperatingAirlineName))
+            {
+                <span class="rz-text-secondary">
+                    <strong>@(Flight.OperatingAirlineIataCode ?? Flight.OperatingAirlineIcaoCode)</strong>
+                    @if (!string.IsNullOrWhiteSpace(Flight.OperatingAirlineName))
                     {
-                        <span title="@Flight.Notes"><i class="fas fa-comment-alt" style="color:#17a2b8"></i></span>
+                        <span class="rz-ml-1">@Flight.OperatingAirlineName</span>
                     }
-                </div>
-            </RadzenColumn>
-        </RadzenRow>
-
-        <!-- Aircraft info row -->
-    <RadzenRow class="rz-mt-1 rz-pt-1 rz-border-top-1">
-            <RadzenColumn Size="12" class="rz-text-secondary">
-                <RadzenText TextStyle="TextStyle.Overline">Aircraft</RadzenText>
-                <div>
+                </span>
+                <span class="sep">|</span>
+            }
+            <span class="rz-text-secondary">@Flight.FlightNumber</span>
+            <span class="sep">|</span>
+            <span>@Flight.DepartureTimeUtc.ToString("yyyy-MM-dd")</span>
+            <span class="sep">|</span>
+            <span>Seat: <strong>@(string.IsNullOrWhiteSpace(Flight.SeatNumber) ? "-" : Flight.SeatNumber)</strong></span>
+            
+            <!-- Route line -->
+            <div class="route-line">
+                <strong>@(Flight.DepartureIataCode ?? Flight.DepartureIcaoCode ?? Flight.DepartureAirportCode)</strong>
+                @if (!string.IsNullOrWhiteSpace(Flight.DepartureIataCode) && !string.IsNullOrWhiteSpace(Flight.DepartureIcaoCode))
+                {
+                    <span class="rz-text-secondary rz-ml-1">(@Flight.DepartureIcaoCode)</span>
+                }
+                <span class="arrow">→</span>
+                <strong>@(Flight.ArrivalIataCode ?? Flight.ArrivalIcaoCode ?? Flight.ArrivalAirportCode)</strong>
+                @if (!string.IsNullOrWhiteSpace(Flight.ArrivalIataCode) && !string.IsNullOrWhiteSpace(Flight.ArrivalIcaoCode))
+                {
+                    <span class="rz-text-secondary rz-ml-1">(@Flight.ArrivalIcaoCode)</span>
+                }
+                <span class="sep">|</span>
+                <span class="rz-text-secondary">
                     @if (Flight.Aircraft is not null)
                     {
-                        <span>
-                            @(
-                                string.Join(" · ", new[] {
-                                    string.IsNullOrWhiteSpace(Flight.Aircraft.Registration) ? null : $"Reg {Flight.Aircraft.Registration}",
-                                    string.IsNullOrWhiteSpace(Flight.Aircraft.Model) ? null : Flight.Aircraft.Model,
-                                    Flight.Aircraft.Manufacturer.ToString()
-                                }.Where(x => x is not null))
-                            )
-                        </span>
+                        @(string.Join(" · ", new[] {
+                            string.IsNullOrWhiteSpace(Flight.Aircraft.Model) ? null : Flight.Aircraft.Model,
+                            Flight.Aircraft.Manufacturer.ToString(),
+                            string.IsNullOrWhiteSpace(Flight.Aircraft.Registration) ? null : $"Reg {Flight.Aircraft.Registration}"
+                        }.Where(x => x is not null)))
                     }
                     else
                     {
                         <span>-</span>
                     }
-                </div>
-            </RadzenColumn>
-        </RadzenRow>
-    </div>
-
-    <div class="mobile-content">
-        <div class="flight-mobile">
-            <div style="background-color: color-mix(in srgb, var(--rz-secondary-lighter) 75%, transparent); border-radius: var(--md3-radius-sm); padding: 0.5rem;">
-                <div class="top">
-                    <span class="date">@Flight.DepartureTimeUtc.ToString("MMM dd")</span>
-                    <span class="number">@Flight.FlightNumber</span>
-                    <span class="status">
-                        <RadzenBadge Pill="true" BadgeStyle="@GetStatusBadgeStyle(Flight.DidFly)" Text="@(didFlyText(Flight.DidFly))" />
-                    </span>
-                </div>
-                <div class="route"><strong>@Flight.DepartureAirportCode</strong> &rarr; <strong>@Flight.ArrivalAirportCode</strong></div>
-                <div class="times rz-text-secondary">
-                    <span>@ToLocalString(Flight.DepartureTimeUtc, Flight.DepartureTimeZoneId)</span>
-                    <span class="sep"> · </span>
-                    <span>@ToLocalString(Flight.ArrivalTimeUtc, Flight.ArrivalTimeZoneId)</span>
-                </div>
+                </span>
             </div>
-            <div class="meta">
-                <RadzenBadge Shade="Shade.Lighter" BadgeStyle="BadgeStyle.Secondary" Text="@(string.IsNullOrWhiteSpace(Flight.SeatNumber) ? "-" : Flight.SeatNumber)" />
-                <RadzenBadge Pill="true" class="rz-ml-2" BadgeStyle="@GetClassBadgeStyle(Flight.FlightClass)" Text="@Flight.FlightClass.ToString()" />
-                <RadzenBadge Shade="Shade.Lighter" Pill="true" class="rz-ml-2" BadgeStyle="BadgeStyle.Info" Text="@GetSeatPositionLabel(Flight.SeatNumber)" />
-            </div>
-            @if (!string.IsNullOrWhiteSpace(Flight.Notes))
-            {
-                <div class="notes rz-text-secondary rz-mt-1"><i class="fas fa-comment-alt" style="color:#17a2b8"></i> @Flight.Notes</div>
-            }
-            <details class="more rz-mt-2">
-                <summary>More</summary>
-                <div class="rz-mt-2">
-                    <div class="rz-mb-1"><strong>Departure:</strong> @Flight.DepartureAirportName, @Flight.DepartureCity</div>
-                    <div class="rz-mb-1"><strong>Arrival:</strong> @Flight.ArrivalAirportName, @Flight.ArrivalCity</div>
-                    <div class="rz-mb-1"><strong>Booked:</strong> @Flight.BookedOnUtc.ToString("MMM dd, yyyy")</div>
-                    <div class="rz-mb-1"><strong>Aircraft:</strong>
-                        @if (Flight.Aircraft is not null)
-                        {
-                            <span>
-                                @(
-                                    string.Join(" · ", new[] {
-                                        string.IsNullOrWhiteSpace(Flight.Aircraft.Registration) ? null : $"Reg {Flight.Aircraft.Registration}",
-                                        string.IsNullOrWhiteSpace(Flight.Aircraft.Model) ? null : Flight.Aircraft.Model,
-                                        Flight.Aircraft.Manufacturer.ToString()
-                                    }.Where(x => x is not null))
-                                )
-                            </span>
-                        }
-                        else
-                        {
-                            <span>-</span>
-                        }
-                    </div>
-                </div>
-            </details>
+        </div>
+        <div class="right">
+            <RadzenBadge Pill="true" BadgeStyle="@GetStatusBadgeStyle(Flight.DidFly)" Text="@(didFlyText(Flight.DidFly))" />
+            <button type="button" class="expand-btn" @onclick="ToggleExpanded" aria-expanded="@expanded" title="Toggle details">
+                <RadzenIcon Icon="expand_more" class="expand-icon" />
+            </button>
         </div>
     </div>
+
+    @if (expanded)
+    {
+        <div class="rz-mt-2">
+            <FlightDetailsCard Flight="@Flight" />
+        </div>
+
+    <div class="rz-mt-2 footer-row">
+        <div class="spacer"></div>
+        <RadzenButton Text="Edit" Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Medium" Click="@HandleEdit" />
+        <RadzenButton Text="Delete" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Medium" class="rz-ml-1" Click="@HandleDelete" />
+    </div>
+    }
 </RadzenCard>

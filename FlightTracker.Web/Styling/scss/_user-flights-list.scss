@@ -23,3 +23,61 @@
     .flight-mobile summary { cursor: pointer; color: var(--rz-primary); }
   }
 }
+
+/* Compact flight card styling with accordion toggle */
+.flight-card-compact {
+  .header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+  }
+
+  .header-row .left {
+    display: flex;
+  flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+  line-height: 1.2;
+  flex: 1 1 auto;
+  min-width: 0;
+  }
+
+  .header-row .sep { opacity: .5; }
+  .header-row .right { display: flex; align-items: center; gap: .5rem; }
+
+  .expand-btn {
+    border: none;
+    background: transparent;
+    padding: .25rem;
+    cursor: pointer;
+    color: var(--rz-text-secondary);
+    display: flex;
+    align-items: center;
+  }
+  .expand-icon { transition: transform .15s ease; }
+  &.expanded .expand-icon { transform: rotate(180deg); }
+
+  .route-line {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .5rem;
+    margin-top: 0;
+  }
+  .route-line .arrow { opacity: .7; margin: 0 .25rem; }
+
+  .footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .5rem;
+  }
+}
+
+/* Ensure <hr> in details match standard divider styling */
+.flight-details hr {
+  border: 0;
+  border-top: 1px solid $color-divider;
+  margin: $spacing-2 0 0 0;
+}
