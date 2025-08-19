@@ -35,7 +35,7 @@
                 }
                 @if (numberResults.Any())
                 {
-                    <RadzenDataList Data="@numberResults" TItem="Flight" WrapItems="false" AllowPaging="true" PageSize="6">
+                    <RadzenDataList Data="@numberResults" TItem="Flight" WrapItems="true" AllowPaging="true" PageSize="6" AllowVirtualization="false">
                         <Template Context="f">
                             <div class="ft-result">
                                 <div class="ft-result__main">
@@ -77,7 +77,7 @@
                 }
                 @if (routeResults.Any())
                 {
-                    <RadzenDataList Data="@routeResults" TItem="Flight" WrapItems="false" AllowPaging="true" PageSize="6">
+                    <RadzenDataList Data="@routeResults" TItem="Flight" WrapItems="true" AllowPaging="true" PageSize="6" AllowVirtualization="false">
                         <Template Context="f">
                             <div class="ft-result">
                                 <div class="ft-result__main">
