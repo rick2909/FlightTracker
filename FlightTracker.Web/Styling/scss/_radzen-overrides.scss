@@ -64,7 +64,28 @@
   --rz-surface-variant: #{$color-surface-variant};
   --rz-background: #{$color-background};
   --rz-border: #{$color-border};
+
+  /* Material 3 corner radius scale */
+  --md3-radius-xs: 4px;   /* extra small */
+  --md3-radius-sm: 8px;   /* small */
+  --md3-radius-md: 12px;  /* medium (cards, text fields default) */
+  --md3-radius-lg: 16px;  /* large */
+  --md3-radius-xl: 28px;  /* extra large (dialogs) */
+  --md3-radius-full: 999px; /* full pill */
+
+  /* Bootstrap radius variables to match MD3 */
+  --bs-border-radius: var(--md3-radius-md);
+  --bs-border-radius-sm: var(--md3-radius-sm);
+  --bs-border-radius-lg: var(--md3-radius-lg);
+  --bs-border-radius-xl: var(--md3-radius-xl);
 }
+
+/* Radzen component rounding aligned to MD3 */
+.rz-card { border-radius: var(--md3-radius-md); overflow: hidden; }
+.rz-dialog { border-radius: var(--md3-radius-xl); overflow: hidden; }
+.rz-button { border-radius: 20px; }
+.rz-chip, .rz-badge { border-radius: var(--md3-radius-sm); }
+.rz-inputtext, .rz-dropdown, .rz-multiselect, .rz-textarea { border-radius: var(--md3-radius-md); }
 
 /* Ensure any Bootstrap-like primary buttons match primary color */
 .btn.btn-primary {

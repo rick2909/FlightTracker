@@ -3,7 +3,7 @@
 .ft-card {
   &.material3 {
     // box model
-    border-radius: 12px;
+  border-radius: var(--md3-radius-md);
 
     // typography
     color: $color-text-primary;

@@ -13,7 +13,7 @@
 
 .ft-dialog {
   background: #fff;
-  border-radius: $radius-3;
+  border-radius: var(--md3-radius-xl);
   width: min(640px, 92vw);
   box-shadow: 0 10px 24px rgba(0,0,0,0.2);
   overflow: hidden;

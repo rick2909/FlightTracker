@@ -20,7 +20,7 @@
   .ft-input {
       width: 100%;
       border: 1px solid $color-border;
-      border-radius: $radius-2;
+  border-radius: var(--md3-radius-md);
       padding: $spacing-2 $spacing-3;
       font-size: .95rem;
       background: $color-surface;
@@ -59,7 +59,7 @@
   background: $color-surface-variant;
   color: $color-text-primary;
   padding: $spacing-2 $spacing-3;
-  border-radius: $radius-2;
+  border-radius: var(--md3-radius-md);
   cursor: pointer;
 
   &:hover { filter: brightness(0.98); }
