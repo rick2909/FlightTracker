@@ -225,7 +225,11 @@ public class UserFlightService : IUserFlightService
                 YearManufactured = userFlight.Flight.Aircraft.YearManufactured,
                 PassengerCapacity = userFlight.Flight.Aircraft.PassengerCapacity,
                 IcaoTypeCode = userFlight.Flight.Aircraft.IcaoTypeCode,
-                Notes = userFlight.Flight.Aircraft.Notes
+                Notes = userFlight.Flight.Aircraft.Notes,
+                AirlineId = userFlight.Flight.Aircraft.AirlineId,
+                AirlineIcaoCode = userFlight.Flight.Aircraft.Airline?.IcaoCode,
+                AirlineIataCode = userFlight.Flight.Aircraft.Airline?.IataCode,
+                AirlineName = userFlight.Flight.Aircraft.Airline?.Name
             }
             : null;
 
@@ -257,6 +261,10 @@ public class UserFlightService : IUserFlightService
             FlightStatus = userFlight.Flight?.Status ?? FlightStatus.Scheduled,
             DepartureTimeUtc = userFlight.Flight?.DepartureTimeUtc ?? DateTime.MinValue,
             ArrivalTimeUtc = userFlight.Flight?.ArrivalTimeUtc ?? DateTime.MinValue,
+            OperatingAirlineId = userFlight.Flight?.OperatingAirlineId,
+            OperatingAirlineIcaoCode = userFlight.Flight?.OperatingAirline?.IcaoCode,
+            OperatingAirlineIataCode = userFlight.Flight?.OperatingAirline?.IataCode,
+            OperatingAirlineName = userFlight.Flight?.OperatingAirline?.Name,
             DepartureAirportCode = userFlight.Flight?.DepartureAirport?.IataCode ?? userFlight.Flight?.DepartureAirport?.IcaoCode ?? string.Empty,
             DepartureAirportName = userFlight.Flight?.DepartureAirport?.Name ?? string.Empty,
             DepartureCity = userFlight.Flight?.DepartureAirport?.City ?? string.Empty,

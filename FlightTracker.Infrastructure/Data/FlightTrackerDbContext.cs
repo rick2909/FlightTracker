@@ -64,6 +64,14 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
 			entity.Property(a => a.Notes).HasMaxLength(500);
 
 			entity.HasIndex(a => a.Registration).IsUnique();
+
+			// Relation: Aircraft -> Airline (optional)
+			entity.HasOne(a => a.Airline)
+				.WithMany(al => al.Aircraft)
+				.HasForeignKey(a => a.AirlineId)
+				.OnDelete(DeleteBehavior.SetNull);
+
+			entity.HasIndex(a => a.AirlineId);
 		});
 
 		// Configure Airline entity

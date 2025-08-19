@@ -23,6 +23,12 @@ public record UserFlightDto
     public DateTime DepartureTimeUtc { get; init; }
     public DateTime ArrivalTimeUtc { get; init; }
 
+    // Airline details
+    public int? OperatingAirlineId { get; init; }
+    public string? OperatingAirlineIcaoCode { get; init; }
+    public string? OperatingAirlineIataCode { get; init; }
+    public string? OperatingAirlineName { get; init; }
+
     // Airport details
     public string DepartureAirportCode { get; init; } = string.Empty;
     public string DepartureAirportName { get; init; } = string.Empty;

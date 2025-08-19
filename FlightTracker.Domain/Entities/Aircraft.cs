@@ -46,6 +46,16 @@ public class Aircraft
     public string? Notes { get; set; }
 
     /// <summary>
+    /// Owning or primary operating airline for this aircraft (optional).
+    /// </summary>
+    public int? AirlineId { get; set; }
+
+    /// <summary>
+    /// Navigation to the airline associated with this aircraft.
+    /// </summary>
+    public Airline? Airline { get; set; }
+
+    /// <summary>
     /// Collection of flights operated by this aircraft.
     /// </summary>
     public ICollection<Flight> Flights { get; set; } = new List<Flight>();

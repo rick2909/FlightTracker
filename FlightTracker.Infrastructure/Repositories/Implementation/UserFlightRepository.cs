@@ -33,6 +33,11 @@ public class UserFlightRepository : IUserFlightRepository
                 .ThenInclude(f => f!.ArrivalAirport)
             .Include(uf => uf.Flight)
                 .ThenInclude(f => f!.Aircraft)
+            .Include(uf => uf.Flight)
+                .ThenInclude(f => f!.OperatingAirline)
+            .Include(uf => uf.Flight)
+                .ThenInclude(f => f!.Aircraft)!
+                .ThenInclude(a => a!.Airline)
             .OrderByDescending(uf => uf.BookedOnUtc)
             .ToListAsync(cancellationToken);
     }
@@ -44,6 +49,11 @@ public class UserFlightRepository : IUserFlightRepository
                 .ThenInclude(f => f!.DepartureAirport)
             .Include(uf => uf.Flight)
                 .ThenInclude(f => f!.ArrivalAirport)
+            .Include(uf => uf.Flight)
+                .ThenInclude(f => f!.OperatingAirline)
+            .Include(uf => uf.Flight)
+                .ThenInclude(f => f!.Aircraft)!
+                .ThenInclude(a => a!.Airline)
             .FirstOrDefaultAsync(uf => uf.Id == id, cancellationToken);
     }
 
@@ -56,6 +66,11 @@ public class UserFlightRepository : IUserFlightRepository
                 .ThenInclude(f => f!.DepartureAirport)
             .Include(uf => uf.Flight)
                 .ThenInclude(f => f!.ArrivalAirport)
+            .Include(uf => uf.Flight)
+                .ThenInclude(f => f!.OperatingAirline)
+            .Include(uf => uf.Flight)
+                .ThenInclude(f => f!.Aircraft)!
+                .ThenInclude(a => a!.Airline)
             .OrderByDescending(uf => uf.BookedOnUtc)
             .ToListAsync(cancellationToken);
     }
