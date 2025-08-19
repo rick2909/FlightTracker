@@ -44,7 +44,7 @@ public class FlightRepository(FlightTrackerDbContext db) : IFlightRepository
             .Include(f => f.DepartureAirport)
             .Include(f => f.ArrivalAirport)
             .AsNoTracking()
-            .Where(f => f.FlightNumber == normalized);
+            .Where(f => !string.IsNullOrEmpty(normalized) && EF.Functions.Like(f.FlightNumber, $"%{normalized}%"));
 
         if (date.HasValue)
         {

@@ -10,7 +10,7 @@ public interface IFlightRepository
     Task<Flight?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<Flight?> GetByFlightNumberAndDateAsync(string flightNumber, DateOnly date, CancellationToken cancellationToken = default);
     /// <summary>
-    /// Searches flights by exact flight number with optional date filter (UTC day).
+    /// Searches flights by flight number (partial/contains match) with optional date filter (UTC day).
     /// </summary>
     Task<IReadOnlyList<Flight>> SearchByFlightNumberAsync(string flightNumber, DateOnly? date = null, CancellationToken cancellationToken = default);
 

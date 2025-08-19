@@ -15,7 +15,7 @@ public interface IFlightLookupService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Returns matching flights by exact flight number; optional date narrows to that day.
+    /// Returns matching flights by flight number (partial/contains match); optional date narrows to that day.
     /// </summary>
     Task<IReadOnlyList<Flight>> SearchByFlightNumberAsync(string flightNumber, DateOnly? date = null, CancellationToken cancellationToken = default);
 
