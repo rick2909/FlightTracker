@@ -81,22 +81,22 @@
     <div class="desktop-content">
         <RadzenRow Gap="0">
             <!-- Left block: Date + Flight on left, Seat/Class/Position on right -->
-            <RadzenColumn Size="12" SizeMD="4" SizeLG="4" class="rz-p-4" Style="background-color: color-mix(in srgb, var(--rz-secondary-lighter) 75%, transparent); border-radius: 12px;">
+            <RadzenColumn Size="12" SizeMD="4" SizeLG="4" class="rz-p-3" Style="background-color: color-mix(in srgb, var(--rz-secondary-lighter) 75%, transparent); border-radius: 12px;">
                 <RadzenRow>
                     <RadzenColumn Size="12" SizeSM="6" SizeMD="6">
                         <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5">@Flight.DepartureTimeUtc.ToString("MMM dd, yyyy")</RadzenText>
-                        <div class="rz-mt-2">
+                        <div class="rz-mt-1">
                             <RadzenText TextStyle="TextStyle.Body1">@Flight.FlightNumber</RadzenText>
                         </div>
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeSM="6" SizeMD="6" class="rz-text-align-start rz-text-align-md-end">
-                        <div class="rz-mb-2">
+                        <div class="rz-mb-1">
                             <RadzenText TextStyle="TextStyle.Caption">Seat</RadzenText>
                             <div>
                                 <RadzenBadge Shade="Shade.Dark" BadgeStyle="BadgeStyle.Secondary" Text="@(string.IsNullOrWhiteSpace(Flight.SeatNumber) ? "-" : Flight.SeatNumber)" />
                             </div>
                         </div>
-                        <div class="rz-mb-2">
+                        <div class="rz-mb-1">
                             <RadzenText TextStyle="TextStyle.Caption">Class</RadzenText>
                             <div>
                                 <RadzenBadge Pill="true" BadgeStyle="@GetClassBadgeStyle(Flight.FlightClass)" Text="@Flight.FlightClass.ToString()" />
@@ -113,7 +113,7 @@
             </RadzenColumn>
 
             <!-- Middle: Route details -->
-            <RadzenColumn Size="12" SizeMD="5" SizeLG="5" class="rz-p-2">
+            <RadzenColumn Size="12" SizeMD="5" SizeLG="5" class="rz-p-1">
                 <RadzenRow Gap="0">
                     <RadzenColumn Size="12" SizeSM="6" SizeMD="6">
                         <RadzenText TextStyle="TextStyle.Overline">Departure</RadzenText>
@@ -133,7 +133,7 @@
             </RadzenColumn>
 
             <!-- Booked/Created separate column -->
-            <RadzenColumn Size="12" SizeMD="2" SizeLG="2" class="rz-p-2">
+            <RadzenColumn Size="12" SizeMD="2" SizeLG="2" class="rz-p-1">
                 <RadzenText TextStyle="TextStyle.Overline">Booked/Created</RadzenText>
                 <div class="rz-mt-1">
                     <RadzenText TextStyle="TextStyle.Body2">Booked</RadzenText>
@@ -142,7 +142,7 @@
             </RadzenColumn>
 
             <!-- Right: Status + notes icon -->
-            <RadzenColumn Size="12" SizeMD="1" SizeLG="1" class="rz-p-2 rz-text-align-start rz-text-align-lg-end">
+            <RadzenColumn Size="12" SizeMD="1" SizeLG="1" class="rz-p-1 rz-text-align-start rz-text-align-lg-end">
                 <div class="rz-mb-2">
                     <RadzenBadge Pill="true" BadgeStyle="@GetStatusBadgeStyle(Flight.DidFly)" Text="@(didFlyText(Flight.DidFly))" />
                 </div>
@@ -156,7 +156,7 @@
         </RadzenRow>
 
         <!-- Aircraft info row -->
-        <RadzenRow class="rz-mt-2 rz-pt-2 rz-border-top-1">
+    <RadzenRow class="rz-mt-1 rz-pt-1 rz-border-top-1">
             <RadzenColumn Size="12" class="rz-text-secondary">
                 <RadzenText TextStyle="TextStyle.Overline">Aircraft</RadzenText>
                 <div>

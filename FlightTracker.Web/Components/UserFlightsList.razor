@@ -15,7 +15,8 @@ else
                     PageSize="20"
                     PagerHorizontalAlign="HorizontalAlign.Left"
                     ShowPagingSummary="true"
-                    WrapItems="false">
+                    WrapItems="true"
+                    AllowVirtualization="false">
         <Template Context="flight">
             <FlightTracker.Web.Components.Cards.FlightCard Flight="@flight" />
         </Template>
