@@ -1,0 +1,16 @@
+@using FlightTracker.Application.Dtos
+@model UserFlightDto
+@{
+    ViewData["Title"] = $"Edit Flight {Model.FlightNumber}";
+}
+<div class="container py-4">
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-0">Edit Flight @Model.FlightNumber</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">Edit form coming soon.</div>
+            <a class="btn btn-secondary" href="@Url.Action("Details", "UserFlights", new { id = Model.Id })">Back</a>
+        </div>
+    </div>
+</div>

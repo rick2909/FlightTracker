@@ -3,18 +3,25 @@
 @using Radzen
 @using Radzen.Blazor
 @using TimeZoneConverter
+@using Microsoft.AspNetCore.Routing
 
 @inherits ComponentBase
 
 @code {
     [Parameter] public UserFlightDto Flight { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+    [Inject] private LinkGenerator Links { get; set; } = default!;
     private bool expanded;
     private void ToggleExpanded() => expanded = !expanded;
     private string CardClass => $"rz-mb-2 rz-p-2 flight-card-compact {(expanded ? "expanded" : string.Empty)}";
+    private string EditUrl => Links.GetPathByAction("Edit", "UserFlights", new { id = Flight.Id }) ?? $"/UserFlights/Edit/{Flight.Id}";
 
-    [Parameter] public EventCallback<UserFlightDto> OnEdit { get; set; }
     [Parameter] public EventCallback<UserFlightDto> OnDelete { get; set; }
-    private async Task HandleEdit() => await OnEdit.InvokeAsync(Flight);
+    private void HandleEdit()
+    {
+        // Navigate to MVC edit page and force full reload so MVC handles the route
+        Nav.NavigateTo(EditUrl, forceLoad: true);
+    }
     private async Task HandleDelete() => await OnDelete.InvokeAsync(Flight);
 
     private static BadgeStyle GetClassBadgeStyle(FlightClass flightClass)

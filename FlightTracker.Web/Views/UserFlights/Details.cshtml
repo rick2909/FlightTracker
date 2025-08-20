@@ -1,0 +1,93 @@
+@using FlightTracker.Application.Dtos
+@model UserFlightDto
+@{
+    ViewData["Title"] = $"Flight {Model.FlightNumber}";
+}
+
+<div class="container py-4">
+    <div class="row g-4">
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Flight @Model.FlightNumber</h5>
+                    <span class="badge bg-secondary">@Model.FlightStatus</span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col">
+                            <h6 class="text-muted">Departure</h6>
+                            <div class="fs-5 fw-semibold">@Model.DepartureAirportCode</div>
+                            <div>@Model.DepartureAirportName, @Model.DepartureCity</div>
+                            <div class="text-muted">@Model.DepartureTimeUtc.ToString("u")</div>
+                        </div>
+                        <div class="col text-center align-self-center">
+                            <i class="bi bi-arrow-right fs-3" aria-hidden="true"></i>
+                        </div>
+                        <div class="col">
+                            <h6 class="text-muted">Arrival</h6>
+                            <div class="fs-5 fw-semibold">@Model.ArrivalAirportCode</div>
+                            <div>@Model.ArrivalAirportName, @Model.ArrivalCity</div>
+                            <div class="text-muted">@Model.ArrivalTimeUtc.ToString("u")</div>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="row g-3">
+                        <div class="col-6 col-md-3">
+                            <div class="small text-muted">Class</div>
+                            <div>@Model.FlightClass</div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="small text-muted">Seat</div>
+                            <div>@Model.SeatNumber</div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="small text-muted">Booked</div>
+                            <div>@Model.BookedOnUtc.ToString("u")</div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="small text-muted">Flew?</div>
+                            <div>@(Model.DidFly ? "Yes" : "No")</div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Notes))
+                    {
+                        <div class="mt-3">
+                            <div class="small text-muted">Notes</div>
+                            <div>@Model.Notes</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Aircraft</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.Aircraft is not null)
+                    {
+                        <div class="mb-1"><strong>@Model.Aircraft.Manufacturer</strong> @Model.Aircraft.Model</div>
+                        <div class="mb-1">Reg: <code>@Model.Aircraft.Registration</code></div>
+                        @if (!string.IsNullOrWhiteSpace(Model.Aircraft.IcaoTypeCode))
+                        {
+                            <div class="mb-1">ICAO: @Model.Aircraft.IcaoTypeCode</div>
+                        }
+                        @if (Model.Aircraft.AirlineName is not null)
+                        {
+                            <div class="mb-1">Airline: @Model.Aircraft.AirlineName (@Model.Aircraft.AirlineIcaoCode ?? Model.Aircraft.AirlineIataCode)</div>
+                        }
+                    }
+                    else
+                    {
+                        <span class="text-muted">No aircraft info.</span>
+                    }
+                </div>
+            </div>
+            <a class="btn btn-primary w-100" href="@Url.Action("Edit", "UserFlights", new { id = Model.Id })">Edit</a>
+        </div>
+    </div>
+</div>
