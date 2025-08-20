@@ -95,6 +95,7 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
 			entity.Property(a => a.Country).HasMaxLength(64).IsRequired();
 			entity.Property(a => a.Latitude);
 			entity.Property(a => a.Longitude);
+			entity.Property(a => a.TimeZoneId).HasMaxLength(64);
 			entity.HasIndex(a => a.IataCode).IsUnique().HasFilter("[IataCode] IS NOT NULL");
 			entity.HasIndex(a => a.IcaoCode).IsUnique().HasFilter("[IcaoCode] IS NOT NULL");
 		});

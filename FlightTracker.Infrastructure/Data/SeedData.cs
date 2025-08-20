@@ -80,7 +80,7 @@ public static class SeedData
     private static IReadOnlyList<Airport> GetSeedAirports() => new List<Airport>
     {
         // Original set with coordinates + IATA/ICAO
-    new() { IataCode = "JFK", IcaoCode = "KJFK", Name = "John F. Kennedy International", City = "New York", Country = "USA", Latitude = 40.6413, Longitude = -73.7781 },
+    new() { IataCode = "JFK", IcaoCode = "KJFK", Name = "John F. Kennedy International", City = "New York", Country = "USA", Latitude = 40.6413, Longitude = -73.7781, TimeZoneId="America/New_York" },
     new() { IataCode = "LAX", IcaoCode = "KLAX", Name = "Los Angeles International", City = "Los Angeles", Country = "USA", Latitude = 33.9416, Longitude = -118.4085 },
     new() { IataCode = "LHR", IcaoCode = "EGLL", Name = "Heathrow", City = "London", Country = "UK", Latitude = 51.4700, Longitude = -0.4543 },
     new() { IataCode = "FRA", IcaoCode = "EDDF", Name = "Frankfurt am Main", City = "Frankfurt", Country = "Germany", Latitude = 50.0379, Longitude = 8.5622 },

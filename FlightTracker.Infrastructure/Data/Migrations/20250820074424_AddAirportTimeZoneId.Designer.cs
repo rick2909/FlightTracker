@@ -3,6 +3,7 @@ using System;
 using FlightTracker.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FlightTracker.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(FlightTrackerDbContext))]
-    partial class FlightTrackerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250820074424_AddAirportTimeZoneId")]
+    partial class AddAirportTimeZoneId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.8");

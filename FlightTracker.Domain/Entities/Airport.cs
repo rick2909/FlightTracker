@@ -32,6 +32,8 @@ public class Airport
     /// </summary>
     public double? Longitude { get; set; }
 
+    public string? TimeZoneId { get; set; }
+
     // Navigation collections
     public ICollection<Flight> DepartingFlights { get; set; } = new List<Flight>();
     public ICollection<Flight> ArrivingFlights { get; set; } = new List<Flight>();
