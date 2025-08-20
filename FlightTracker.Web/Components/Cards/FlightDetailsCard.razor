@@ -111,7 +111,7 @@
             <div class="rz-mt-1">
                 <RadzenBadge Shade="Shade.Dark" BadgeStyle="BadgeStyle.Secondary" Text="@(string.IsNullOrWhiteSpace(Flight.SeatNumber) ? "-" : Flight.SeatNumber)" />
                 <RadzenBadge Pill="true" class="rz-ml-2" BadgeStyle="@GetClassBadgeStyle(Flight.FlightClass)" Text="@Flight.FlightClass.ToString()" />
-                <RadzenBadge Shade="Shade.Lighter" Pill="true" class="rz-ml-2" BadgeStyle="BadgeStyle.Info" Text="@GetSeatPositionLabel(Flight.SeatNumber)" />
+                <RadzenBadge Shade="Shade.Dark" Pill="true" class="rz-ml-2" BadgeStyle="BadgeStyle.Info" Text="@GetSeatPositionLabel(Flight.SeatNumber)" />
             </div>
         </RadzenColumn>
         
