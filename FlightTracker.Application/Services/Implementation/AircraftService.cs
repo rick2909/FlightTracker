@@ -87,7 +87,7 @@ public class AircraftService : IAircraftService
         existingAircraft.PassengerCapacity = updateDto.PassengerCapacity;
         existingAircraft.IcaoTypeCode = updateDto.IcaoTypeCode;
         existingAircraft.Notes = updateDto.Notes;
-    existingAircraft.AirlineId = updateDto.AirlineId;
+        existingAircraft.AirlineId = updateDto.AirlineId;
 
         var updatedAircraft = await _aircraftRepository.UpdateAsync(existingAircraft, cancellationToken);
         return MapToDto(updatedAircraft);

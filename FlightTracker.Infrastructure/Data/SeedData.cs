@@ -94,11 +94,11 @@ public static class SeedData
 
     private static IReadOnlyList<Aircraft> GetSeedAircraft() => new List<Aircraft>
     {
-        new() { Registration = "N12345", Manufacturer = AircraftManufacturer.Boeing, Model = "737-800", YearManufactured = 2018, PassengerCapacity = 189, IcaoTypeCode = "B738" },
-        new() { Registration = "N67890", Manufacturer = AircraftManufacturer.Airbus, Model = "A320", YearManufactured = 2020, PassengerCapacity = 180, IcaoTypeCode = "A320" },
-        new() { Registration = "G-ABCD", Manufacturer = AircraftManufacturer.Boeing, Model = "777-200", YearManufactured = 2019, PassengerCapacity = 314, IcaoTypeCode = "B772" },
-        new() { Registration = "D-EFGH", Manufacturer = AircraftManufacturer.Airbus, Model = "A350-900", YearManufactured = 2021, PassengerCapacity = 325, IcaoTypeCode = "A359" },
-        new() { Registration = "JA1234", Manufacturer = AircraftManufacturer.Boeing, Model = "787-9", YearManufactured = 2022, PassengerCapacity = 290, IcaoTypeCode = "B789" }
+        new() { Registration = "N12345", Manufacturer = AircraftManufacturer.Boeing, Model = "737-800", YearManufactured = 2018, PassengerCapacity = 189, IcaoTypeCode = "B738", AirlineId = 1 },
+        new() { Registration = "N67890", Manufacturer = AircraftManufacturer.Airbus, Model = "A320", YearManufactured = 2020, PassengerCapacity = 180, IcaoTypeCode = "A320", AirlineId = 1 },
+        new() { Registration = "G-ABCD", Manufacturer = AircraftManufacturer.Boeing, Model = "777-200", YearManufactured = 2019, PassengerCapacity = 314, IcaoTypeCode = "B772", AirlineId = 1 },
+        new() { Registration = "D-EFGH", Manufacturer = AircraftManufacturer.Airbus, Model = "A350-900", YearManufactured = 2021, PassengerCapacity = 325, IcaoTypeCode = "A359", AirlineId = 1 },
+        new() { Registration = "JA1234", Manufacturer = AircraftManufacturer.Boeing, Model = "787-9", YearManufactured = 2022, PassengerCapacity = 290, IcaoTypeCode = "B789", AirlineId = 1 }
     };
 
     private static IReadOnlyList<Airline> GetSeedAirlines() => new List<Airline>

@@ -81,6 +81,7 @@ public class UserFlightService : IUserFlightService
 
         var depAirport = await _airportService.GetAirportByCodeAsync(createDto.DepartureAirportCode!, cancellationToken);
         var arrAirport = await _airportService.GetAirportByCodeAsync(createDto.ArrivalAirportCode!, cancellationToken);
+        // TODO make api call wich finds the airport and inserts it in our database.
         if (depAirport is null || arrAirport is null)
         {
             throw new ArgumentException("Invalid airport code(s) provided.");
