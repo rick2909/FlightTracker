@@ -5,16 +5,17 @@
 @using Radzen
 @using Radzen.Blazor
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
 @using System.ComponentModel.DataAnnotations
 
-<EditForm Model="validation" OnValidSubmit="HandleSave" class="ft-form">
+<EditForm @ref="editForm" Model="validation" class="ft-form">
     <DataAnnotationsValidator />
     <ValidationSummary />
 
     <RadzenTabs @bind-SelectedIndex="_tabIndex">
         <Tabs>
             <RadzenTabsItem Text="By number">
-                <div class="ft-form__row">
+                <div class="ft-form__row" @onkeyup="OnNumberKeyUp">
                     <div class="ft-form__field">
                         <label>Flight number</label>
                         <RadzenTextBox @bind-Value="numberSearchNumber" Style="width:100%" />
@@ -52,7 +53,7 @@
                 }
             </RadzenTabsItem>
             <RadzenTabsItem Text="By route">
-                <div class="ft-form__row">
+                <div class="ft-form__row" @onkeyup="OnRouteKeyUp">
                     <div class="ft-form__field">
                         <label>From (code or city)</label>
                         <RadzenTextBox @bind-Value="routeDep" Style="width:100%" />
@@ -151,7 +152,7 @@
 
         <div class="ft-form__actions">
             <RadzenButton Variant="Variant.Flat" ButtonStyle="ButtonStyle.Light" Text="Cancel" Click="OnCancelClicked" />
-            <RadzenButton Variant="Variant.Flat" ButtonStyle="ButtonStyle.Primary" Text="Save" ButtonType="ButtonType.Submit" Disabled="@(!CanSave)" />
+            <RadzenButton Variant="Variant.Flat" ButtonStyle="ButtonStyle.Primary" Text="Save" Click="OnSaveClicked" Disabled="@(!CanSave)" />
         </div>
         @if (!CanSave)
         {
@@ -172,6 +173,8 @@
 
     [Inject]
     public IFlightLookupService Lookup { get; set; } = default!;
+
+    private EditForm? editForm;
 
     private class ValidationModel
     {
@@ -344,6 +347,31 @@
                 ArrivalTimeUtc = validation.ArrivalTimeUtc
             };
             await OnSave.InvokeAsync(dto);
+        }
+    }
+
+    private async Task OnSaveClicked()
+    {
+        var ctx = editForm?.EditContext;
+        if (ctx is not null && ctx.Validate())
+        {
+            await HandleSave();
+        }
+    }
+
+    private async Task OnNumberKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchByNumber();
+        }
+    }
+
+    private async Task OnRouteKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchByRoute();
         }
     }
 
