@@ -1,8 +1,9 @@
 @use 'variables' as *;
 @use 'sass:color';
 
-/* Override Radzen theme variables to use app primary color */
-:root {
+/* Override Radzen theme variables to align Material 3 tokens with
+  Radzen Material (non‑premium) theme variables */
+:root, .rz-material {
   --rz-primary: #{$color-primary};
   --rz-primary-contrast: #fff;
   --rz-primary-hover: #{color.adjust($color-primary, $lightness: -5%)};
@@ -65,6 +66,22 @@
   --rz-background: #{$color-background};
   --rz-border: #{$color-border};
 
+  /* Older Radzen Material variable aliases (non‑premium) */
+  --rz-base-background: var(--rz-background);
+  --rz-base-foreground: var(--rz-text-primary);
+  --rz-body-background: var(--rz-background);
+  --rz-panel-background: var(--rz-surface);
+  --rz-card-background: var(--rz-surface);
+  --rz-border-color: var(--rz-border);
+  --rz-input-background: var(--rz-surface);
+  --rz-input-text: var(--rz-text-primary);
+  --rz-input-placeholder: var(--rz-text-secondary);
+  --rz-input-border: var(--rz-border);
+  --rz-input-focus-border: var(--rz-primary);
+  --rz-link: var(--rz-primary);
+  --rz-link-hover: var(--rz-primary-dark);
+  --rz-muted: var(--rz-text-secondary);
+
   /* Material 3 corner radius scale */
   --md3-radius-xs: 4px;   /* extra small */
   --md3-radius-sm: 8px;   /* small */
@@ -78,14 +95,36 @@
   --bs-border-radius-sm: var(--md3-radius-sm);
   --bs-border-radius-lg: var(--md3-radius-lg);
   --bs-border-radius-xl: var(--md3-radius-xl);
+
+  /* Radzen component radius variables (fallbacks for older theme) */
+  --rz-border-radius: var(--md3-radius-md);
+  --rz-input-border-radius: var(--md3-radius-md);
+  --rz-button-border-radius: 20px;
+  --rz-card-border-radius: var(--md3-radius-md);
+  --rz-dialog-border-radius: var(--md3-radius-xl);
 }
 
 /* Radzen component rounding aligned to MD3 */
-.rz-card { border-radius: var(--md3-radius-md); overflow: hidden; }
-.rz-dialog { border-radius: var(--md3-radius-xl); overflow: hidden; }
-.rz-button { border-radius: 20px; }
+.rz-card { border-radius: var(--rz-card-border-radius, var(--md3-radius-md)); overflow: hidden; }
+.rz-dialog { border-radius: var(--rz-dialog-border-radius, var(--md3-radius-xl)); overflow: hidden; }
+.rz-button { border-radius: var(--rz-button-border-radius, 20px); }
 .rz-chip, .rz-badge { border-radius: var(--md3-radius-sm); }
-.rz-inputtext, .rz-dropdown, .rz-multiselect, .rz-textarea { border-radius: var(--md3-radius-md); }
+.rz-inputtext, .rz-dropdown, .rz-multiselect, .rz-textarea { border-radius: var(--rz-input-border-radius, var(--md3-radius-md)); }
+
+/* Inputs: border/color alignment with theme */
+.rz-inputtext, .rz-dropdown, .rz-multiselect, .rz-textarea {
+  background: var(--rz-input-background);
+  color: var(--rz-input-text);
+  border-color: var(--rz-input-border);
+}
+.rz-inputtext:focus, .rz-dropdown:focus-within, .rz-multiselect:focus-within, .rz-textarea:focus {
+  border-color: var(--rz-input-focus-border);
+  box-shadow: 0 0 0 3px color.change($color-primary, $alpha: .15);
+}
+
+/* Links */
+a { color: var(--rz-link); }
+a:hover { color: var(--rz-link-hover); }
 
 /* Ensure any Bootstrap-like primary buttons match primary color */
 .btn.btn-primary {
