@@ -14,4 +14,7 @@ public record CreateAircraftDto
     public int? PassengerCapacity { get; init; }
     public string? IcaoTypeCode { get; init; }
     public string? Notes { get; init; }
+    public int? AirlineId { get; init; }
+    public string? AirlineIcaoCode { get; init; }
+    public string? AirlineIataCode { get; init; }
 }

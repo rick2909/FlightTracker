@@ -16,4 +16,5 @@ public class Airline
 
     // Navigation
     public ICollection<Flight> Flights { get; set; } = new List<Flight>();
+    public ICollection<Aircraft> Aircraft { get; set; } = new List<Aircraft>();
 }

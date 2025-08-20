@@ -57,7 +57,8 @@ public class AircraftService : IAircraftService
             YearManufactured = createDto.YearManufactured,
             PassengerCapacity = createDto.PassengerCapacity,
             IcaoTypeCode = createDto.IcaoTypeCode,
-            Notes = createDto.Notes
+            Notes = createDto.Notes,
+            AirlineId = createDto.AirlineId
         };
 
         var savedAircraft = await _aircraftRepository.AddAsync(aircraft, cancellationToken);
@@ -86,6 +87,7 @@ public class AircraftService : IAircraftService
         existingAircraft.PassengerCapacity = updateDto.PassengerCapacity;
         existingAircraft.IcaoTypeCode = updateDto.IcaoTypeCode;
         existingAircraft.Notes = updateDto.Notes;
+        existingAircraft.AirlineId = updateDto.AirlineId;
 
         var updatedAircraft = await _aircraftRepository.UpdateAsync(existingAircraft, cancellationToken);
         return MapToDto(updatedAircraft);
@@ -123,7 +125,11 @@ public class AircraftService : IAircraftService
             YearManufactured = aircraft.YearManufactured,
             PassengerCapacity = aircraft.PassengerCapacity,
             IcaoTypeCode = aircraft.IcaoTypeCode,
-            Notes = aircraft.Notes
+            Notes = aircraft.Notes,
+            AirlineId = aircraft.AirlineId,
+            AirlineIcaoCode = aircraft.Airline?.IcaoCode,
+            AirlineIataCode = aircraft.Airline?.IataCode,
+            AirlineName = aircraft.Airline?.Name
         };
     }
 }

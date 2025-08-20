@@ -8,7 +8,16 @@ namespace FlightTracker.Domain.Entities;
 public class Airport
 {
     public int Id { get; set; }
-    public string Code { get; set; } = string.Empty; // e.g., "JFK"
+    /// <summary>
+    /// Optional IATA 3-letter code (e.g., JFK). Prefer using specific
+    /// properties over the legacy Code where possible.
+    /// </summary>
+    public string? IataCode { get; set; }
+
+    /// <summary>
+    /// Optional ICAO 4-letter code (e.g., KJFK).
+    /// </summary>
+    public string? IcaoCode { get; set; }
     public string Name { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
     public string Country { get; set; } = string.Empty;
@@ -22,6 +31,8 @@ public class Airport
     /// Longitude in decimal degrees (WGS84). Optional until data populated.
     /// </summary>
     public double? Longitude { get; set; }
+
+    public string? TimeZoneId { get; set; }
 
     // Navigation collections
     public ICollection<Flight> DepartingFlights { get; set; } = new List<Flight>();

@@ -1,21 +1,33 @@
 $color-background: #FAFAFA;
 $color-surface: #FFFFFF;
-$color-primary: #1565C0;
-$color-primary-variant: #0D47A1;
-$color-secondary: #FFB300;
-$color-secondary-variant: #FF8F00;
+$color-primary: #3f51b5;
+$color-primary-variant: #283593;
+$color-secondary: #80deea;
+$color-secondary-variant: #4dd0e1;
 $color-tertiary: #43A047;
 $color-error: #D32F2F;
 $color-text-primary: #212121;
 $color-text-secondary: #424242;
 $color-divider: #E0E0E0;
 $color-highlight: #29B6F6;
+$color-border: $color-divider;
+$color-surface-variant: #F5F5F5;
 
 $navbar-height: 56px;
 $transition-fast: 150ms ease;
 $transition-medium: 200ms ease;
 $transition-slow: 250ms ease;
 $font-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, sans-serif;
+
+// Spacing scale (rem units)
+$spacing-1: 0.25rem; // 4px
+$spacing-2: 0.5rem;  // 8px
+$spacing-3: 0.75rem; // 12px
+$spacing-4: 1rem;    // 16px
+
+// Radius tokens
+$radius-2: 8px;
+$radius-3: 12px;
 
 // Breakpoints (min-width)
 $bp-xs: 576px;

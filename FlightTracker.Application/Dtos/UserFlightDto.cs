@@ -23,11 +23,21 @@ public record UserFlightDto
     public DateTime DepartureTimeUtc { get; init; }
     public DateTime ArrivalTimeUtc { get; init; }
 
+    // Airline details
+    public int? OperatingAirlineId { get; init; }
+    public string? OperatingAirlineIcaoCode { get; init; }
+    public string? OperatingAirlineIataCode { get; init; }
+    public string? OperatingAirlineName { get; init; }
+
     // Airport details
     public string DepartureAirportCode { get; init; } = string.Empty;
+    public string? DepartureIataCode { get; init; }
+    public string? DepartureIcaoCode { get; init; }
     public string DepartureAirportName { get; init; } = string.Empty;
     public string DepartureCity { get; init; } = string.Empty;
     public string ArrivalAirportCode { get; init; } = string.Empty;
+    public string? ArrivalIataCode { get; init; }
+    public string? ArrivalIcaoCode { get; init; }
     public string ArrivalAirportName { get; init; } = string.Empty;
     public string ArrivalCity { get; init; } = string.Empty;
     public string? DepartureTimeZoneId { get; init; }

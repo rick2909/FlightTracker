@@ -49,10 +49,21 @@ public class AirportService : IAirportService
     public async Task<string?> GetTimeZoneIdByAirportCodeAsync(string airportCode, CancellationToken cancellationToken = default)
     {
         var airport = await _airportRepository.GetByCodeAsync(airportCode, cancellationToken);
-        if (airport?.Latitude is double lat && airport.Longitude is double lon)
+        if (airport?.Latitude is double lat && airport.Longitude is double lon && airport.TimeZoneId is null)
         {
-            return await _timeApiService.GetTimeZoneIdAsync(lat, lon, cancellationToken);
+            try
+            {
+                // get time zone and update airport
+                airport.TimeZoneId = await _timeApiService.GetTimeZoneIdAsync(lat, lon, cancellationToken);
+                await _airportRepository.UpdateAsync(airport, cancellationToken);
+            }
+            catch
+            {
+                // Degrade gracefully: unavailable or timed out
+                return null;
+            }
         }
-        return null;
+
+        return airport?.TimeZoneId;
     }
 }

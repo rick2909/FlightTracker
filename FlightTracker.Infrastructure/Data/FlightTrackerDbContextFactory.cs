@@ -13,9 +13,8 @@ public class FlightTrackerDbContextFactory : IDesignTimeDbContextFactory<FlightT
     {
         var optionsBuilder = new DbContextOptionsBuilder<FlightTrackerDbContext>();
         
-        // Use a default connection string for migrations
-        // In a real application, this would come from configuration
-        optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=FlightTrackerDb;Trusted_Connection=true;MultipleActiveResultSets=true");
+    // Use SQLite for design-time migrations to align with development
+    optionsBuilder.UseSqlite("Data Source=flighttracker.dev.db");
 
         return new FlightTrackerDbContext(optionsBuilder.Options);
     }

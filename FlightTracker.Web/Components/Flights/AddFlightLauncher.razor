@@ -1,0 +1,41 @@
+@using FlightTracker.Application.Dtos
+@using FlightTracker.Web.Components.Flights
+@inject Microsoft.JSInterop.IJSRuntime JS
+
+
+<RadzenButton Click=Open Text="Add New Flight" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" />
+
+<AddFlightDialog IsOpen="isOpen" Value="draft" OnSave="HandleSave" OnClose="Close" />
+
+@code {
+    private bool isOpen;
+    private CreateUserFlightDto draft = new();
+
+    private void Open()
+    {
+        isOpen = true;
+    }
+
+    private void Close()
+    {
+        isOpen = false;
+    }
+
+    private async Task HandleSave(CreateUserFlightDto dto)
+    {
+        // Temporary: print to browser console
+        await JS.InvokeVoidAsync("console.log", new
+        {
+            dto.FlightNumber,
+            dto.FlightId,
+            FlightClass = dto.FlightClass.ToString(),
+            dto.SeatNumber,
+            dto.Notes,
+            dto.DepartureAirportCode,
+            dto.ArrivalAirportCode,
+            dto.DepartureTimeUtc,
+            dto.ArrivalTimeUtc,
+        });
+        Close();
+    }
+}

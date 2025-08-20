@@ -14,15 +14,18 @@ public class UserFlightService : IUserFlightService
     private readonly IUserFlightRepository _userFlightRepository;
     private readonly IFlightRepository _flightRepository;
     private readonly IAirportService _airportService;
+    private readonly IFlightService _flightService;
 
     public UserFlightService(
         IUserFlightRepository userFlightRepository,
         IFlightRepository flightRepository,
-        IAirportService airportService)
+        IAirportService airportService,
+        IFlightService flightService)
     {
         _userFlightRepository = userFlightRepository;
         _flightRepository = flightRepository;
         _airportService = airportService;
+        _flightService = flightService;
     }
 
     public async Task<IEnumerable<UserFlightDto>> GetUserFlightsAsync(int userId, CancellationToken cancellationToken = default)
@@ -55,28 +58,61 @@ public class UserFlightService : IUserFlightService
 
     public async Task<UserFlightDto> AddUserFlightAsync(int userId, CreateUserFlightDto createDto, CancellationToken cancellationToken = default)
     {
-        // Validate that the flight exists
-        var flight = await _flightRepository.GetByIdAsync(createDto.FlightId, cancellationToken);
-        if (flight == null)
+        Flight? flight = null;
+        // If FlightId provided, use it; otherwise attempt to create a Flight from provided fields
+        if (createDto.FlightId > 0)
         {
-            throw new ArgumentException($"Flight with ID {createDto.FlightId} not found.", nameof(createDto.FlightId));
+            flight = await _flightRepository.GetByIdAsync(createDto.FlightId, cancellationToken);
+
+            if (flight == null)
+            {
+                throw new ArgumentException($"Flight with ID {createDto.FlightId} not found.", nameof(createDto.FlightId));
+            }
         }
 
+        if (string.IsNullOrWhiteSpace(createDto.FlightNumber)
+            || string.IsNullOrWhiteSpace(createDto.DepartureAirportCode)
+            || string.IsNullOrWhiteSpace(createDto.ArrivalAirportCode)
+            || !createDto.DepartureTimeUtc.HasValue
+            || !createDto.ArrivalTimeUtc.HasValue)
+        {
+            throw new ArgumentException("Missing fields to create a new Flight. Provide FlightNumber, departure/arrival airport codes, and both times.");
+        }
+
+        var depAirport = await _airportService.GetAirportByCodeAsync(createDto.DepartureAirportCode!, cancellationToken);
+        var arrAirport = await _airportService.GetAirportByCodeAsync(createDto.ArrivalAirportCode!, cancellationToken);
+        // TODO make api call wich finds the airport and inserts it in our database.
+        if (depAirport is null || arrAirport is null)
+        {
+            throw new ArgumentException("Invalid airport code(s) provided.");
+        }
+
+        flight = new Flight
+        {
+            FlightNumber = createDto.FlightNumber!,
+            Status = FlightStatus.Scheduled,
+            DepartureAirportId = depAirport.Id,
+            ArrivalAirportId = arrAirport.Id,
+            DepartureTimeUtc = createDto.DepartureTimeUtc!.Value,
+            ArrivalTimeUtc = createDto.ArrivalTimeUtc!.Value
+        };
+
+        flight = await _flightService.AddFlightAsync(flight, cancellationToken);
+
         // Check if user has already recorded this flight
-        var hasFlown = await _userFlightRepository.HasUserFlownFlightAsync(userId, createDto.FlightId, cancellationToken);
+        var hasFlown = await _userFlightRepository.HasUserFlownFlightAsync(userId, flight.Id, cancellationToken);
         if (hasFlown)
         {
-            throw new InvalidOperationException($"User {userId} has already recorded flight {createDto.FlightId}.");
+            throw new InvalidOperationException($"User {userId} has already recorded flight {flight.Id}.");
         }
 
         var userFlight = new UserFlight
         {
             UserId = userId,
-            FlightId = createDto.FlightId,
+            FlightId = flight.Id,
             FlightClass = createDto.FlightClass,
             SeatNumber = createDto.SeatNumber,
             Notes = createDto.Notes,
-            DidFly = createDto.DidFly,
             BookedOnUtc = DateTime.UtcNow
         };
 
@@ -99,7 +135,6 @@ public class UserFlightService : IUserFlightService
         existingUserFlight.FlightClass = updateDto.FlightClass;
         existingUserFlight.SeatNumber = updateDto.SeatNumber;
         existingUserFlight.Notes = updateDto.Notes;
-        existingUserFlight.DidFly = updateDto.DidFly;
 
         var updatedUserFlight = await _userFlightRepository.UpdateAsync(existingUserFlight, cancellationToken);
     return await MapToDtoAsync(updatedUserFlight, cancellationToken);
@@ -186,21 +221,31 @@ public class UserFlightService : IUserFlightService
             {
                 Id = userFlight.Flight.Aircraft.Id,
                 Registration = userFlight.Flight.Aircraft.Registration,
+                Manufacturer = userFlight.Flight.Aircraft.Manufacturer,
                 Model = userFlight.Flight.Aircraft.Model,
-                Manufacturer = userFlight.Flight.Aircraft.Manufacturer
+                YearManufactured = userFlight.Flight.Aircraft.YearManufactured,
+                PassengerCapacity = userFlight.Flight.Aircraft.PassengerCapacity,
+                IcaoTypeCode = userFlight.Flight.Aircraft.IcaoTypeCode,
+                Notes = userFlight.Flight.Aircraft.Notes,
+                AirlineId = userFlight.Flight.Aircraft.AirlineId,
+                AirlineIcaoCode = userFlight.Flight.Aircraft.Airline?.IcaoCode,
+                AirlineIataCode = userFlight.Flight.Aircraft.Airline?.IataCode,
+                AirlineName = userFlight.Flight.Aircraft.Airline?.Name
             }
             : null;
 
         // Resolve time zones via airport codes if available
         string? depTz = null;
         string? arrTz = null;
-        if (!string.IsNullOrWhiteSpace(userFlight.Flight?.DepartureAirport?.Code))
+        if (!string.IsNullOrWhiteSpace(userFlight.Flight?.DepartureAirport?.IataCode) || !string.IsNullOrWhiteSpace(userFlight.Flight?.DepartureAirport?.IcaoCode))
         {
-            depTz = await _airportService.GetTimeZoneIdByAirportCodeAsync(userFlight.Flight!.DepartureAirport!.Code, cancellationToken);
+            var code = userFlight.Flight!.DepartureAirport!.IataCode ?? userFlight.Flight!.DepartureAirport!.IcaoCode!;
+            depTz = await _airportService.GetTimeZoneIdByAirportCodeAsync(code, cancellationToken);
         }
-        if (!string.IsNullOrWhiteSpace(userFlight.Flight?.ArrivalAirport?.Code))
+        if (!string.IsNullOrWhiteSpace(userFlight.Flight?.ArrivalAirport?.IataCode) || !string.IsNullOrWhiteSpace(userFlight.Flight?.ArrivalAirport?.IcaoCode))
         {
-            arrTz = await _airportService.GetTimeZoneIdByAirportCodeAsync(userFlight.Flight!.ArrivalAirport!.Code, cancellationToken);
+            var code = userFlight.Flight!.ArrivalAirport!.IataCode ?? userFlight.Flight!.ArrivalAirport!.IcaoCode!;
+            arrTz = await _airportService.GetTimeZoneIdByAirportCodeAsync(code, cancellationToken);
         }
 
         return new UserFlightDto
@@ -217,10 +262,18 @@ public class UserFlightService : IUserFlightService
             FlightStatus = userFlight.Flight?.Status ?? FlightStatus.Scheduled,
             DepartureTimeUtc = userFlight.Flight?.DepartureTimeUtc ?? DateTime.MinValue,
             ArrivalTimeUtc = userFlight.Flight?.ArrivalTimeUtc ?? DateTime.MinValue,
-            DepartureAirportCode = userFlight.Flight?.DepartureAirport?.Code ?? string.Empty,
+            OperatingAirlineId = userFlight.Flight?.OperatingAirlineId,
+            OperatingAirlineIcaoCode = userFlight.Flight?.OperatingAirline?.IcaoCode,
+            OperatingAirlineIataCode = userFlight.Flight?.OperatingAirline?.IataCode,
+            OperatingAirlineName = userFlight.Flight?.OperatingAirline?.Name,
+            DepartureAirportCode = userFlight.Flight?.DepartureAirport?.IataCode ?? userFlight.Flight?.DepartureAirport?.IcaoCode ?? string.Empty,
+            DepartureIataCode = userFlight.Flight?.DepartureAirport?.IataCode,
+            DepartureIcaoCode = userFlight.Flight?.DepartureAirport?.IcaoCode,
             DepartureAirportName = userFlight.Flight?.DepartureAirport?.Name ?? string.Empty,
             DepartureCity = userFlight.Flight?.DepartureAirport?.City ?? string.Empty,
-            ArrivalAirportCode = userFlight.Flight?.ArrivalAirport?.Code ?? string.Empty,
+            ArrivalAirportCode = userFlight.Flight?.ArrivalAirport?.IataCode ?? userFlight.Flight?.ArrivalAirport?.IcaoCode ?? string.Empty,
+            ArrivalIataCode = userFlight.Flight?.ArrivalAirport?.IataCode,
+            ArrivalIcaoCode = userFlight.Flight?.ArrivalAirport?.IcaoCode,
             ArrivalAirportName = userFlight.Flight?.ArrivalAirport?.Name ?? string.Empty,
             ArrivalCity = userFlight.Flight?.ArrivalAirport?.City ?? string.Empty,
             DepartureTimeZoneId = depTz,

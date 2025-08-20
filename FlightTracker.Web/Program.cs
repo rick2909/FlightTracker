@@ -30,13 +30,18 @@ builder.Services.AddDbContext<FlightTrackerDbContext>(options =>
 builder.Services.AddScoped<IAirportRepository, AirportRepository>();
 builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 builder.Services.AddScoped<IUserFlightRepository, UserFlightRepository>();
+builder.Services.AddScoped<IAircraftRepository, AircraftRepository>();
 
 // Register application services
 builder.Services.AddScoped<IAirportService, AirportService>();
 builder.Services.AddScoped<IFlightService, FlightService>();
 builder.Services.AddScoped<IUserFlightService, UserFlightService>();
 builder.Services.AddScoped<IMapFlightService, MapFlightService>();
-builder.Services.AddHttpClient<ITimeApiService, TimeApiService>();
+builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(3);
+});
+builder.Services.AddScoped<IFlightLookupService, FlightLookupService>();
 
 // Identity (basic, for seeding users)
 builder.Services

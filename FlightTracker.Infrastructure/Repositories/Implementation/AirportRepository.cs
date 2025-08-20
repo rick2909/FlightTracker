@@ -13,8 +13,13 @@ public class AirportRepository(FlightTrackerDbContext db) : IAirportRepository
     public async Task<Airport?> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
         await db.Airports.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
 
-    public async Task<Airport?> GetByCodeAsync(string code, CancellationToken cancellationToken = default) =>
-        await db.Airports.AsNoTracking().FirstOrDefaultAsync(a => a.Code == code, cancellationToken);
+    public async Task<Airport?> GetByCodeAsync(string code, CancellationToken cancellationToken = default)
+    {
+        var normalized = (code ?? string.Empty).Trim().ToUpper();
+        return await db.Airports.AsNoTracking().FirstOrDefaultAsync(a =>
+            (a.IataCode != null && a.IataCode.ToUpper() == normalized) ||
+            (a.IcaoCode != null && a.IcaoCode.ToUpper() == normalized), cancellationToken);
+    }
 
     public async Task<IReadOnlyList<Airport>> GetAllAsync(CancellationToken cancellationToken = default) =>
         await db.Airports.AsNoTracking().ToListAsync(cancellationToken);

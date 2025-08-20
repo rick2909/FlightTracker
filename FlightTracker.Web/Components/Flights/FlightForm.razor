@@ -1,0 +1,217 @@
+@using FlightTracker.Application.Dtos
+@using FlightTracker.Domain.Enums
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+
+<EditForm Model="model" OnValidSubmit="HandleValidSubmit" class="ft-form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="ft-form__field">
+        <label for="flightNumber">Flight number</label>
+        <div style="display:flex; gap:.5rem; align-items:center;">
+            <RadzenTextBox id="flightNumber" @bind-Value="model.FlightNumber" Style="flex:1" Name="FlightNumber" />
+            <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="search" Text="Lookup" Click="LookupFlight" />
+        </div>
+        <ValidationMessage For="(() => model.FlightNumber)" />
+        @if (lookupMessage is not null)
+        {
+            <div class="validation-message" style="margin-top:.25rem">@lookupMessage</div>
+        }
+    </div>
+
+    <div class="ft-form__field">
+        <label for="flightDate">Flight date</label>
+        <RadzenDatePicker @bind-Value="model.FlightDate" DateFormat="yyyy-MM-dd" Name="FlightDate" />
+        <ValidationMessage For="(() => model.FlightDate)" />
+    </div>
+
+    <details class="ft-form__field" open="@detailsOpen">
+        <summary><strong>Flight details</strong></summary>
+        <div style="display:grid; gap:.75rem; grid-template-columns: 1fr 1fr; margin-top:.5rem;">
+            <div>
+                <label for="depCode">Departure airport code</label>
+                <RadzenTextBox id="depCode" @bind-Value="model.DepartureAirportCode" Name="DepartureAirportCode" />
+            </div>
+            <div>
+                <label for="arrCode">Arrival airport code</label>
+                <RadzenTextBox id="arrCode" @bind-Value="model.ArrivalAirportCode" Name="ArrivalAirportCode" />
+            </div>
+
+            <div>
+                <label for="depUtc">Departure (UTC)</label>
+                <RadzenDatePicker @bind-Value="model.DepartureTimeUtc" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Name="DepartureTimeUtc" />
+            </div>
+            <div>
+                <label for="arrUtc">Arrival (UTC)</label>
+                <RadzenDatePicker @bind-Value="model.ArrivalTimeUtc" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Name="ArrivalTimeUtc" />
+            </div>
+
+            <div>
+                <label for="depTerm">Departure terminal</label>
+                <RadzenTextBox id="depTerm" @bind-Value="model.DepartureTerminal" Name="DepartureTerminal" />
+            </div>
+            <div>
+                <label for="depGate">Departure gate</label>
+                <RadzenTextBox id="depGate" @bind-Value="model.DepartureGate" Name="DepartureGate" />
+            </div>
+            <div>
+                <label for="arrTerm">Arrival terminal</label>
+                <RadzenTextBox id="arrTerm" @bind-Value="model.ArrivalTerminal" Name="ArrivalTerminal" />
+            </div>
+            <div>
+                <label for="arrGate">Arrival gate</label>
+                <RadzenTextBox id="arrGate" @bind-Value="model.ArrivalGate" Name="ArrivalGate" />
+            </div>
+        </div>
+    </details>
+
+    <div class="ft-form__row">
+        <div class="ft-form__field">
+            <label for="seatNumber">Seat number</label>
+            <RadzenTextBox id="seatNumber" @bind-Value="model.SeatNumber" Name="SeatNumber" />
+            <ValidationMessage For="(() => model.SeatNumber)" />
+        </div>
+        <div class="ft-form__field">
+            <label for="flightClass">Class</label>
+            <RadzenDropDown TValue="FlightClass" Data="@_flightClassValues" @bind-Value="model.FlightClass" Name="FlightClass" Style="width:100%" />
+            <ValidationMessage For="(() => model.FlightClass)" />
+        </div>
+    </div>
+
+    <div class="ft-form__field">
+        <label for="notes">Notes</label>
+        <RadzenTextArea id="notes" @bind-Value="model.Notes" Name="Notes" Rows="3" Style="width:100%" />
+    </div>
+
+    <div class="ft-form__actions">
+    <RadzenButton ButtonStyle="ButtonStyle.Light" Text="Cancel" Click="OnCancelClicked" />
+    <RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Save" ButtonType="ButtonType.Submit" />
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public CreateUserFlightDto? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<CreateUserFlightDto> OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private FlightFormModel model = new();
+
+    protected override void OnParametersSet()
+    {
+        // Map incoming DTO to mutable model
+    if (Value is null)
+        {
+            model = new();
+        }
+        else
+        {
+            model = new()
+            {
+                FlightId = Value.FlightId,
+                FlightNumber = Value.FlightNumber,
+                FlightDate = Value.FlightDate.HasValue ? Value.FlightDate.Value.ToDateTime(TimeOnly.MinValue) : null,
+                FlightClass = Value.FlightClass,
+                SeatNumber = Value.SeatNumber,
+                Notes = Value.Notes
+            };
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (OnSave.HasDelegate)
+        {
+            var dto = new CreateUserFlightDto
+            {
+                FlightId = model.FlightId,
+                FlightNumber = model.FlightNumber,
+                FlightDate = model.FlightDate.HasValue ? DateOnly.FromDateTime(model.FlightDate.Value.Date) : null,
+                FlightClass = model.FlightClass,
+                SeatNumber = model.SeatNumber ?? string.Empty,
+                Notes = model.Notes,
+            };
+
+            await OnSave.InvokeAsync(dto);
+        }
+    }
+
+    private async Task OnCancelClicked()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+
+    private string? lookupMessage;
+    private bool detailsOpen;
+
+    [Inject]
+    private FlightTracker.Application.Services.Interfaces.IFlightLookupService Lookup { get; set; } = default!;
+
+    private async Task LookupFlight()
+    {
+    lookupMessage = null;
+    if (string.IsNullOrWhiteSpace(model.FlightNumber) || model.FlightDate is null)
+        {
+            lookupMessage = "Enter flight number and date first.";
+            return;
+        }
+    var flight = await Lookup.ResolveFlightAsync(model.FlightNumber!, DateOnly.FromDateTime(model.FlightDate!.Value.Date));
+        if (flight is null)
+        {
+            lookupMessage = "No matching flight found. You can create it manually.";
+            return;
+        }
+    // Populate known fields and open details
+    model.FlightId = flight.Id;
+    model.DepartureAirportCode = flight.DepartureAirport?.IataCode ?? flight.DepartureAirport?.IcaoCode;
+    model.ArrivalAirportCode = flight.ArrivalAirport?.IataCode ?? flight.ArrivalAirport?.IcaoCode;
+    model.DepartureTimeUtc = flight.DepartureTimeUtc;
+    model.ArrivalTimeUtc = flight.ArrivalTimeUtc;
+    model.DepartureTerminal = flight.DepartureTerminal;
+    model.DepartureGate = flight.DepartureGate;
+    model.ArrivalTerminal = flight.ArrivalTerminal;
+    model.ArrivalGate = flight.ArrivalGate;
+    detailsOpen = true;
+    lookupMessage = null; // no success message
+    }
+
+    private sealed class FlightFormModel
+    {
+        public int FlightId { get; set; }
+
+        [Required]
+        [MinLength(2)]
+        public string? FlightNumber { get; set; }
+
+        [Required]
+        public DateTime? FlightDate { get; set; }
+
+        [Required]
+        public FlightClass FlightClass { get; set; } = FlightClass.Economy; // Default to Economy
+
+        [Required]
+        [MinLength(2)]
+        public string? SeatNumber { get; set; } = string.Empty;
+        public string? Notes { get; set; }
+
+        // Manual flight creation fields
+        public string? DepartureAirportCode { get; set; }
+        public string? ArrivalAirportCode { get; set; }
+        public DateTime? DepartureTimeUtc { get; set; }
+        public DateTime? ArrivalTimeUtc { get; set; }
+        public string? DepartureTerminal { get; set; }
+        public string? DepartureGate { get; set; }
+        public string? ArrivalTerminal { get; set; }
+        public string? ArrivalGate { get; set; }
+    }
+
+    private readonly FlightClass[] _flightClassValues = System.Enum.GetValues<FlightClass>();
+}

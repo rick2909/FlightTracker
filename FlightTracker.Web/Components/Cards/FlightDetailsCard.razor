@@ -1,0 +1,149 @@
+@using FlightTracker.Application.Dtos
+@using FlightTracker.Domain.Enums
+@using Radzen
+@using Radzen.Blazor
+@using TimeZoneConverter
+
+@inherits ComponentBase
+
+@code {
+    [Parameter] public UserFlightDto Flight { get; set; } = default!;
+
+    // Best-effort seat position inference from trailing seat letter.
+    private static string GetSeatPositionLabel(string? seatNumber)
+    {
+        if (string.IsNullOrWhiteSpace(seatNumber)) return "-";
+        var letter = seatNumber.Trim().LastOrDefault();
+        if (!char.IsLetter(letter)) return "-";
+        letter = char.ToUpperInvariant(letter);
+        return letter switch
+        {
+            'A' or 'F' => "Window",
+            'C' or 'D' => "Aisle",
+            'B' or 'E' => "Middle",
+            _ => "-"
+        };
+    }
+
+    private static BadgeStyle GetClassBadgeStyle(FlightClass flightClass)
+    {
+        return flightClass switch
+        {
+            FlightClass.First => BadgeStyle.Warning,
+            FlightClass.Business => BadgeStyle.Info,
+            FlightClass.PremiumEconomy => BadgeStyle.Secondary,
+            FlightClass.Economy => BadgeStyle.Primary,
+            _ => BadgeStyle.Light
+        };
+    }
+
+    private static string ToLocalString(DateTime utc, string? timeZoneId)
+    {
+        if (string.IsNullOrWhiteSpace(timeZoneId))
+        {
+            return "-";
+        }
+
+        try
+        {
+            TimeZoneInfo tz;
+            try
+            {
+                tz = TZConvert.GetTimeZoneInfo(timeZoneId);
+            }
+            catch
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            }
+
+            var utcKind = DateTime.SpecifyKind(utc, DateTimeKind.Utc);
+            var local = TimeZoneInfo.ConvertTimeFromUtc(utcKind, tz);
+            var offset = tz.GetUtcOffset(local);
+            var sign = offset < TimeSpan.Zero ? "-" : "+";
+            var hh = Math.Abs(offset.Hours).ToString("00");
+            var mm = Math.Abs(offset.Minutes).ToString("00");
+
+            return $"{local:MMM dd, yyyy HH:mm} (UTC{sign}{hh}:{mm})";
+        }
+        catch
+        {
+            return "-";
+        }
+    }
+}
+
+<div class="flight-details">
+    <hr />
+    <RadzenRow Gap="0">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText TextStyle="TextStyle.Overline">Departure</RadzenText>
+            <div>
+                <strong>@(Flight.DepartureIataCode ?? Flight.DepartureIcaoCode ?? Flight.DepartureAirportCode)</strong>
+                <span class="rz-text-secondary rz-ml-1">@Flight.DepartureAirportName</span>
+                @if (!string.IsNullOrWhiteSpace(Flight.DepartureIataCode) && !string.IsNullOrWhiteSpace(Flight.DepartureIcaoCode))
+                {
+                    <span class="rz-text-secondary rz-ml-2">(@Flight.DepartureIcaoCode)</span>
+                }
+            </div>
+            <div class="rz-text-secondary">@Flight.DepartureCity</div>
+            <div class="rz-text-secondary rz-mt-1">@Flight.DepartureTimeUtc.ToString("MMM dd, yyyy HH:mm") UTC</div>
+            <div class="rz-text-secondary">Local: @ToLocalString(Flight.DepartureTimeUtc, Flight.DepartureTimeZoneId)</div>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText TextStyle="TextStyle.Overline">Arrival</RadzenText>
+            <div>
+                <strong>@(Flight.ArrivalIataCode ?? Flight.ArrivalIcaoCode ?? Flight.ArrivalAirportCode)</strong>
+                <span class="rz-text-secondary rz-ml-1">@Flight.ArrivalAirportName</span>
+                @if (!string.IsNullOrWhiteSpace(Flight.ArrivalIataCode) && !string.IsNullOrWhiteSpace(Flight.ArrivalIcaoCode))
+                {
+                    <span class="rz-text-secondary rz-ml-2">(@Flight.ArrivalIcaoCode)</span>
+                }
+            </div>
+            <div class="rz-text-secondary">@Flight.ArrivalCity</div>
+            <div class="rz-text-secondary rz-mt-1">@Flight.ArrivalTimeUtc.ToString("MMM dd, yyyy HH:mm") UTC</div>
+            <div class="rz-text-secondary">Local: @ToLocalString(Flight.ArrivalTimeUtc, Flight.ArrivalTimeZoneId)</div>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenRow class="rz-mt-2">
+        <RadzenColumn Size="12" SizeMD="4">
+            <RadzenText TextStyle="TextStyle.Overline">Seat</RadzenText>
+            <div class="rz-mt-1">
+                <RadzenBadge Shade="Shade.Dark" BadgeStyle="BadgeStyle.Secondary" Text="@(string.IsNullOrWhiteSpace(Flight.SeatNumber) ? "-" : Flight.SeatNumber)" />
+                <RadzenBadge Pill="true" class="rz-ml-2" BadgeStyle="@GetClassBadgeStyle(Flight.FlightClass)" Text="@Flight.FlightClass.ToString()" />
+                <RadzenBadge Shade="Shade.Dark" Pill="true" class="rz-ml-2" BadgeStyle="BadgeStyle.Info" Text="@GetSeatPositionLabel(Flight.SeatNumber)" />
+            </div>
+        </RadzenColumn>
+        
+        <RadzenColumn Size="12" SizeMD="5">
+            <RadzenText TextStyle="TextStyle.Overline">Aircraft</RadzenText>
+            <div>
+                @if (Flight.Aircraft is not null)
+                {
+                    <span>
+                        @(
+                            string.Join(" · ", new[] {
+                                string.IsNullOrWhiteSpace(Flight.Aircraft.Registration) ? null : $"Reg {Flight.Aircraft.Registration}",
+                                string.IsNullOrWhiteSpace(Flight.Aircraft.Model) ? null : Flight.Aircraft.Model,
+                                Flight.Aircraft.Manufacturer.ToString()
+                            }.Where(x => x is not null))
+                        )
+                    </span>
+                }
+                else
+                {
+                    <span>-</span>
+                }
+            </div>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="3">
+            <RadzenText TextStyle="TextStyle.Overline">Booking</RadzenText>
+            <div class="rz-text-secondary">Booked: @Flight.BookedOnUtc.ToString("MMM dd, yyyy")</div>
+            @if (!string.IsNullOrWhiteSpace(Flight.Notes))
+            {
+                <div class="rz-text-secondary rz-mt-1"><i class="fas fa-comment-alt" style="color:#17a2b8"></i> @Flight.Notes</div>
+            }
+        </RadzenColumn>
+    </RadzenRow>
+    <hr />
+</div>

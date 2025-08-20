@@ -1,0 +1,52 @@
+@use 'variables' as *;
+
+// BEM: .ft-dialog and elements
+.ft-dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.ft-dialog {
+  background: #fff;
+  border-radius: var(--md3-radius-xl);
+  width: min(640px, 92vw);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.2);
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-3 $spacing-4;
+    border-bottom: 1px solid $color-divider;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  &__content {
+    padding: $spacing-3 $spacing-4;
+  }
+
+  &__icon-button {
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+}
+
+.material-icons { font-family: 'Material Icons'; }

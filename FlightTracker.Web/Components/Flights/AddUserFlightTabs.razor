@@ -1,0 +1,387 @@
+@using FlightTracker.Application.Dtos
+@using FlightTracker.Application.Services.Interfaces
+@using FlightTracker.Domain.Entities
+@using FlightTracker.Domain.Enums
+@using Radzen
+@using Radzen.Blazor
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using System.ComponentModel.DataAnnotations
+
+<EditForm @ref="editForm" Model="validation" class="ft-form">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <RadzenTabs @bind-SelectedIndex="_tabIndex">
+        <Tabs>
+            <RadzenTabsItem Text="By number">
+                <div class="ft-form__row" @onkeyup="OnNumberKeyUp">
+                    <div class="ft-form__field">
+                        <label>Flight number</label>
+                        <RadzenTextBox @bind-Value="numberSearchNumber" Style="width:100%" />
+                    </div>
+                    <div class="ft-form__field">
+                        <label>Date (UTC)</label>
+                        <RadzenDatePicker @bind-Value="numberSearchDate" DateFormat="yyyy-MM-dd" />
+                    </div>
+                    <div class="ft-form__field" style="align-self:end;">
+                        <RadzenButton Text="Search" Icon="search" Click="SearchByNumber" />
+                    </div>
+                </div>
+                @if (numberNoDateMatches)
+                {
+                    <div class="rz-message rz-message-warning" style="margin:.5rem 0;">
+                        No flights found for that date. Showing all matches for this flight number.
+                    </div>
+                }
+                @if (numberResults.Any())
+                {
+                    <RadzenDataList Data="@numberResults" TItem="Flight" WrapItems="true" AllowPaging="true" PageSize="6" AllowVirtualization="false">
+                        <Template Context="f">
+                            <div class="ft-result">
+                                <div class="ft-result__main">
+                                    <div class="ft-result__title"><strong>@f.FlightNumber</strong> @(f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode) → @(f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode)</div>
+                                    <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
+                                </div>
+                                <div class="ft-result__actions">
+                                    <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectFlightFull(f)" />
+                                    <RadzenButton Size="ButtonSize.Small" Icon="event_busy" Text="No date" Click="() => SelectFlightNoDate(f)" ButtonStyle="ButtonStyle.Light" />
+                                </div>
+                            </div>
+                        </Template>
+                    </RadzenDataList>
+                }
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="By route">
+                <div class="ft-form__row" @onkeyup="OnRouteKeyUp">
+                    <div class="ft-form__field">
+                        <label>From (code or city)</label>
+                        <RadzenTextBox @bind-Value="routeDep" Style="width:100%" />
+                    </div>
+                    <div class="ft-form__field">
+                        <label>To (code or city)</label>
+                        <RadzenTextBox @bind-Value="routeArr" Style="width:100%" />
+                    </div>
+                    <div class="ft-form__field">
+                        <label>Date (UTC)</label>
+                        <RadzenDatePicker @bind-Value="routeDate" DateFormat="yyyy-MM-dd" />
+                    </div>
+                    <div class="ft-form__field" style="align-self:end;">
+                        <RadzenButton Text="Search" Icon="search" Click="SearchByRoute" />
+                    </div>
+                </div>
+                @if (routeNoDateMatches)
+                {
+                    <div class="rz-message rz-message-warning" style="margin:.5rem 0;">
+                        No flights found for that date. Showing all matches for this route.
+                    </div>
+                }
+                @if (routeResults.Any())
+                {
+                    <RadzenDataList Data="@routeResults" TItem="Flight" WrapItems="true" AllowPaging="true" PageSize="6" AllowVirtualization="false">
+                        <Template Context="f">
+                            <div class="ft-result">
+                                <div class="ft-result__main">
+                                    <div class="ft-result__title">@f.FlightNumber @(f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode) → @(f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode)</div>
+                                    <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
+                                </div>
+                                <div class="ft-result__actions">
+                                    <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectFlightFull(f)" />
+                                    <RadzenButton Size="ButtonSize.Small" Icon="event_busy" Text="No date" Click="() => SelectFlightNoDate(f)" ButtonStyle="ButtonStyle.Light" />
+                                </div>
+                            </div>
+                        </Template>
+                    </RadzenDataList>
+                }
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Manual">
+                <div class="rz-message rz-message-info" style="margin:.5rem 0;">
+                    Prefilled from selected search result. Manual fields are for review/editing.
+                </div>
+                <div class="ft-form__field">
+                    <label>Flight number</label>
+                    <RadzenTextBox @bind-Value="validation.FlightNumber" Style="width:100%" />
+                    <ValidationMessage For="() => validation.FlightNumber" />
+                </div>
+                <div class="ft-form__row">
+                    <div>
+                        <div class="ft-form__field">
+                            <label>Departure airport</label>
+                            <RadzenTextBox @bind-Value="validation.DepartureAirportCode" Style="width:100%" />
+                            <ValidationMessage For="() => validation.DepartureAirportCode" />
+                        </div>
+                        <div class="ft-form__field">
+                            <label>Departure (UTC)</label>
+                            <RadzenDatePicker @bind-Value="validation.DepartureTimeUtc" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                            <ValidationMessage For="() => validation.DepartureTimeUtc" />
+                        </div>
+                    </div>
+                    <div>
+                        <div class="ft-form__field">
+                            <label>Arrival airport</label>
+                            <RadzenTextBox @bind-Value="validation.ArrivalAirportCode" Style="width:100%" />
+                            <ValidationMessage For="() => validation.ArrivalAirportCode" />
+                        </div>
+                        <div class="ft-form__field">
+                            <label>Arrival (UTC)</label>
+                            <RadzenDatePicker @bind-Value="validation.ArrivalTimeUtc" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                            <ValidationMessage For="() => validation.ArrivalTimeUtc" />
+                        </div>
+                    </div>
+                </div>
+        </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+
+    <div class="ft-form__section">
+        <div class="ft-form__row">
+            <div class="ft-form__field">
+                <label>Seat number</label>
+                <RadzenTextBox @bind-Value="validation.SeatNumber" Name="SeatNumber" Style="width:100%" />
+                <ValidationMessage For="() => validation.SeatNumber" />
+            </div>
+            <div class="ft-form__field">
+                <label>Class</label>
+                <RadzenDropDown TValue="FlightClass" Data="@_classes" @bind-Value="flightClass" Style="width:100%" />
+            </div>
+            <div class="ft-form__field">
+                <label>Notes</label>
+                <RadzenTextArea @bind-Value="notes" Rows="2" Style="width:100%" />
+            </div>
+        </div>
+
+        <div class="ft-form__actions">
+            <RadzenButton Variant="Variant.Flat" ButtonStyle="ButtonStyle.Light" Text="Cancel" Click="OnCancelClicked" />
+            <RadzenButton Variant="Variant.Flat" ButtonStyle="ButtonStyle.Primary" Text="Save" Click="OnSaveClicked" Disabled="@(!CanSave)" />
+        </div>
+        @if (!CanSave)
+        {
+            <div class="rz-text-secondary" style="margin-top:.25rem">Enter seat, flight number, from/to airports, and both times to enable Save.</div>
+        }
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public CreateUserFlightDto? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<CreateUserFlightDto> OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Inject]
+    public IFlightLookupService Lookup { get; set; } = default!;
+
+    private EditForm? editForm;
+
+    private class ValidationModel
+    {
+        [Required, MinLength(2)]
+        public string? SeatNumber { get; set; }
+
+        [Required, MinLength(3)]
+        public string? FlightNumber { get; set; }
+
+        [Required, MinLength(3), MaxLength(4)]
+        public string? DepartureAirportCode { get; set; }
+
+        [Required, MinLength(3), MaxLength(4)]
+        public string? ArrivalAirportCode { get; set; }
+
+        [Required]
+        public DateTime? DepartureTimeUtc { get; set; }
+
+        [Required]
+        public DateTime? ArrivalTimeUtc { get; set; }
+    }
+    private ValidationModel validation = new();
+
+    // Local mutable fields
+    private int flightId;
+    private string? flightNumber;
+    private DateOnly? flightDate;
+    private FlightClass flightClass = FlightClass.Economy;
+    private string? notes;
+
+    protected override void OnParametersSet()
+    {
+        if (Value is not null)
+        {
+            flightId = Value.FlightId;
+            flightNumber = Value.FlightNumber;
+            flightDate = Value.FlightDate;
+            validation.SeatNumber = Value.SeatNumber;
+            flightClass = Value.FlightClass;
+            notes = Value.Notes;
+        }
+        else
+        {
+            flightId = 0;
+            flightNumber = null;
+            flightDate = null;
+            validation.SeatNumber = null;
+            flightClass = FlightClass.Economy;
+            notes = null;
+        }
+    }
+
+    private int _tabIndex = 0;
+    private bool HasTimes => validation.DepartureTimeUtc.HasValue && validation.ArrivalTimeUtc.HasValue;
+    private bool HasRouteAndNumber =>
+        !string.IsNullOrWhiteSpace(validation.FlightNumber)
+        && !string.IsNullOrWhiteSpace(validation.DepartureAirportCode)
+        && !string.IsNullOrWhiteSpace(validation.ArrivalAirportCode);
+    private bool CanSave => !string.IsNullOrWhiteSpace(validation.SeatNumber) && HasRouteAndNumber && HasTimes;
+
+    // Number search state
+    private string? numberSearchNumber;
+    private DateTime? numberSearchDate;
+    private bool numberNoDateMatches;
+    private List<Flight> numberResults = new();
+
+    // Route search state
+    private string? routeDep;
+    private string? routeArr;
+    private DateTime? routeDate;
+    private bool routeNoDateMatches;
+    private List<Flight> routeResults = new();
+
+    // Manual fields (prefilled from selected flight)
+    // Manual fields bound through validation model
+
+    private async Task SearchByNumber()
+    {
+        numberNoDateMatches = false;
+        numberResults.Clear();
+        if (string.IsNullOrWhiteSpace(numberSearchNumber)) return;
+        IReadOnlyList<Flight> results;
+        if (numberSearchDate.HasValue)
+        {
+            var dateOnly = DateOnly.FromDateTime(numberSearchDate.Value.Date);
+            results = await Lookup.SearchByFlightNumberAsync(numberSearchNumber!, dateOnly);
+            if (results.Count == 0)
+            {
+                numberNoDateMatches = true;
+                results = await Lookup.SearchByFlightNumberAsync(numberSearchNumber!, null);
+            }
+        }
+        else
+        {
+            results = await Lookup.SearchByFlightNumberAsync(numberSearchNumber!, null);
+        }
+        numberResults = results.ToList();
+    }
+
+    private async Task SearchByRoute()
+    {
+        routeNoDateMatches = false;
+        routeResults.Clear();
+        if (string.IsNullOrWhiteSpace(routeDep) && string.IsNullOrWhiteSpace(routeArr)) return;
+        IReadOnlyList<Flight> results;
+        if (routeDate.HasValue)
+        {
+            var dateOnly = DateOnly.FromDateTime(routeDate.Value.Date);
+            results = await Lookup.SearchByRouteAsync(routeDep, routeArr, dateOnly);
+            if (results.Count == 0)
+            {
+                routeNoDateMatches = true;
+                results = await Lookup.SearchByRouteAsync(routeDep, routeArr, null);
+            }
+        }
+        else
+        {
+            results = await Lookup.SearchByRouteAsync(routeDep, routeArr, null);
+        }
+        routeResults = results.ToList();
+    }
+
+    private void SelectFlightFull(Flight f)
+    {
+        // Populate draft for saving
+        flightId = f.Id;
+        flightNumber = f.FlightNumber;
+        flightDate = DateOnly.FromDateTime(f.DepartureTimeUtc.Date);
+        // Prefill manual tab
+    validation.FlightNumber = f.FlightNumber;
+    validation.DepartureAirportCode = f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode;
+    validation.ArrivalAirportCode = f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode;
+    validation.DepartureTimeUtc = f.DepartureTimeUtc;
+    validation.ArrivalTimeUtc = f.ArrivalTimeUtc;
+    _tabIndex = 2; // switch to Manual tab
+        StateHasChanged();
+    }
+
+    private void SelectFlightNoDate(Flight f)
+    {
+        // Select flight and route, clear dates
+        flightId = f.Id;
+        flightNumber = f.FlightNumber;
+        flightDate = null;
+    validation.FlightNumber = f.FlightNumber;
+    validation.DepartureAirportCode = f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode;
+    validation.ArrivalAirportCode = f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode;
+    validation.DepartureTimeUtc = null;
+    validation.ArrivalTimeUtc = null;
+    _tabIndex = 2; // switch to Manual tab
+        StateHasChanged();
+    }
+
+    private async Task HandleSave()
+    {
+        if (!CanSave) return;
+        if (OnSave.HasDelegate)
+        {
+            var dto = new CreateUserFlightDto
+            {
+                FlightId = flightId,
+                FlightNumber = validation.FlightNumber,
+                FlightDate = validation.DepartureTimeUtc.HasValue ? DateOnly.FromDateTime(validation.DepartureTimeUtc.Value.Date) : null,
+                FlightClass = flightClass,
+                SeatNumber = validation.SeatNumber!,
+                Notes = notes,
+                DepartureAirportCode = validation.DepartureAirportCode,
+                ArrivalAirportCode = validation.ArrivalAirportCode,
+                DepartureTimeUtc = validation.DepartureTimeUtc,
+                ArrivalTimeUtc = validation.ArrivalTimeUtc
+            };
+            await OnSave.InvokeAsync(dto);
+        }
+    }
+
+    private async Task OnSaveClicked()
+    {
+        var ctx = editForm?.EditContext;
+        if (ctx is not null && ctx.Validate())
+        {
+            await HandleSave();
+        }
+    }
+
+    private async Task OnNumberKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchByNumber();
+        }
+    }
+
+    private async Task OnRouteKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchByRoute();
+        }
+    }
+
+    private async Task OnCancelClicked()
+    {
+        if (OnCancel.HasDelegate)
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+
+    private readonly FlightClass[] _classes = Enum.GetValues<FlightClass>();
+}

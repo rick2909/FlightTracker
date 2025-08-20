@@ -1,0 +1,54 @@
+@using FlightTracker.Application.Dtos
+@using FlightTracker.Web.Components.Flights
+
+@if (IsOpen)
+{
+    <div class="ft-dialog__backdrop" @onclick="HandleBackdropClick">
+        <div class="ft-dialog" role="dialog" aria-modal="true" @onclick:stopPropagation>
+            <div class="ft-dialog__header">
+                <h3 class="ft-dialog__title">Add Flight</h3>
+                <button type="button" class="ft-dialog__icon-button" aria-label="Close" @onclick="Close">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="ft-dialog__content">
+                <AddUserFlightTabs Value="Value" OnSave="HandleSave" OnCancel="Close" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public CreateUserFlightDto? Value { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<CreateUserFlightDto> OnSave { get; set; }
+
+    private async Task HandleSave(CreateUserFlightDto dto)
+    {
+        if (OnSave.HasDelegate)
+        {
+            await OnSave.InvokeAsync(dto);
+        }
+    }
+
+    private async Task Close()
+    {
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+
+    private async Task HandleBackdropClick()
+    {
+        await Close();
+    }
+}

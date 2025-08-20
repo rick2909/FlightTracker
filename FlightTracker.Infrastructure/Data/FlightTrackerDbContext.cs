@@ -64,6 +64,14 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
 			entity.Property(a => a.Notes).HasMaxLength(500);
 
 			entity.HasIndex(a => a.Registration).IsUnique();
+
+			// Relation: Aircraft -> Airline (optional)
+			entity.HasOne(a => a.Airline)
+				.WithMany(al => al.Aircraft)
+				.HasForeignKey(a => a.AirlineId)
+				.OnDelete(DeleteBehavior.SetNull);
+
+			entity.HasIndex(a => a.AirlineId);
 		});
 
 		// Configure Airline entity
@@ -80,13 +88,16 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
 
 		builder.Entity<Airport>(entity =>
 		{
-			entity.Property(a => a.Code).HasMaxLength(8).IsRequired();
+			entity.Property(a => a.IataCode).HasMaxLength(3);
+			entity.Property(a => a.IcaoCode).HasMaxLength(4);
 			entity.Property(a => a.Name).HasMaxLength(128).IsRequired();
 			entity.Property(a => a.City).HasMaxLength(64).IsRequired();
 			entity.Property(a => a.Country).HasMaxLength(64).IsRequired();
 			entity.Property(a => a.Latitude);
 			entity.Property(a => a.Longitude);
-			entity.HasIndex(a => a.Code).IsUnique();
+			entity.Property(a => a.TimeZoneId).HasMaxLength(64);
+			entity.HasIndex(a => a.IataCode).IsUnique().HasFilter("[IataCode] IS NOT NULL");
+			entity.HasIndex(a => a.IcaoCode).IsUnique().HasFilter("[IcaoCode] IS NOT NULL");
 		});
 
 		// Configure UserFlight entity

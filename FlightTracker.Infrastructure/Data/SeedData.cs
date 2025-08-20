@@ -79,26 +79,26 @@ public static class SeedData
 
     private static IReadOnlyList<Airport> GetSeedAirports() => new List<Airport>
     {
-        // Original set with coordinates
-        new() { Code = "JFK", Name = "John F. Kennedy International", City = "New York", Country = "USA", Latitude = 40.6413, Longitude = -73.7781 },
-        new() { Code = "LAX", Name = "Los Angeles International", City = "Los Angeles", Country = "USA", Latitude = 33.9416, Longitude = -118.4085 },
-        new() { Code = "LHR", Name = "Heathrow", City = "London", Country = "UK", Latitude = 51.4700, Longitude = -0.4543 },
-        new() { Code = "FRA", Name = "Frankfurt am Main", City = "Frankfurt", Country = "Germany", Latitude = 50.0379, Longitude = 8.5622 },
-        new() { Code = "NRT", Name = "Narita International", City = "Tokyo", Country = "Japan", Latitude = 35.7719, Longitude = 140.3929 },
-        new() { Code = "AMS", Name = "Amsterdam Schiphol", City = "Amsterdam", Country = "Netherlands", Latitude = 52.3105, Longitude = 4.7683 },
-        new() { Code = "CDG", Name = "Charles de Gaulle", City = "Paris", Country = "France", Latitude = 49.0097, Longitude = 2.5479 },
-        new() { Code = "DXB", Name = "Dubai International", City = "Dubai", Country = "UAE", Latitude = 25.2532, Longitude = 55.3657 },
-        new() { Code = "SIN", Name = "Singapore Changi", City = "Singapore", Country = "Singapore", Latitude = 1.3644, Longitude = 103.9915 },
-        new() { Code = "ATL", Name = "Hartsfield-Jackson Atlanta International", City = "Atlanta", Country = "USA", Latitude = 33.6407, Longitude = -84.4277 }
+        // Original set with coordinates + IATA/ICAO
+    new() { IataCode = "JFK", IcaoCode = "KJFK", Name = "John F. Kennedy International", City = "New York", Country = "USA", Latitude = 40.6413, Longitude = -73.7781, TimeZoneId="America/New_York" },
+    new() { IataCode = "LAX", IcaoCode = "KLAX", Name = "Los Angeles International", City = "Los Angeles", Country = "USA", Latitude = 33.9416, Longitude = -118.4085 },
+    new() { IataCode = "LHR", IcaoCode = "EGLL", Name = "Heathrow", City = "London", Country = "UK", Latitude = 51.4700, Longitude = -0.4543 },
+    new() { IataCode = "FRA", IcaoCode = "EDDF", Name = "Frankfurt am Main", City = "Frankfurt", Country = "Germany", Latitude = 50.0379, Longitude = 8.5622 },
+    new() { IataCode = "NRT", IcaoCode = "RJAA", Name = "Narita International", City = "Tokyo", Country = "Japan", Latitude = 35.7719, Longitude = 140.3929 },
+    new() { IataCode = "AMS", IcaoCode = "EHAM", Name = "Amsterdam Schiphol", City = "Amsterdam", Country = "Netherlands", Latitude = 52.3105, Longitude = 4.7683 },
+    new() { IataCode = "CDG", IcaoCode = "LFPG", Name = "Charles de Gaulle", City = "Paris", Country = "France", Latitude = 49.0097, Longitude = 2.5479 },
+    new() { IataCode = "DXB", IcaoCode = "OMDB", Name = "Dubai International", City = "Dubai", Country = "UAE", Latitude = 25.2532, Longitude = 55.3657 },
+    new() { IataCode = "SIN", IcaoCode = "WSSS", Name = "Singapore Changi", City = "Singapore", Country = "Singapore", Latitude = 1.3644, Longitude = 103.9915 },
+    new() { IataCode = "ATL", IcaoCode = "KATL", Name = "Hartsfield-Jackson Atlanta International", City = "Atlanta", Country = "USA", Latitude = 33.6407, Longitude = -84.4277 }
     };
 
     private static IReadOnlyList<Aircraft> GetSeedAircraft() => new List<Aircraft>
     {
-        new() { Registration = "N12345", Manufacturer = AircraftManufacturer.Boeing, Model = "737-800", YearManufactured = 2018, PassengerCapacity = 189, IcaoTypeCode = "B738" },
-        new() { Registration = "N67890", Manufacturer = AircraftManufacturer.Airbus, Model = "A320", YearManufactured = 2020, PassengerCapacity = 180, IcaoTypeCode = "A320" },
-        new() { Registration = "G-ABCD", Manufacturer = AircraftManufacturer.Boeing, Model = "777-200", YearManufactured = 2019, PassengerCapacity = 314, IcaoTypeCode = "B772" },
-        new() { Registration = "D-EFGH", Manufacturer = AircraftManufacturer.Airbus, Model = "A350-900", YearManufactured = 2021, PassengerCapacity = 325, IcaoTypeCode = "A359" },
-        new() { Registration = "JA1234", Manufacturer = AircraftManufacturer.Boeing, Model = "787-9", YearManufactured = 2022, PassengerCapacity = 290, IcaoTypeCode = "B789" }
+        new() { Registration = "N12345", Manufacturer = AircraftManufacturer.Boeing, Model = "737-800", YearManufactured = 2018, PassengerCapacity = 189, IcaoTypeCode = "B738", AirlineId = 1 },
+        new() { Registration = "N67890", Manufacturer = AircraftManufacturer.Airbus, Model = "A320", YearManufactured = 2020, PassengerCapacity = 180, IcaoTypeCode = "A320", AirlineId = 1 },
+        new() { Registration = "G-ABCD", Manufacturer = AircraftManufacturer.Boeing, Model = "777-200", YearManufactured = 2019, PassengerCapacity = 314, IcaoTypeCode = "B772", AirlineId = 1 },
+        new() { Registration = "D-EFGH", Manufacturer = AircraftManufacturer.Airbus, Model = "A350-900", YearManufactured = 2021, PassengerCapacity = 325, IcaoTypeCode = "A359", AirlineId = 1 },
+        new() { Registration = "JA1234", Manufacturer = AircraftManufacturer.Boeing, Model = "787-9", YearManufactured = 2022, PassengerCapacity = 290, IcaoTypeCode = "B789", AirlineId = 1 }
     };
 
     private static IReadOnlyList<Airline> GetSeedAirlines() => new List<Airline>
@@ -110,7 +110,7 @@ public static class SeedData
     {
         // Deterministic base time for tests (UTC)
         var baseTime = new DateTime(2025, 01, 01, 08, 00, 00, DateTimeKind.Utc);
-        Airport A(string code) => airports.First(a => a.Code == code);
+    Airport A(string code) => airports.First(a => a.IataCode == code || a.IcaoCode == code);
         Aircraft Ac(string registration) => aircraft.First(a => a.Registration == registration);
         int? AirlineId(string code)
         {

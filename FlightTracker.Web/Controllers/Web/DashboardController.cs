@@ -89,7 +89,7 @@ public class DashboardController : Controller
         try
         {
             // TODO: Get actual user ID from authentication context
-            var userId = 1;
+            var userId = 2;
 
             var userFlights = await _userFlightService.GetUserFlightsAsync(userId);
 

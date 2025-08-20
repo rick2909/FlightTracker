@@ -1,0 +1,151 @@
+@use 'variables' as *;
+@use 'sass:color';
+
+/* Override Radzen theme variables to align Material 3 tokens with
+  Radzen Material (non‑premium) theme variables */
+:root, .rz-material {
+  --rz-primary: #{$color-primary};
+  --rz-primary-contrast: #fff;
+  --rz-primary-hover: #{color.adjust($color-primary, $lightness: -5%)};
+  --rz-primary-active: #{color.adjust($color-primary, $lightness: -10%)};
+  --rz-primary-light: #{color.mix(white, $color-primary, 10%)};
+  --rz-primary-lighter: #{color.mix(white, $color-primary, 20%)};
+  --rz-primary-dark: #{color.adjust($color-primary, $lightness: -5%)};
+  --rz-primary-darker: #{color.adjust($color-primary, $lightness: -15%)};
+
+  /* Secondary */
+  --rz-secondary: #{$color-secondary};
+  --rz-secondary-contrast: #000;
+  --rz-secondary-hover: #{color.adjust($color-secondary, $lightness: -5%)};
+  --rz-secondary-active: #{color.adjust($color-secondary, $lightness: -10%)};
+  --rz-secondary-light: #{color.mix(white, $color-secondary, 10%)};
+  --rz-secondary-lighter: #{color.mix(white, $color-secondary, 20%)};
+  --rz-secondary-dark: #{color.adjust($color-secondary, $lightness: -5%)};
+  --rz-secondary-darker: #{color.adjust($color-secondary, $lightness: -15%)};
+
+  /* Success */
+  --rz-success: #{$color-tertiary};
+  --rz-success-contrast: #fff;
+  --rz-success-hover: #{color.adjust($color-tertiary, $lightness: -5%)};
+  --rz-success-active: #{color.adjust($color-tertiary, $lightness: -10%)};
+  --rz-success-lighter: #{color.mix(white, $color-tertiary, 20%)};
+  --rz-success-darker: #{color.adjust($color-tertiary, $lightness: -15%)};
+
+  /* Info */
+  --rz-info: #{$color-highlight};
+  --rz-info-contrast: #000;
+  --rz-info-hover: #{color.adjust($color-highlight, $lightness: -5%)};
+  --rz-info-active: #{color.adjust($color-highlight, $lightness: -10%)};
+  --rz-info-lighter: #{color.mix(white, $color-highlight, 20%)};
+  --rz-info-darker: #{color.adjust($color-highlight, $lightness: -15%)};
+
+  /* Warning */
+  --rz-warning: #{$color-secondary};
+  --rz-warning-contrast: #000;
+  --rz-warning-hover: #{color.adjust($color-secondary, $lightness: -5%)};
+  --rz-warning-active: #{color.adjust($color-secondary, $lightness: -10%)};
+  --rz-warning-lighter: #{color.mix(white, $color-secondary, 20%)};
+  --rz-warning-darker: #{color.adjust($color-secondary, $lightness: -15%)};
+
+  /* Danger */
+  --rz-danger: #{$color-error};
+  --rz-danger-contrast: #fff;
+  --rz-danger-hover: #{color.adjust($color-error, $lightness: -5%)};
+  --rz-danger-active: #{color.adjust($color-error, $lightness: -10%)};
+  --rz-danger-lighter: #{color.mix(white, $color-error, 20%)};
+  --rz-danger-darker: #{color.adjust($color-error, $lightness: -15%)};
+
+  /* Text */
+  --rz-text-primary: #{$color-text-primary};
+  --rz-text-secondary: #{$color-text-secondary};
+  --rz-text-disabled: #{color.mix($color-text-primary, $color-divider, 60%)};
+
+  /* Surfaces & borders */
+  --rz-surface: #{$color-surface};
+  --rz-surface-variant: #{$color-surface-variant};
+  --rz-background: #{$color-background};
+  --rz-border: #{$color-border};
+
+  /* Older Radzen Material variable aliases (non‑premium) */
+  --rz-base-background: var(--rz-background);
+  --rz-base-foreground: var(--rz-text-primary);
+  --rz-body-background: var(--rz-background);
+  --rz-panel-background: var(--rz-surface);
+  --rz-card-background: var(--rz-surface);
+  --rz-border-color: var(--rz-border);
+  --rz-input-background: var(--rz-surface);
+  --rz-input-text: var(--rz-text-primary);
+  --rz-input-placeholder: var(--rz-text-secondary);
+  --rz-input-border: var(--rz-border);
+  --rz-input-focus-border: var(--rz-primary);
+  --rz-link: var(--rz-primary);
+  --rz-link-hover: var(--rz-primary-dark);
+  --rz-muted: var(--rz-text-secondary);
+
+  /* Material 3 corner radius scale */
+  --md3-radius-xs: 4px;   /* extra small */
+  --md3-radius-sm: 8px;   /* small */
+  --md3-radius-md: 12px;  /* medium (cards, text fields default) */
+  --md3-radius-lg: 16px;  /* large */
+  --md3-radius-xl: 28px;  /* extra large (dialogs) */
+  --md3-radius-full: 999px; /* full pill */
+
+  /* Bootstrap radius variables to match MD3 */
+  --bs-border-radius: var(--md3-radius-md);
+  --bs-border-radius-sm: var(--md3-radius-sm);
+  --bs-border-radius-lg: var(--md3-radius-lg);
+  --bs-border-radius-xl: var(--md3-radius-xl);
+
+  /* Radzen component radius variables (fallbacks for older theme) */
+  --rz-border-radius: var(--md3-radius-md);
+  --rz-input-border-radius: var(--md3-radius-md);
+  --rz-button-border-radius: 20px;
+  --rz-card-border-radius: var(--md3-radius-md);
+  --rz-dialog-border-radius: var(--md3-radius-xl);
+}
+
+/* Radzen component rounding aligned to MD3 */
+.rz-card { border-radius: var(--rz-card-border-radius, var(--md3-radius-md)); overflow: hidden; }
+.rz-dialog { border-radius: var(--rz-dialog-border-radius, var(--md3-radius-xl)); overflow: hidden; }
+.rz-button { border-radius: var(--rz-button-border-radius, 20px); }
+.rz-chip, .rz-badge { border-radius: var(--md3-radius-sm); }
+.rz-inputtext, .rz-dropdown, .rz-multiselect, .rz-textarea { border-radius: var(--rz-input-border-radius, var(--md3-radius-md)); }
+
+/* Inputs: border/color alignment with theme */
+.rz-inputtext, .rz-dropdown, .rz-multiselect, .rz-textarea {
+  background: var(--rz-input-background);
+  color: var(--rz-input-text);
+  border-color: var(--rz-input-border);
+}
+.rz-inputtext:focus, .rz-dropdown:focus-within, .rz-multiselect:focus-within, .rz-textarea:focus {
+  border-color: var(--rz-input-focus-border);
+  box-shadow: 0 0 0 3px color.change($color-primary, $alpha: .15);
+}
+
+/* Links */
+a { color: var(--rz-link); }
+a:hover { color: var(--rz-link-hover); }
+
+/* Ensure any Bootstrap-like primary buttons match primary color */
+.btn.btn-primary {
+  background-color: $color-primary;
+  border-color: $color-primary-variant;
+  color: #fff;
+
+  &:hover {
+    background-color: color.adjust($color-primary, $lightness: -5%);
+    border-color: color.adjust($color-primary-variant, $lightness: -5%);
+  }
+
+  &:active,
+  &.active {
+    background-color: color.adjust($color-primary, $lightness: -10%);
+    border-color: color.adjust($color-primary-variant, $lightness: -10%);
+  }
+
+  &:disabled,
+  &.disabled {
+    background-color: color.mix($color-primary, #ccc, 50%);
+    border-color: color.mix($color-primary-variant, #ccc, 50%);
+  }
+}

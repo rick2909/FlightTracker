@@ -4,6 +4,9 @@
 @use 'flight-map';
 @use 'flight-stats';
 @use 'user-flights-list';
+@use 'dialog';
+@use 'flight-form';
+@use 'radzen-overrides';
 
 .layout {
   display: flex;
@@ -31,5 +34,19 @@ body {
 
 main {
   padding: 1rem;
+}
+
+/* Simple toolbar for page headers (no Bootstrap dependency) */
+.ft-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+.ft-toolbar__actions {
+  margin-left: auto; /* push actions to the right */
+  display: inline-flex;
+  gap: .5rem;
 }
 
