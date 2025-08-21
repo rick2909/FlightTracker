@@ -1,0 +1,29 @@
+@using Radzen
+@using Radzen.Blazor
+@inherits ComponentBase
+
+@code {
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string Name { get; set; } = string.Empty;
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public string? Id { get; set; }
+
+    private string currentValue = string.Empty;
+    private string inputId => string.IsNullOrWhiteSpace(Id) ? $"{Name}-input" : Id!;
+
+    protected override void OnParametersSet()
+    {
+        currentValue = Value ?? string.Empty;
+    }
+}
+
+<div class="ft-form__field">
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <label for="@inputId">@Label</label>
+    }
+    <RadzenTextBox @bind-Value="currentValue" id="@inputId" style="width:100%" Placeholder="@Placeholder" />
+    <!-- Hidden input for MVC model binding -->
+    <input type="hidden" name="@Name" value="@currentValue" />
+</div>

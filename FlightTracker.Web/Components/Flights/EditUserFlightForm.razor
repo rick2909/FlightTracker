@@ -1,0 +1,268 @@
+@using FlightTracker.Application.Dtos
+@using FlightTracker.Application.Services.Interfaces
+@using FlightTracker.Domain.Enums
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@using TimeZoneConverter
+@inject IUserFlightService UserFlightService
+@inject IFlightService FlightService
+@inject IAirportService AirportService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @if (Model is null)
+        {
+            <div>Loading…</div>
+        }
+        else
+        {
+            <EditForm Model="@this" OnValidSubmit="SaveAsync" class="ft-form">
+                <div class="ft-form__row">
+                    <div class="ft-form__field">
+                        <label>Class</label>
+                        <RadzenDropDown TValue="FlightClass"
+                                        @bind-Value="FlightClass"
+                                        Data="@flightClasses"
+                                        Style="width:100%" />
+                    </div>
+                    <div class="ft-form__field">
+                        <label>Seat</label>
+                        <RadzenTextBox @bind-Value="SeatNumber" Placeholder="e.g., 12A" Style="width:100%" />
+                    </div>
+                </div>
+
+                <div class="ft-form__field">
+                    <label>Notes</label>
+                    <RadzenTextArea @bind-Value="Notes" Rows="4" Placeholder="Add any trip notes (service, delays, etc.)" Style="width:100%" />
+                </div>
+
+                <div class="ft-form__section">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Flight details</h6>
+                        <div class="ft-form__actions" style="padding:0">
+                            <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Warning" Click="@EnableManualFlightEdit" Disabled="@CanEditFlight" Text="Enable manual edit" />
+                            <RadzenButton Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Click="@LoadFromApiAsync" Text="Load from API" Style="margin-left:.5rem" />
+                        </div>
+                    </div>
+                    <div class="ft-form__row">
+                        <div class="ft-form__field">
+                            <label>Flight number</label>
+                            <RadzenTextBox @bind-Value="FlightNumber" Disabled="@(!CanEditFlight)" Style="width:100%" />
+                        </div>
+                        <div></div>
+                    </div>
+                    <div class="ft-form__row">
+                        <div class="ft-form__field">
+                            <label>Departure airport</label>
+                            <RadzenTextBox @bind-Value="DepartureAirportCode" Placeholder="IATA or ICAO" Disabled="@(!CanEditFlight)" Style="width:100%" />
+                        </div>
+                        <div class="ft-form__field">
+                            <label>Arrival airport</label>
+                            <RadzenTextBox @bind-Value="ArrivalAirportCode" Placeholder="IATA or ICAO" Disabled="@(!CanEditFlight)" Style="width:100%" />
+                        </div>
+                    </div>
+                    <div class="ft-form__row">
+                        <div class="ft-form__field">
+                            <label>Departure (UTC)</label>
+                            <RadzenDatePicker @bind-Value="DepartureTimeForm" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Disabled="@(!CanEditFlight)" Style="width:100%" />
+                            <div class="small text-muted">Local: @FormatLocal(DepartureTimeUtc, DepartureTimeZoneId)</div>
+                        </div>
+                        <div class="ft-form__field">
+                            <label>Arrival (UTC)</label>
+                            <RadzenDatePicker @bind-Value="ArrivalTimeForm" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Disabled="@(!CanEditFlight)" Style="width:100%" />
+                            <div class="small text-muted">Local: @FormatLocal(ArrivalTimeUtc, ArrivalTimeZoneId)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ft-form__actions">
+                    <RadzenButton ButtonStyle="ButtonStyle.Secondary" Click="@Cancel" Text="Cancel" />
+                    <RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Save changes" ButtonType="ButtonType.Submit" Style="margin-left:.5rem" />
+                </div>
+            </EditForm>
+        }
+    </div>
+ </div>
+
+@code {
+    [Parameter] public int UserFlightId { get; set; }
+
+    // Backing model (loaded from service)
+    private UserFlightDto? Model;
+
+    // User flight fields
+    private FlightClass FlightClass { get; set; } = FlightClass.Economy;
+    private string SeatNumber { get; set; } = string.Empty;
+    private bool DidFly { get; set; } = true;
+    private string? Notes { get; set; }
+
+    // Flight fields
+    private int FlightId { get; set; }
+    private string FlightNumber { get; set; } = string.Empty;
+    private string? DepartureAirportCode { get; set; }
+    private string? ArrivalAirportCode { get; set; }
+    private DateTime DepartureTimeUtc { get; set; }
+    private DateTime ArrivalTimeUtc { get; set; }
+
+    // flight local time
+    private string? DepartureTimeZoneId { get; set; }
+    private string? ArrivalTimeZoneId { get; set; }
+
+    // UI state
+    private bool CanEditFlight { get; set; } = false;
+    private string? browserTimeZoneId;
+    private IEnumerable<FlightClass> flightClasses = Array.Empty<FlightClass>();
+    private IEnumerable<Option<bool>> statusOptions = Array.Empty<Option<bool>>();
+    private sealed record Option<T>(string Text, T Value);
+
+    // Wrappers for InputDate which yields DateTime with Unspecified kind; we store as UTC
+    private DateTime DepartureTimeForm
+    {
+        get => DepartureTimeUtc == default ? DateTime.UtcNow : DepartureTimeUtc;
+        set => DepartureTimeUtc = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+    }
+
+    private DateTime ArrivalTimeForm
+    {
+        get => ArrivalTimeUtc == default ? DateTime.UtcNow : ArrivalTimeUtc;
+        set => ArrivalTimeUtc = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        flightClasses = Enum.GetValues(typeof(FlightClass)).Cast<FlightClass>().ToArray();
+        statusOptions = new List<Option<bool>>
+        {
+            new("Completed", true),
+            new("No Show", false)
+        };
+        var dto = await UserFlightService.GetByIdAsync(UserFlightId);
+        Model = dto;
+        if (dto is not null)
+        {
+            FlightId = dto.FlightId;
+            FlightClass = dto.FlightClass;
+            SeatNumber = dto.SeatNumber;
+            DidFly = dto.DidFly;
+            Notes = dto.Notes;
+            FlightNumber = dto.FlightNumber;
+            DepartureAirportCode = dto.DepartureIataCode ?? dto.DepartureIcaoCode ?? dto.DepartureAirportCode;
+            ArrivalAirportCode = dto.ArrivalIataCode ?? dto.ArrivalIcaoCode ?? dto.ArrivalAirportCode;
+            DepartureTimeUtc = DateTime.SpecifyKind(dto.DepartureTimeUtc, DateTimeKind.Utc);
+            ArrivalTimeUtc = DateTime.SpecifyKind(dto.ArrivalTimeUtc, DateTimeKind.Utc);
+            DepartureTimeZoneId = dto.DepartureTimeZoneId;
+            ArrivalTimeZoneId = dto.ArrivalTimeZoneId;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                browserTimeZoneId = await JS.InvokeAsync<string>("(function(){return Intl.DateTimeFormat().resolvedOptions().timeZone;})");
+            }
+            catch
+            {
+                browserTimeZoneId = null;
+            }
+            StateHasChanged();
+        }
+    }
+
+    private string FormatLocal(DateTime utc, string? timeZoneId)
+    {
+        if (string.IsNullOrWhiteSpace(timeZoneId))
+        {
+            return "-";
+        }
+
+        try
+        {
+            TimeZoneInfo tz;
+            try
+            {
+                tz = TZConvert.GetTimeZoneInfo(timeZoneId);
+            }
+            catch
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            }
+
+            var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), tz);
+            var offset = tz.GetUtcOffset(local);
+            var sign = offset < TimeSpan.Zero ? "-" : "+";
+            var hh = Math.Abs(offset.Hours).ToString("00");
+            var mm = Math.Abs(offset.Minutes).ToString("00");
+            return $"{local:MMM dd, yyyy HH:mm} (UTC{sign}{hh}:{mm})";
+        }
+        catch
+        {
+            return "-";
+        }
+    }
+
+    private void EnableManualFlightEdit()
+    {
+        CanEditFlight = true;
+    }
+
+    private async Task LoadFromApiAsync()
+    {
+        try
+        {
+            // Simple POST to MVC endpoint; replace with service-backed refresh later
+            var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
+            var resp = await http.PostAsync($"UserFlights/{UserFlightId}/LoadFromApi", content: null);
+            if (resp.IsSuccessStatusCode)
+            {
+                // No-op for now. Future: hydrate fields from response JSON
+                // await JS.InvokeVoidAsync("console.log", await resp.Content.ReadAsStringAsync());
+            }
+        }
+        catch
+        {
+            // Intentionally swallow; UX can be added later
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (Model is null) return;
+
+        // If manual edit enabled, update Flight entity
+        if (CanEditFlight)
+        {
+            var flight = await FlightService.GetFlightByIdAsync(FlightId);
+            if (flight is not null)
+            {
+                flight.FlightNumber = FlightNumber;
+                // TODO: Resolve airport codes to IDs via AirportService if changed
+                flight.DepartureTimeUtc = DepartureTimeUtc;
+                flight.ArrivalTimeUtc = ArrivalTimeUtc;
+                await FlightService.UpdateFlightAsync(flight);
+            }
+        }
+
+        var update = new CreateUserFlightDto
+        {
+            FlightId = FlightId,
+            FlightClass = FlightClass,
+            SeatNumber = SeatNumber,
+            Notes = Notes,
+            DidFly = DidFly
+        };
+        await UserFlightService.UpdateUserFlightAsync(UserFlightId, update);
+
+        // back to MVC details (server render)
+        Nav.NavigateTo($"/UserFlights/Details/{UserFlightId}", forceLoad: true);
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo($"/UserFlights/Details/{UserFlightId}", forceLoad: true);
+    }
+}

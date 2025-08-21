@@ -14,6 +14,7 @@ public record CreateUserFlightDto
     public FlightClass FlightClass { get; init; } = FlightClass.Economy;
     public string SeatNumber { get; init; } = string.Empty;
     public string? Notes { get; init; }
+    public bool DidFly { get; init; } = true;
 
     // Optional fields to allow creating a new Flight atomically when FlightId is not provided
     public string? DepartureAirportCode { get; init; }
