@@ -10,7 +10,7 @@ using FlightTracker.Application.Services.Interfaces;
 
 namespace FlightTracker.Web.Controllers.Web;
 
-public class UserFlightsController(IUserFlightService userFlightService, IFlightService flightService, IFlightLookupService flightLookupService) : Controller
+public class UserFlightsController(IUserFlightService userFlightService, IFlightService flightService, IFlightLookupService flightLookupService, IAirportService airportService) : Controller
 {
     [HttpGet("/UserFlights/Details/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken = default)
@@ -88,10 +88,19 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
         flight.FlightNumber = form.FlightNumber;
         if (!string.IsNullOrWhiteSpace(form.DepartureAirportCode))
         {
-            // TODO: Resolve code to airport entity via IAirportService if necessary
+            var dep = await airportService.GetAirportByCodeAsync(form.DepartureAirportCode.Trim(), cancellationToken);
+            if (dep is not null)
+            {
+                flight.DepartureAirportId = dep.Id;
+            }
         }
         if (!string.IsNullOrWhiteSpace(form.ArrivalAirportCode))
         {
+            var arr = await airportService.GetAirportByCodeAsync(form.ArrivalAirportCode.Trim(), cancellationToken);
+            if (arr is not null)
+            {
+                flight.ArrivalAirportId = arr.Id;
+            }
         }
         flight.DepartureTimeUtc = form.DepartureTimeUtc;
         flight.ArrivalTimeUtc = form.ArrivalTimeUtc;

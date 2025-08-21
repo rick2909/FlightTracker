@@ -9,6 +9,7 @@
 @inject IAirportService AirportService
 @inject NavigationManager Nav
 @inject IJSRuntime JS
+@inject NotificationService NotificationService
 
 <div class="card shadow-sm">
     <div class="card-body">
@@ -217,10 +218,28 @@
             // Simple POST to MVC endpoint; replace with service-backed refresh later
             var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
             var resp = await http.PostAsync($"UserFlights/{UserFlightId}/LoadFromApi", content: null);
-            if (resp.IsSuccessStatusCode)
+            var payload = await resp.Content.ReadAsStringAsync();
+            try
             {
-                // No-op for now. Future: hydrate fields from response JSON
-                // await JS.InvokeVoidAsync("console.log", await resp.Content.ReadAsStringAsync());
+                using var doc = System.Text.Json.JsonDocument.Parse(payload);
+                var root = doc.RootElement;
+                var status = root.TryGetProperty("status", out var s) ? s.GetString() : null;
+                switch (status)
+                {
+                    case "no_changes":
+                        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "No changes", Detail = "No changes found.", Duration = 2500 });
+                        break;
+                    case "changes":
+                        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Updates available", Detail = "New flight data found.", Duration = 2500 });
+                        break;
+                    default:
+                        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = "Not found", Detail = "No flight found via lookup.", Duration = 2500 });
+                        break;
+                }
+            }
+            catch
+            {
+                // Ignore JSON parse issues
             }
         }
         catch
