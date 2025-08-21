@@ -149,11 +149,7 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
             return NotFound(new { status = "not_found", message = "Current flight not found." });
         }
 
-        var noChanges = string.Equals(candidate.FlightNumber, currentFlight.FlightNumber, StringComparison.OrdinalIgnoreCase)
-                        && candidate.DepartureTimeUtc == currentFlight.DepartureTimeUtc
-                        && candidate.ArrivalTimeUtc == currentFlight.ArrivalTimeUtc
-                        && candidate.DepartureAirportId == currentFlight.DepartureAirportId
-                        && candidate.ArrivalAirportId == currentFlight.ArrivalAirportId;
+    var noChanges = currentFlight.HasSameScheduleAndRoute(candidate);
 
         if (noChanges)
         {

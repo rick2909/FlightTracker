@@ -82,4 +82,23 @@ public class Flight
     /// Optional collection for related operational notes or events in future iterations.
     /// </summary>
     public ICollection<string> Tags { get; set; } = new List<string>();
+
+    /// <summary>
+    /// Compares this flight to another for schedule and route equivalence.
+    /// Useful for detecting whether an external lookup yields any changes
+    /// relevant to the user-facing data without implying entity identity.
+    /// </summary>
+    public bool HasSameScheduleAndRoute(Flight? other)
+    {
+        if (other is null)
+        {
+            return false;
+        }
+
+        return string.Equals(FlightNumber, other.FlightNumber, StringComparison.OrdinalIgnoreCase)
+               && DepartureTimeUtc == other.DepartureTimeUtc
+               && ArrivalTimeUtc == other.ArrivalTimeUtc
+               && DepartureAirportId == other.DepartureAirportId
+               && ArrivalAirportId == other.ArrivalAirportId;
+    }
 }
