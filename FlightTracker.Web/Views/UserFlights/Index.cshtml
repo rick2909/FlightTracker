@@ -1,0 +1,77 @@
+@model IEnumerable<FlightTracker.Application.Dtos.UserFlightDto>
+@{
+    ViewData["Title"] = "My Flights";
+}
+
+@section HeaderContent {
+    <div class="remove__header"></div>
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="ft-toolbar">
+            <h1>My Flights</h1>
+            <div class="ft-toolbar__actions">
+                <component type="typeof(FlightTracker.Web.Components.Flights.AddFlightLauncher)"
+                            render-mode="Server" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Flight History (@Model.Count() flights)</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.Any())
+                {
+                    <component type="typeof(FlightTracker.Web.Components.UserFlightsList)"
+                                render-mode="ServerPrerendered"
+                                param-Flights="Model" />
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="fas fa-plane fa-3x text-muted mb-3"></i>
+                        <h4>No flights recorded</h4>
+                        <p class="text-muted">Start tracking your aviation journey by adding your first flight!</p>
+                        <component type="typeof(FlightTracker.Web.Components.Flights.AddFlightLauncher)"
+                                    render-mode="Server" />
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetClassBadgeColor(FlightTracker.Domain.Enums.FlightClass flightClass)
+    {
+        return flightClass switch
+        {
+            FlightTracker.Domain.Enums.FlightClass.First => "bg-warning text-dark",
+            FlightTracker.Domain.Enums.FlightClass.Business => "bg-info",
+            FlightTracker.Domain.Enums.FlightClass.PremiumEconomy => "bg-secondary",
+            FlightTracker.Domain.Enums.FlightClass.Economy => "bg-primary",
+            _ => "bg-light text-dark"
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        // Initialize Bootstrap tooltips without jQuery (Bootstrap 5+)
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+                // If Bootstrap JS is present globally, init via its API; otherwise skip
+                if (window.bootstrap && window.bootstrap.Tooltip) {
+                    new window.bootstrap.Tooltip(tooltipTriggerEl);
+                }
+            });
+        });
+    </script>
+}

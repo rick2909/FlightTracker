@@ -24,6 +24,9 @@ builder.Services.AddServerSideBlazor().AddCircuitOptions(o =>
     }
 });
 
+// Radzen services (Notification, Dialog, Tooltip, ContextMenu)
+builder.Services.AddRadzenComponents();
+
 // Configure Entity Framework (SQLite for local inspection)
 builder.Services.AddDbContext<FlightTrackerDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite") ?? "Data Source=flighttracker.dev.db"));

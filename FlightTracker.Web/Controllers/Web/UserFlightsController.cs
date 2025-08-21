@@ -7,11 +7,76 @@ using FlightTracker.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 
 using FlightTracker.Application.Services.Interfaces;
+using FlightTracker.Domain.Enums;
 
 namespace FlightTracker.Web.Controllers.Web;
 
 public class UserFlightsController(IUserFlightService userFlightService, IFlightService flightService, IFlightLookupService flightLookupService) : Controller
 {
+    [HttpGet("/UserFlights/{userId:int?}")]
+    public async Task<IActionResult> Index(
+        int? userId,
+        string? q,
+        FlightClass? @class,
+        bool? didFly,
+        DateTime? fromUtc,
+        DateTime? toUtc,
+        int page = 1,
+        int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Replace with actual current user id when auth is wired
+        const int demoUserId = 1;
+        var effectiveUserId = (userId.HasValue && userId.Value > 0) ? userId.Value : demoUserId;
+        var flights = await userFlightService.GetUserFlightsAsync(effectiveUserId, cancellationToken);
+
+        // Apply optional server-side filters (helps on large lists)
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var term = q.Trim();
+            flights = flights.Where(f => f.FlightNumber?.Contains(term, StringComparison.OrdinalIgnoreCase) == true);
+        }
+        if (@class.HasValue)
+        {
+            var cls = @class.Value;
+            flights = flights.Where(f => f.FlightClass == cls);
+        }
+        if (didFly.HasValue)
+        {
+            var flag = didFly.Value;
+            flights = flights.Where(f => f.DidFly == flag);
+        }
+        if (fromUtc.HasValue)
+        {
+            var from = DateTime.SpecifyKind(fromUtc.Value.Date, DateTimeKind.Utc);
+            flights = flights.Where(f => f.DepartureTimeUtc >= from);
+        }
+        if (toUtc.HasValue)
+        {
+            var to = DateTime.SpecifyKind(toUtc.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
+            flights = flights.Where(f => f.DepartureTimeUtc <= to);
+        }
+
+        // Server-side paging (optional)
+        var ordered = flights.OrderByDescending(f => f.DepartureTimeUtc);
+        var totalCount = ordered.Count();
+        if (pageSize <= 0) pageSize = 20;
+        if (page <= 0) page = 1;
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+        if (page > totalPages && totalPages > 0) page = totalPages;
+        var pageItems = ordered
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        ViewData["Page"] = page;
+        ViewData["PageSize"] = pageSize;
+        ViewData["TotalCount"] = totalCount;
+        ViewData["TotalPages"] = totalPages;
+
+        return View(pageItems);
+    }
+
     [HttpGet("/UserFlights/Details/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken = default)
     {

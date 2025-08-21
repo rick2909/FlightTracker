@@ -63,7 +63,7 @@
             <span class="material-symbols-outlined" aria-hidden="true">globe</span>
             <span class="sidebar__text">Dashboard</span>
         </a>
-        <a class="sidebar__link @(IsActive("Dashboard","MyFlights") ? "is-active" : null)" asp-controller="Dashboard" asp-action="MyFlights">
+        <a class="sidebar__link @(IsActive("Dashboard","MyFlights") ? "is-active" : null)" asp-controller="UserFlights" asp-action="Index" >
             <span class="material-symbols-outlined" aria-hidden="true">flight</span>
             <span class="sidebar__text">Flights</span>
         </a>
