@@ -56,8 +56,7 @@
                 tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
             }
 
-            var utcKind = DateTime.SpecifyKind(utc, DateTimeKind.Utc);
-            var local = TimeZoneInfo.ConvertTimeFromUtc(utcKind, tz);
+            var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), tz);
             var offset = tz.GetUtcOffset(local);
             var sign = offset < TimeSpan.Zero ? "-" : "+";
             var hh = Math.Abs(offset.Hours).ToString("00");

@@ -1,0 +1,395 @@
+@using FlightTracker.Application.Dtos
+@using FlightTracker.Application.Services.Interfaces
+@using FlightTracker.Domain.Enums
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@using TimeZoneConverter
+@inject IUserFlightService UserFlightService
+@inject IFlightService FlightService
+@inject IAirportService AirportService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject NotificationService NotificationService
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @if (Model is null)
+        {
+            <div>Loading…</div>
+        }
+        else
+        {
+            <EditForm Model="@this" OnValidSubmit="SaveAsync" class="ft-form">
+                <div class="ft-form__row">
+                    <div class="ft-form__field">
+                        <label>Class</label>
+                        <RadzenDropDown TValue="FlightClass"
+                                        @bind-Value="FlightClass"
+                                        Data="@flightClasses"
+                                        Style="width:100%" />
+                    </div>
+                    <div class="ft-form__field">
+                        <label>Seat</label>
+                        <RadzenTextBox @bind-Value="SeatNumber" Placeholder="e.g., 12A" Style="width:100%" />
+                    </div>
+                </div>
+
+                <div class="ft-form__field">
+                    <label>Notes</label>
+                    <RadzenTextArea @bind-Value="Notes" Rows="4" Placeholder="Add any trip notes (service, delays, etc.)" Style="width:100%" />
+                </div>
+
+                <div class="ft-form__section">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Flight details</h6>
+                        <div class="ft-form__actions" style="padding:0">
+                            <RadzenButton Shade="Shade.Light" ButtonStyle="ButtonStyle.Warning" Click="@EnableManualFlightEdit" Disabled="@CanEditFlight" Text="Enable manual edit" />
+                            <RadzenButton Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Click="@LoadFromApiAsync" Text="Load from API" Style="margin-left:.5rem" />
+                        </div>
+                    </div>
+                    <div class="ft-form__row">
+                        <div class="ft-form__field">
+                            <label>Flight number</label>
+                            <RadzenTextBox @bind-Value="FlightNumber" Disabled="@(!CanEditFlight)" Style="width:100%" />
+                            @if (HasPendingFlightNumber)
+                            {
+                                <div class="rz-text-info small rz-mt-1">
+                                    Suggested: <strong>@pendingChanges.FlightNumber</strong>
+                                    <RadzenButton Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Info" Text="Apply" Click="@ApplyFlightNumber" Style="margin-left:.5rem" />
+                                </div>
+                            }
+                        </div>
+                        <div></div>
+                    </div>
+                    <div class="ft-form__row">
+                        <div class="ft-form__field">
+                            <label>Departure airport</label>
+                            <RadzenTextBox @bind-Value="DepartureAirportCode" Placeholder="IATA or ICAO" Disabled="@(!CanEditFlight)" Style="width:100%" />
+                        </div>
+                        <div class="ft-form__field">
+                            <label>Arrival airport</label>
+                            <RadzenTextBox @bind-Value="ArrivalAirportCode" Placeholder="IATA or ICAO" Disabled="@(!CanEditFlight)" Style="width:100%" />
+                        </div>
+                    </div>
+                    <div class="ft-form__row">
+                        <div class="ft-form__field">
+                            <label>Departure (UTC)</label>
+                            <RadzenDatePicker @bind-Value="DepartureTimeForm" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Disabled="@(!CanEditFlight)" Style="width:100%" />
+                            <div class="small text-muted">Local: @FormatLocal(DepartureTimeUtc, DepartureTimeZoneId)</div>
+                            @if (HasPendingDepartureTime)
+                            {
+                                <div class="rz-text-info small rz-mt-1">
+                                    Suggested: @FormatLocal(pendingChanges.DepartureTimeUtc!.Value, DepartureTimeZoneId)
+                                    <RadzenButton Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Info" Text="Apply" Click="@ApplyDepartureTime" Style="margin-left:.5rem" />
+                                </div>
+                            }
+                        </div>
+                        <div class="ft-form__field">
+                            <label>Arrival (UTC)</label>
+                            <RadzenDatePicker @bind-Value="ArrivalTimeForm" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Disabled="@(!CanEditFlight)" Style="width:100%" />
+                            <div class="small text-muted">Local: @FormatLocal(ArrivalTimeUtc, ArrivalTimeZoneId)</div>
+                            @if (HasPendingArrivalTime)
+                            {
+                                <div class="rz-text-info small rz-mt-1">
+                                    Suggested: @FormatLocal(pendingChanges.ArrivalTimeUtc!.Value, ArrivalTimeZoneId)
+                                    <RadzenButton Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Info" Text="Apply" Click="@ApplyArrivalTime" Style="margin-left:.5rem" />
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ft-form__actions">
+                    <RadzenButton ButtonStyle="ButtonStyle.Secondary" Click="@Cancel" Text="Cancel" />
+                    <RadzenButton ButtonStyle="ButtonStyle.Primary" Text="Save changes" ButtonType="ButtonType.Submit" Style="margin-left:.5rem" />
+                </div>
+            </EditForm>
+        }
+    </div>
+ </div>
+
+@code {
+    [Parameter] public int UserFlightId { get; set; }
+
+    // Backing model (loaded from service)
+    private UserFlightDto? Model;
+
+    // User flight fields
+    private FlightClass FlightClass { get; set; } = FlightClass.Economy;
+    private string SeatNumber { get; set; } = string.Empty;
+    private bool DidFly { get; set; } = true;
+    private string? Notes { get; set; }
+
+    // Flight fields
+    private int FlightId { get; set; }
+    private string FlightNumber { get; set; } = string.Empty;
+    private string? DepartureAirportCode { get; set; }
+    private string? ArrivalAirportCode { get; set; }
+    private DateTime DepartureTimeUtc { get; set; }
+    private DateTime ArrivalTimeUtc { get; set; }
+
+    // flight local time
+    private string? DepartureTimeZoneId { get; set; }
+    private string? ArrivalTimeZoneId { get; set; }
+
+    // UI state
+    private bool CanEditFlight { get; set; } = false;
+    private string? browserTimeZoneId;
+    private IEnumerable<FlightClass> flightClasses = Array.Empty<FlightClass>();
+    private IEnumerable<Option<bool>> statusOptions = Array.Empty<Option<bool>>();
+    private sealed record Option<T>(string Text, T Value);
+
+    // Pending changes preview (from API lookup)
+    private class PendingChanges
+    {
+        public string? FlightNumber { get; set; }
+        public DateTime? DepartureTimeUtc { get; set; }
+        public DateTime? ArrivalTimeUtc { get; set; }
+    }
+    private PendingChanges pendingChanges = new();
+    private bool HasPendingFlightNumber => !string.IsNullOrWhiteSpace(pendingChanges.FlightNumber) && !string.Equals(pendingChanges.FlightNumber, FlightNumber, StringComparison.OrdinalIgnoreCase);
+    private bool HasPendingDepartureTime => pendingChanges.DepartureTimeUtc.HasValue && pendingChanges.DepartureTimeUtc.Value != DepartureTimeUtc;
+    private bool HasPendingArrivalTime => pendingChanges.ArrivalTimeUtc.HasValue && pendingChanges.ArrivalTimeUtc.Value != ArrivalTimeUtc;
+
+    // Wrappers for InputDate which yields DateTime with Unspecified kind; we store as UTC
+    private DateTime DepartureTimeForm
+    {
+        get => DepartureTimeUtc == default ? DateTime.UtcNow : DepartureTimeUtc;
+        set => DepartureTimeUtc = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+    }
+
+    private DateTime ArrivalTimeForm
+    {
+        get => ArrivalTimeUtc == default ? DateTime.UtcNow : ArrivalTimeUtc;
+        set => ArrivalTimeUtc = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        flightClasses = Enum.GetValues(typeof(FlightClass)).Cast<FlightClass>().ToArray();
+        statusOptions = new List<Option<bool>>
+        {
+            new("Completed", true),
+            new("No Show", false)
+        };
+        var dto = await UserFlightService.GetByIdAsync(UserFlightId);
+        Model = dto;
+        if (dto is not null)
+        {
+            FlightId = dto.FlightId;
+            FlightClass = dto.FlightClass;
+            SeatNumber = dto.SeatNumber;
+            DidFly = dto.DidFly;
+            Notes = dto.Notes;
+            FlightNumber = dto.FlightNumber;
+            DepartureAirportCode = dto.DepartureIataCode ?? dto.DepartureIcaoCode ?? dto.DepartureAirportCode;
+            ArrivalAirportCode = dto.ArrivalIataCode ?? dto.ArrivalIcaoCode ?? dto.ArrivalAirportCode;
+            DepartureTimeUtc = DateTime.SpecifyKind(dto.DepartureTimeUtc, DateTimeKind.Utc);
+            ArrivalTimeUtc = DateTime.SpecifyKind(dto.ArrivalTimeUtc, DateTimeKind.Utc);
+            DepartureTimeZoneId = dto.DepartureTimeZoneId;
+            ArrivalTimeZoneId = dto.ArrivalTimeZoneId;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                browserTimeZoneId = await JS.InvokeAsync<string>("(function(){return Intl.DateTimeFormat().resolvedOptions().timeZone;})");
+            }
+            catch
+            {
+                browserTimeZoneId = null;
+            }
+            StateHasChanged();
+        }
+    }
+
+    private string FormatLocal(DateTime utc, string? timeZoneId)
+    {
+        if (string.IsNullOrWhiteSpace(timeZoneId))
+        {
+            return "-";
+        }
+
+        try
+        {
+            TimeZoneInfo tz;
+            try
+            {
+                tz = TZConvert.GetTimeZoneInfo(timeZoneId);
+            }
+            catch
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            }
+
+            var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), tz);
+            var offset = tz.GetUtcOffset(local);
+            var sign = offset < TimeSpan.Zero ? "-" : "+";
+            var hh = Math.Abs(offset.Hours).ToString("00");
+            var mm = Math.Abs(offset.Minutes).ToString("00");
+            return $"{local:MMM dd, yyyy HH:mm} (UTC{sign}{hh}:{mm})";
+        }
+        catch
+        {
+            return "-";
+        }
+    }
+
+    private void EnableManualFlightEdit()
+    {
+        CanEditFlight = true;
+    }
+
+    private async Task LoadFromApiAsync()
+    {
+        try
+        {
+            // Simple POST to MVC endpoint; replace with service-backed refresh later
+            var http = new HttpClient { BaseAddress = new Uri(Nav.BaseUri) };
+            var resp = await http.PostAsync($"UserFlights/{UserFlightId}/LoadFromApi", content: null);
+            var payload = await resp.Content.ReadAsStringAsync();
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(payload);
+                var root = doc.RootElement;
+                var status = root.TryGetProperty("status", out var s) ? s.GetString() : null;
+                switch (status)
+                {
+                    case "no_changes":
+                        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "No changes", Detail = "No changes found.", Duration = 2500 });
+                        break;
+                    case "changes":
+                        // Populate pending changes preview
+                        if (root.TryGetProperty("changes", out var changes))
+                        {
+                            if (changes.TryGetProperty("flightNumber", out var fn) && fn.ValueKind == System.Text.Json.JsonValueKind.String)
+                            {
+                                pendingChanges.FlightNumber = fn.GetString();
+                            }
+                            if (changes.TryGetProperty("departureTimeUtc", out var dtu))
+                            {
+                                var dt = TryGetUtc(dtu);
+                                if (dt.HasValue) pendingChanges.DepartureTimeUtc = dt.Value;
+                            }
+                            if (changes.TryGetProperty("arrivalTimeUtc", out var atu))
+                            {
+                                var dt = TryGetUtc(atu);
+                                if (dt.HasValue) pendingChanges.ArrivalTimeUtc = dt.Value;
+                            }
+                        }
+                        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Updates available", Detail = "New flight data found.", Duration = 2500 });
+                        StateHasChanged();
+                        break;
+                    default:
+                        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = "Not found", Detail = "No flight found via lookup.", Duration = 2500 });
+                        break;
+                }
+            }
+            catch
+            {
+                // Ignore JSON parse issues
+            }
+        }
+        catch
+        {
+            // Intentionally swallow; UX can be added later
+        }
+    }
+
+    private static DateTime? TryGetUtc(System.Text.Json.JsonElement el)
+    {
+        try
+        {
+            var dt = el.GetDateTime();
+            return DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+        }
+        catch
+        {
+            var s = el.GetString();
+            if (DateTime.TryParse(s, out var parsed))
+            {
+                return DateTime.SpecifyKind(parsed, DateTimeKind.Utc);
+            }
+        }
+        return null;
+    }
+
+    private void ApplyFlightNumber()
+    {
+        if (!HasPendingFlightNumber) return;
+        CanEditFlight = true;
+        FlightNumber = pendingChanges.FlightNumber!;
+        pendingChanges.FlightNumber = null;
+    }
+
+    private void ApplyDepartureTime()
+    {
+        if (!HasPendingDepartureTime) return;
+        CanEditFlight = true;
+        DepartureTimeUtc = pendingChanges.DepartureTimeUtc!.Value;
+        pendingChanges.DepartureTimeUtc = null;
+    }
+
+    private void ApplyArrivalTime()
+    {
+        if (!HasPendingArrivalTime) return;
+        CanEditFlight = true;
+        ArrivalTimeUtc = pendingChanges.ArrivalTimeUtc!.Value;
+        pendingChanges.ArrivalTimeUtc = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (Model is null) return;
+
+        var ufUpdate = new UpdateUserFlightDto
+        {
+            FlightClass = FlightClass,
+            SeatNumber = SeatNumber,
+            Notes = Notes,
+            DidFly = DidFly
+        };
+
+        var schedule = new FlightScheduleUpdateDto
+        {
+            FlightId = FlightId,
+            FlightNumber = FlightNumber,
+            DepartureAirportCode = DepartureAirportCode ?? string.Empty,
+            ArrivalAirportCode = ArrivalAirportCode ?? string.Empty,
+            DepartureTimeUtc = DepartureTimeUtc,
+            ArrivalTimeUtc = ArrivalTimeUtc
+        };
+
+        try
+        {
+            // If manual edit not enabled, still allow updating user-flight fields only by passing current schedule
+            await UserFlightService.UpdateUserFlightAndScheduleAsync(UserFlightId, ufUpdate, schedule);
+        }
+        catch (FluentValidation.ValidationException vex)
+        {
+            foreach (var error in vex.Errors)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Validation error",
+                    Detail = $"{error.PropertyName}: {error.ErrorMessage}",
+                    Duration = 4000
+                });
+            }
+            return;
+        }
+
+        // back to MVC details (server render)
+        Nav.NavigateTo($"/UserFlights/Details/{UserFlightId}", forceLoad: true);
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo($"/UserFlights/Details/{UserFlightId}", forceLoad: true);
+    }
+}

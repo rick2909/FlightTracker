@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Radzen;
 using FlightTracker.Web;
+using AutoMapper;
+using FlightTracker.Application.Mapping;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +44,15 @@ builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
     c.Timeout = TimeSpan.FromSeconds(3);
 });
 builder.Services.AddScoped<IFlightLookupService, FlightLookupService>();
+
+// External provider(s)
+builder.Services.AddScoped<IFlightDataProvider, FlightTracker.Infrastructure.External.OpenSkyClient>();
+
+// AutoMapper
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<ApplicationMappingProfile>();
+});
 
 // Identity (basic, for seeding users)
 builder.Services

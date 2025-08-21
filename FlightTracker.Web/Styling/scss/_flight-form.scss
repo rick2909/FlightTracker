@@ -4,7 +4,7 @@
 .ft-form {
   &__row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
     gap: $spacing-4;
   }
 
@@ -50,6 +50,22 @@
     color: $color-error;
     font-size: .85rem;
     margin-top: $spacing-1;
+  }
+}
+
+// Responsive: stack rows on narrow screens
+@media (max-width: 768px) {
+  .ft-form {
+    &__row {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// Small screens: stack form rows to single column
+@media (max-width: 576px) {
+  .ft-form__row {
+    grid-template-columns: 1fr;
   }
 }
 

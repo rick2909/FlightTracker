@@ -37,6 +37,15 @@ public interface IUserFlightService
     Task<UserFlightDto?> UpdateUserFlightAsync(int id, CreateUserFlightDto updateDto, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Updates both the user flight fields and underlying flight schedule/route in one operation.
+    /// </summary>
+    Task<UserFlightDto?> UpdateUserFlightAndScheduleAsync(
+        int id,
+        UpdateUserFlightDto userFlight,
+        FlightScheduleUpdateDto schedule,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes a user flight experience.
     /// </summary>
     Task<bool> DeleteUserFlightAsync(int id, CancellationToken cancellationToken = default);

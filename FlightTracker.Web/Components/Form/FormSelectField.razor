@@ -1,0 +1,34 @@
+@using Radzen
+@using Radzen.Blazor
+@inherits ComponentBase
+
+@code {
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string Name { get; set; } = string.Empty;
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public IEnumerable<SelectItem> Items { get; set; } = Enumerable.Empty<SelectItem>();
+    [Parameter] public string? Value { get; set; }
+
+    private string currentValue = string.Empty;
+    private string inputId => string.IsNullOrWhiteSpace(Id) ? $"{Name}-select" : Id!;
+
+    protected override void OnParametersSet()
+    {
+        currentValue = Value ?? string.Empty;
+    }
+
+    public class SelectItem
+    {
+        public string Value { get; set; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
+    }
+}
+
+<div class="ft-form__field">
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <label for="@inputId">@Label</label>
+    }
+    <RadzenDropDown Data="@Items" TextProperty="Text" ValueProperty="Value" @bind-Value="currentValue" id="@inputId" Style="width:100%" />
+    <input type="hidden" name="@Name" value="@currentValue" />
+</div>
