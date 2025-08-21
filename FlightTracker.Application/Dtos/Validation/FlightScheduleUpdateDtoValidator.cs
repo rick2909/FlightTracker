@@ -20,7 +20,7 @@ public class FlightScheduleUpdateDtoValidator : AbstractValidator<FlightSchedule
             .NotEmpty();
 
         RuleFor(x => x.ArrivalTimeUtc)
-            .Must((x, arr) => arr > x.DepartureTimeUtc)
+            .Must((x, arrivalTimeUtc) => arrivalTimeUtc > x.DepartureTimeUtc)
             .WithMessage("Arrival time must be after departure time.");
     }
 }

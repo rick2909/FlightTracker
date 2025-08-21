@@ -28,7 +28,7 @@ public class CreateUserFlightDtoValidator : AbstractValidator<CreateUserFlightDt
                 .NotNull();
 
             RuleFor(x => x)
-                .Must(x => x.DepartureTimeUtc.HasValue && x.ArrivalTimeUtc.HasValue && x.ArrivalTimeUtc.Value > x.DepartureTimeUtc.Value)
+                .Must(ValidateArrivalAfterDeparture)
                 .WithMessage("Arrival time must be after departure time.");
         });
 
@@ -38,5 +38,12 @@ public class CreateUserFlightDtoValidator : AbstractValidator<CreateUserFlightDt
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
             .When(x => x.Notes != null);
+    }
+
+    private bool ValidateArrivalAfterDeparture(CreateUserFlightDto dto)
+    {
+        return dto.DepartureTimeUtc.HasValue
+            && dto.ArrivalTimeUtc.HasValue
+            && dto.ArrivalTimeUtc.Value > dto.DepartureTimeUtc.Value;
     }
 }
