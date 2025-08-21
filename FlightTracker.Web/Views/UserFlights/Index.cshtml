@@ -1,6 +1,9 @@
 @model IEnumerable<FlightTracker.Application.Dtos.UserFlightDto>
 @{
-    ViewData["Title"] = "My Flights";
+    int? requestedUserId = ViewData["RequestedUserId"] as int?;
+    string title = requestedUserId.HasValue ? $"User #{requestedUserId.Value} Flights" : "My Flights";
+
+    ViewData["Title"] = title;
 }
 
 @section HeaderContent {
@@ -10,7 +13,9 @@
 <div class="row">
     <div class="col-12">
         <div class="ft-toolbar">
-            <h1>My Flights</h1>
+            <h1 class="d-flex align-items-center">
+                @title
+            </h1>
             <div class="ft-toolbar__actions">
                 <component type="typeof(FlightTracker.Web.Components.Flights.AddFlightLauncher)"
                             render-mode="Server" />

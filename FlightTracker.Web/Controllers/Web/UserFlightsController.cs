@@ -29,6 +29,7 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
         const int demoUserId = 1;
         var effectiveUserId = (userId.HasValue && userId.Value > 0) ? userId.Value : demoUserId;
         var flights = await userFlightService.GetUserFlightsAsync(effectiveUserId, cancellationToken);
+        ViewData["RequestedUserId"] = userId;
 
         // Apply optional server-side filters (helps on large lists)
         if (!string.IsNullOrWhiteSpace(q))
@@ -69,7 +70,7 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
             .Take(pageSize)
             .ToList();
 
-        ViewData["Page"] = page;
+    ViewData["Page"] = page;
         ViewData["PageSize"] = pageSize;
         ViewData["TotalCount"] = totalCount;
         ViewData["TotalPages"] = totalPages;
