@@ -51,6 +51,13 @@
                         <div class="ft-form__field">
                             <label>Flight number</label>
                             <RadzenTextBox @bind-Value="FlightNumber" Disabled="@(!CanEditFlight)" Style="width:100%" />
+                            @if (HasPendingFlightNumber)
+                            {
+                                <div class="rz-text-info small rz-mt-1">
+                                    Suggested: <strong>@pendingChanges.FlightNumber</strong>
+                                    <RadzenButton Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Info" Text="Apply" Click="@ApplyFlightNumber" Style="margin-left:.5rem" />
+                                </div>
+                            }
                         </div>
                         <div></div>
                     </div>
@@ -69,11 +76,25 @@
                             <label>Departure (UTC)</label>
                             <RadzenDatePicker @bind-Value="DepartureTimeForm" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Disabled="@(!CanEditFlight)" Style="width:100%" />
                             <div class="small text-muted">Local: @FormatLocal(DepartureTimeUtc, DepartureTimeZoneId)</div>
+                            @if (HasPendingDepartureTime)
+                            {
+                                <div class="rz-text-info small rz-mt-1">
+                                    Suggested: @FormatLocal(pendingChanges.DepartureTimeUtc!.Value, DepartureTimeZoneId)
+                                    <RadzenButton Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Info" Text="Apply" Click="@ApplyDepartureTime" Style="margin-left:.5rem" />
+                                </div>
+                            }
                         </div>
                         <div class="ft-form__field">
                             <label>Arrival (UTC)</label>
                             <RadzenDatePicker @bind-Value="ArrivalTimeForm" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Disabled="@(!CanEditFlight)" Style="width:100%" />
                             <div class="small text-muted">Local: @FormatLocal(ArrivalTimeUtc, ArrivalTimeZoneId)</div>
+                            @if (HasPendingArrivalTime)
+                            {
+                                <div class="rz-text-info small rz-mt-1">
+                                    Suggested: @FormatLocal(pendingChanges.ArrivalTimeUtc!.Value, ArrivalTimeZoneId)
+                                    <RadzenButton Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Info" Text="Apply" Click="@ApplyArrivalTime" Style="margin-left:.5rem" />
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>
@@ -117,6 +138,18 @@
     private IEnumerable<FlightClass> flightClasses = Array.Empty<FlightClass>();
     private IEnumerable<Option<bool>> statusOptions = Array.Empty<Option<bool>>();
     private sealed record Option<T>(string Text, T Value);
+
+    // Pending changes preview (from API lookup)
+    private class PendingChanges
+    {
+        public string? FlightNumber { get; set; }
+        public DateTime? DepartureTimeUtc { get; set; }
+        public DateTime? ArrivalTimeUtc { get; set; }
+    }
+    private PendingChanges pendingChanges = new();
+    private bool HasPendingFlightNumber => !string.IsNullOrWhiteSpace(pendingChanges.FlightNumber) && !string.Equals(pendingChanges.FlightNumber, FlightNumber, StringComparison.OrdinalIgnoreCase);
+    private bool HasPendingDepartureTime => pendingChanges.DepartureTimeUtc.HasValue && pendingChanges.DepartureTimeUtc.Value != DepartureTimeUtc;
+    private bool HasPendingArrivalTime => pendingChanges.ArrivalTimeUtc.HasValue && pendingChanges.ArrivalTimeUtc.Value != ArrivalTimeUtc;
 
     // Wrappers for InputDate which yields DateTime with Unspecified kind; we store as UTC
     private DateTime DepartureTimeForm
@@ -230,7 +263,26 @@
                         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "No changes", Detail = "No changes found.", Duration = 2500 });
                         break;
                     case "changes":
+                        // Populate pending changes preview
+                        if (root.TryGetProperty("changes", out var changes))
+                        {
+                            if (changes.TryGetProperty("flightNumber", out var fn) && fn.ValueKind == System.Text.Json.JsonValueKind.String)
+                            {
+                                pendingChanges.FlightNumber = fn.GetString();
+                            }
+                            if (changes.TryGetProperty("departureTimeUtc", out var dtu))
+                            {
+                                var dt = TryGetUtc(dtu);
+                                if (dt.HasValue) pendingChanges.DepartureTimeUtc = dt.Value;
+                            }
+                            if (changes.TryGetProperty("arrivalTimeUtc", out var atu))
+                            {
+                                var dt = TryGetUtc(atu);
+                                if (dt.HasValue) pendingChanges.ArrivalTimeUtc = dt.Value;
+                            }
+                        }
                         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Updates available", Detail = "New flight data found.", Duration = 2500 });
+                        StateHasChanged();
                         break;
                     default:
                         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = "Not found", Detail = "No flight found via lookup.", Duration = 2500 });
@@ -246,6 +298,48 @@
         {
             // Intentionally swallow; UX can be added later
         }
+    }
+
+    private static DateTime? TryGetUtc(System.Text.Json.JsonElement el)
+    {
+        try
+        {
+            var dt = el.GetDateTime();
+            return DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+        }
+        catch
+        {
+            var s = el.GetString();
+            if (DateTime.TryParse(s, out var parsed))
+            {
+                return DateTime.SpecifyKind(parsed, DateTimeKind.Utc);
+            }
+        }
+        return null;
+    }
+
+    private void ApplyFlightNumber()
+    {
+        if (!HasPendingFlightNumber) return;
+        CanEditFlight = true;
+        FlightNumber = pendingChanges.FlightNumber!;
+        pendingChanges.FlightNumber = null;
+    }
+
+    private void ApplyDepartureTime()
+    {
+        if (!HasPendingDepartureTime) return;
+        CanEditFlight = true;
+        DepartureTimeUtc = pendingChanges.DepartureTimeUtc!.Value;
+        pendingChanges.DepartureTimeUtc = null;
+    }
+
+    private void ApplyArrivalTime()
+    {
+        if (!HasPendingArrivalTime) return;
+        CanEditFlight = true;
+        ArrivalTimeUtc = pendingChanges.ArrivalTimeUtc!.Value;
+        pendingChanges.ArrivalTimeUtc = null;
     }
 
     private async Task SaveAsync()
