@@ -7,7 +7,7 @@ using FlightTracker.Domain.Entities;
 
 namespace FlightTracker.Application.Services.Implementation;
 
-public class FlightLookupService(IFlightRepository flights) : IFlightLookupService
+public class FlightLookupService(IFlightRepository flights, IFlightDataProvider provider) : IFlightLookupService
 {
     public async Task<Flight?> ResolveFlightAsync(string flightNumber, DateOnly date, CancellationToken cancellationToken = default)
     {
@@ -16,8 +16,10 @@ public class FlightLookupService(IFlightRepository flights) : IFlightLookupServi
         var local = await flights.GetByFlightNumberAndDateAsync(flightNumber.Trim().ToUpperInvariant(), date, cancellationToken);
         if (local != null) return local;
 
-        // TODO: External API lookup (OpenSky/FR24) via abstraction when available
-        return null;
+    // Fallback: External provider by number; bias to same-day departures
+    var startOfDayUtc = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+    var candidate = await provider.GetFlightByNumberAsync(flightNumber.Trim().ToUpperInvariant(), startOfDayUtc, cancellationToken);
+    return candidate;
     }
 
     public Task<IReadOnlyList<Flight>> SearchByFlightNumberAsync(string flightNumber, DateOnly? date = null, CancellationToken cancellationToken = default)

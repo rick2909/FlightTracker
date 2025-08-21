@@ -10,7 +10,7 @@ using FlightTracker.Application.Services.Interfaces;
 
 namespace FlightTracker.Web.Controllers.Web;
 
-public class UserFlightsController(IUserFlightService userFlightService, IFlightService flightService, IFlightLookupService flightLookupService, IAirportService airportService) : Controller
+public class UserFlightsController(IUserFlightService userFlightService, IFlightService flightService, IFlightLookupService flightLookupService) : Controller
 {
     [HttpGet("/UserFlights/Details/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken = default)
@@ -77,45 +77,25 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
             };
             return View(vm);
         }
-        // Update flight details (manual changes)
-        var flight = await flightService.GetFlightByIdAsync(form.FlightId, cancellationToken);
-        if (flight is null)
-        {
-            return NotFound();
-        }
-
-        // Map mutable flight fields
-        flight.FlightNumber = form.FlightNumber;
-        if (!string.IsNullOrWhiteSpace(form.DepartureAirportCode))
-        {
-            var dep = await airportService.GetAirportByCodeAsync(form.DepartureAirportCode.Trim(), cancellationToken);
-            if (dep is not null)
+        var updated = await userFlightService.UpdateUserFlightAndScheduleAsync(
+            id,
+            new UpdateUserFlightDto
             {
-                flight.DepartureAirportId = dep.Id;
-            }
-        }
-        if (!string.IsNullOrWhiteSpace(form.ArrivalAirportCode))
-        {
-            var arr = await airportService.GetAirportByCodeAsync(form.ArrivalAirportCode.Trim(), cancellationToken);
-            if (arr is not null)
+                FlightClass = form.FlightClass,
+                SeatNumber = form.SeatNumber,
+                Notes = form.Notes,
+                DidFly = form.DidFly
+            },
+            new FlightScheduleUpdateDto
             {
-                flight.ArrivalAirportId = arr.Id;
-            }
-        }
-        flight.DepartureTimeUtc = form.DepartureTimeUtc;
-        flight.ArrivalTimeUtc = form.ArrivalTimeUtc;
-        await flightService.UpdateFlightAsync(flight, cancellationToken);
-
-        // Update user-flight fields
-        var update = new CreateUserFlightDto
-        {
-            FlightId = form.FlightId,
-            FlightClass = form.FlightClass,
-            SeatNumber = form.SeatNumber,
-            Notes = form.Notes,
-            DidFly = form.DidFly
-        };
-        var updated = await userFlightService.UpdateUserFlightAsync(id, update, cancellationToken);
+                FlightId = form.FlightId,
+                FlightNumber = form.FlightNumber,
+                DepartureAirportCode = form.DepartureAirportCode ?? string.Empty,
+                ArrivalAirportCode = form.ArrivalAirportCode ?? string.Empty,
+                DepartureTimeUtc = form.DepartureTimeUtc,
+                ArrivalTimeUtc = form.ArrivalTimeUtc
+            },
+            cancellationToken);
         if (updated == null)
         {
             return NotFound();
@@ -136,14 +116,7 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
             return NotFound(new { status = "not_found", message = "User flight not found." });
         }
 
-        // Current behavior: simulate external not found until providers are integrated
-        var simulateExternalNotFound = true;
-        if (simulateExternalNotFound)
-        {
-            return NotFound(new { status = "not_found", message = "No flight found via lookup (not implemented)." });
-        }
-
-        // Future: try lookup based on flight number and departure date
+    // Try lookup based on flight number and departure date
         var date = DateOnly.FromDateTime(dto.DepartureTimeUtc);
         var candidate = await flightLookupService.ResolveFlightAsync(dto.FlightNumber, date, cancellationToken);
 
@@ -166,6 +139,8 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
         }
 
         // Return minimal delta payload for now (no DB update yet)
+        var depCode = candidate.DepartureAirport?.IataCode ?? candidate.DepartureAirport?.IcaoCode;
+        var arrCode = candidate.ArrivalAirport?.IataCode ?? candidate.ArrivalAirport?.IcaoCode;
         return Ok(new
         {
             status = "changes",
@@ -175,7 +150,9 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
                 departureTimeUtc = candidate.DepartureTimeUtc,
                 arrivalTimeUtc = candidate.ArrivalTimeUtc,
                 departureAirportId = candidate.DepartureAirportId,
-                arrivalAirportId = candidate.ArrivalAirportId
+                arrivalAirportId = candidate.ArrivalAirportId,
+                departureAirportCode = depCode,
+                arrivalAirportCode = arrCode
             }
         });
     }

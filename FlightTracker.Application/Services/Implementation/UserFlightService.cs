@@ -142,6 +142,57 @@ public class UserFlightService : IUserFlightService
     return await MapToDtoAsync(updatedUserFlight, cancellationToken);
     }
 
+    public async Task<UserFlightDto?> UpdateUserFlightAndScheduleAsync(
+        int id,
+        UpdateUserFlightDto userFlight,
+        FlightScheduleUpdateDto schedule,
+        CancellationToken cancellationToken = default)
+    {
+        var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
+        if (existingUserFlight == null)
+        {
+            return null;
+        }
+
+        var flight = await _flightRepository.GetByIdAsync(schedule.FlightId, cancellationToken);
+        if (flight is null)
+        {
+            return null;
+        }
+
+        // Resolve airports by code
+        var depAirport = await _airportService.GetAirportByCodeAsync(schedule.DepartureAirportCode, cancellationToken);
+        var arrAirport = await _airportService.GetAirportByCodeAsync(schedule.ArrivalAirportCode, cancellationToken);
+        if (depAirport is null || arrAirport is null)
+        {
+            throw new ArgumentException("Invalid airport code(s) provided.");
+        }
+
+        if (schedule.ArrivalTimeUtc <= schedule.DepartureTimeUtc)
+        {
+            throw new ArgumentException("Arrival time must be after departure time.");
+        }
+
+        // Update flight schedule/route
+        flight.FlightNumber = schedule.FlightNumber;
+        flight.DepartureAirportId = depAirport.Id;
+        flight.ArrivalAirportId = arrAirport.Id;
+        flight.DepartureTimeUtc = schedule.DepartureTimeUtc;
+        flight.ArrivalTimeUtc = schedule.ArrivalTimeUtc;
+        await _flightService.UpdateFlightAsync(flight, cancellationToken);
+
+        // Update user flight fields
+        existingUserFlight.FlightClass = userFlight.FlightClass;
+        existingUserFlight.SeatNumber = userFlight.SeatNumber;
+        existingUserFlight.Notes = userFlight.Notes;
+        existingUserFlight.DidFly = userFlight.DidFly;
+        var updatedUserFlight = await _userFlightRepository.UpdateAsync(existingUserFlight, cancellationToken);
+
+        // Reload with navs
+        var reloaded = await _userFlightRepository.GetByIdAsync(updatedUserFlight.Id, cancellationToken);
+        return await MapToDtoAsync(reloaded!, cancellationToken);
+    }
+
     public async Task<bool> DeleteUserFlightAsync(int id, CancellationToken cancellationToken = default)
     {
         var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);

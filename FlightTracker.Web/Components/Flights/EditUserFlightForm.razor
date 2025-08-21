@@ -346,29 +346,26 @@
     {
         if (Model is null) return;
 
-        // If manual edit enabled, update Flight entity
-        if (CanEditFlight)
+        var ufUpdate = new UpdateUserFlightDto
         {
-            var flight = await FlightService.GetFlightByIdAsync(FlightId);
-            if (flight is not null)
-            {
-                flight.FlightNumber = FlightNumber;
-                // TODO: Resolve airport codes to IDs via AirportService if changed
-                flight.DepartureTimeUtc = DepartureTimeUtc;
-                flight.ArrivalTimeUtc = ArrivalTimeUtc;
-                await FlightService.UpdateFlightAsync(flight);
-            }
-        }
-
-        var update = new CreateUserFlightDto
-        {
-            FlightId = FlightId,
             FlightClass = FlightClass,
             SeatNumber = SeatNumber,
             Notes = Notes,
             DidFly = DidFly
         };
-        await UserFlightService.UpdateUserFlightAsync(UserFlightId, update);
+
+        var schedule = new FlightScheduleUpdateDto
+        {
+            FlightId = FlightId,
+            FlightNumber = FlightNumber,
+            DepartureAirportCode = DepartureAirportCode ?? string.Empty,
+            ArrivalAirportCode = ArrivalAirportCode ?? string.Empty,
+            DepartureTimeUtc = DepartureTimeUtc,
+            ArrivalTimeUtc = ArrivalTimeUtc
+        };
+
+        // If manual edit not enabled, still allow updating user-flight fields only by passing current schedule
+        await UserFlightService.UpdateUserFlightAndScheduleAsync(UserFlightId, ufUpdate, schedule);
 
         // back to MVC details (server render)
         Nav.NavigateTo($"/UserFlights/Details/{UserFlightId}", forceLoad: true);

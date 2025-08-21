@@ -45,7 +45,8 @@ builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
 });
 builder.Services.AddScoped<IFlightLookupService, FlightLookupService>();
 
-// External provider(s) — deferred
+// External provider(s)
+builder.Services.AddScoped<IFlightDataProvider, FlightTracker.Infrastructure.External.OpenSkyClient>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(cfg =>
