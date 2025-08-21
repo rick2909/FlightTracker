@@ -34,10 +34,10 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Implement FlightService (CRUD + upcoming flights query)
 - [x] Implement AirportService (CRUD + lookup by code)
 - [x] Create DTOs: FlightDto, FlightDetailDto, AirportDto
-- [ ] Create/Update DTO variants (FlightCreate/UpdateDto, AirportCreate/UpdateDto)
+- [x] Create/Update DTO variants (UserFlight Update, Flight schedule update)
 - [x] Mapping profiles (AutoMapper) Domain <-> DTOs
 - [ ] Add Result wrapper (e.g., Result&lt;T&gt;, PaginatedResult&lt;T&gt;)
-- [ ] Add validation (FluentValidation or custom) for create/update DTOs
+- [x] Add validation (FluentValidation) for create/update DTOs (CreateUserFlightDto, UpdateUserFlightDto, FlightScheduleUpdateDto)
 - [ ] Add cancellation token propagation tests
 - [x] Define external provider abstraction: IFlightDataProvider (live flight & track retrieval)
 - [ ] Define IFlightStatsService + DTOs for passport/stats (TotalFlights, TotalHours, MonthlyCounts)
@@ -177,9 +177,9 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 ## Immediate Next Suggested Focus
 
-1. Build Users Flight info page (read-only) and edit page in Web project.
-2. Add validation + Result wrapper for create/update flows; introduce Create/Update DTOs for Flight and Airport.
-3. Add unit tests scaffold later once UI pages are in place (Domain/Application first).
-4. Defer external providers (OpenSky, FR24) until after user flows.
+1. Wrap up Flight details/edit (done): unified update use case, validators, Web wired.
+2. Optional: Add Result wrapper for APIs; improve error surface in Presentation.
+3. Implement external provider lookup (beyond stub) and consider background periodic refresh.
+4. Add unit tests for Application services (UserFlightService happy-path + validation failures).
 
 Keep this file updated; prune completed groups to maintain clarity.

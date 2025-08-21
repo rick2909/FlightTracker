@@ -1,8 +1,10 @@
 using FlightTracker.Application.Dtos;
+using FlightTracker.Application.Dtos.Validation;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
 using FlightTracker.Domain.Enums;
 using FlightTracker.Application.Repositories.Interfaces;
+using FluentValidation;
 
 namespace FlightTracker.Application.Services.Implementation;
 
@@ -58,6 +60,8 @@ public class UserFlightService : IUserFlightService
 
     public async Task<UserFlightDto> AddUserFlightAsync(int userId, CreateUserFlightDto createDto, CancellationToken cancellationToken = default)
     {
+    // Validate input
+    new CreateUserFlightDtoValidator().ValidateAndThrow(createDto);
                 // Use existing flight if provided; otherwise create from fields
                 Flight flight = createDto.FlightId > 0
                         ? await _flightRepository.GetByIdAsync(createDto.FlightId, cancellationToken)
@@ -111,6 +115,9 @@ public class UserFlightService : IUserFlightService
         FlightScheduleUpdateDto schedule,
         CancellationToken cancellationToken = default)
     {
+    // Validate inputs
+    new UpdateUserFlightDtoValidator().ValidateAndThrow(userFlight);
+    new FlightScheduleUpdateDtoValidator().ValidateAndThrow(schedule);
     var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
     if (existingUserFlight == null) return null;
 

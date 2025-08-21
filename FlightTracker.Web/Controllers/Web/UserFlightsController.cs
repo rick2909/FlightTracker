@@ -77,32 +77,47 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
             };
             return View(vm);
         }
-        var updated = await userFlightService.UpdateUserFlightAndScheduleAsync(
-            id,
-            new UpdateUserFlightDto
-            {
-                FlightClass = form.FlightClass,
-                SeatNumber = form.SeatNumber,
-                Notes = form.Notes,
-                DidFly = form.DidFly
-            },
-            new FlightScheduleUpdateDto
-            {
-                FlightId = form.FlightId,
-                FlightNumber = form.FlightNumber,
-                DepartureAirportCode = form.DepartureAirportCode ?? string.Empty,
-                ArrivalAirportCode = form.ArrivalAirportCode ?? string.Empty,
-                DepartureTimeUtc = form.DepartureTimeUtc,
-                ArrivalTimeUtc = form.ArrivalTimeUtc
-            },
-            cancellationToken);
-        if (updated == null)
+        try
         {
-            return NotFound();
-        }
+            var updated = await userFlightService.UpdateUserFlightAndScheduleAsync(
+                id,
+                new UpdateUserFlightDto
+                {
+                    FlightClass = form.FlightClass,
+                    SeatNumber = form.SeatNumber,
+                    Notes = form.Notes,
+                    DidFly = form.DidFly
+                },
+                new FlightScheduleUpdateDto
+                {
+                    FlightId = form.FlightId,
+                    FlightNumber = form.FlightNumber,
+                    DepartureAirportCode = form.DepartureAirportCode ?? string.Empty,
+                    ArrivalAirportCode = form.ArrivalAirportCode ?? string.Empty,
+                    DepartureTimeUtc = form.DepartureTimeUtc,
+                    ArrivalTimeUtc = form.ArrivalTimeUtc
+                },
+                cancellationToken);
+            if (updated == null)
+            {
+                return NotFound();
+            }
 
-        // Redirect to Details after successful update
-    return RedirectToAction("Details", new { id });
+            // Redirect to Details after successful update
+            return RedirectToAction("Details", new { id });
+        }
+        catch (FluentValidation.ValidationException vex)
+        {
+            foreach (var error in vex.Errors)
+            {
+                // Map validator property names to our form fields
+                var key = error.PropertyName;
+                ModelState.AddModelError(key, error.ErrorMessage);
+            }
+
+            // Return the view with the same form values so validation messages render
+            return View(form);
+        }
     }
 
     // Placeholder API endpoint to load/refresh flight details from external providers.

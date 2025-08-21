@@ -364,8 +364,25 @@
             ArrivalTimeUtc = ArrivalTimeUtc
         };
 
-        // If manual edit not enabled, still allow updating user-flight fields only by passing current schedule
-        await UserFlightService.UpdateUserFlightAndScheduleAsync(UserFlightId, ufUpdate, schedule);
+        try
+        {
+            // If manual edit not enabled, still allow updating user-flight fields only by passing current schedule
+            await UserFlightService.UpdateUserFlightAndScheduleAsync(UserFlightId, ufUpdate, schedule);
+        }
+        catch (FluentValidation.ValidationException vex)
+        {
+            foreach (var error in vex.Errors)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Validation error",
+                    Detail = $"{error.PropertyName}: {error.ErrorMessage}",
+                    Duration = 4000
+                });
+            }
+            return;
+        }
 
         // back to MVC details (server render)
         Nav.NavigateTo($"/UserFlights/Details/{UserFlightId}", forceLoad: true);
