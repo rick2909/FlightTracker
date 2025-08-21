@@ -226,13 +226,8 @@ public class UserFlightService : IUserFlightService
                 Manufacturer = userFlight.Flight.Aircraft.Manufacturer,
                 Model = userFlight.Flight.Aircraft.Model,
                 YearManufactured = userFlight.Flight.Aircraft.YearManufactured,
-                PassengerCapacity = userFlight.Flight.Aircraft.PassengerCapacity,
                 IcaoTypeCode = userFlight.Flight.Aircraft.IcaoTypeCode,
-                Notes = userFlight.Flight.Aircraft.Notes,
-                AirlineId = userFlight.Flight.Aircraft.AirlineId,
-                AirlineIcaoCode = userFlight.Flight.Aircraft.Airline?.IcaoCode,
-                AirlineIataCode = userFlight.Flight.Aircraft.Airline?.IataCode,
-                AirlineName = userFlight.Flight.Aircraft.Airline?.Name
+                Notes = userFlight.Flight.Aircraft.Notes
             }
             : null;
 
