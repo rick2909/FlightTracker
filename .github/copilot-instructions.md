@@ -48,6 +48,7 @@ Dependency Rule:
 - No double underscores. Avoid unnecessary abbreviations.
 - Prefer descriptive names over terse ones.
 - Single-letter vars only for tiny loop scopes.
+- Minimize nested conditionals; prefer guard clauses and small helper methods to keep code flat and readable.
 
 ## SCSS Guidelines
 - BEM naming: .block, .block__element, .block--modifier
@@ -90,6 +91,11 @@ Dependency Rule:
 - Error handling: Domain may throw domain-specific exceptions; Application maps to Result/DTO; Presentation translates to HTTP responses.
 - Logging only in Infrastructure & Presentation; Domain/Application stay free of logging frameworks.
 - Avoid circular dependencies; Infrastructure must NOT be referenced by Domain or Application.
+
+### Readability & Control Flow
+- Keep methods small and focused.
+- Prefer early returns over deep nesting.
+- Extract validation and mapping into local functions or private helpers when it simplifies the primary flow.
 
 ### Folder Conventions (Illustrative)
 Domain/
@@ -160,4 +166,6 @@ Presentation/
 
 ---
 When generating or modifying code, adhere strictly to the above. If unsure about placement, prefer asking or default to the most inward valid layer.
+
+When performing a code review, focus on readability and avoid nested ternary operators.
 

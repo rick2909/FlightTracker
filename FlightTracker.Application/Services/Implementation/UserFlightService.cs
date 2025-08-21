@@ -42,7 +42,7 @@ public class UserFlightService : IUserFlightService
     public async Task<UserFlightDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var userFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
-    return userFlight != null ? await MapToDtoAsync(userFlight, cancellationToken) : null;
+        return userFlight != null ? await MapToDtoAsync(userFlight, cancellationToken) : null;
     }
 
     public async Task<IEnumerable<UserFlightDto>> GetUserFlightsByClassAsync(int userId, FlightClass flightClass, CancellationToken cancellationToken = default)
@@ -58,48 +58,13 @@ public class UserFlightService : IUserFlightService
 
     public async Task<UserFlightDto> AddUserFlightAsync(int userId, CreateUserFlightDto createDto, CancellationToken cancellationToken = default)
     {
-        Flight? flight = null;
-        // If FlightId provided, use it; otherwise attempt to create a Flight from provided fields
-        if (createDto.FlightId > 0)
-        {
-            flight = await _flightRepository.GetByIdAsync(createDto.FlightId, cancellationToken);
+                // Use existing flight if provided; otherwise create from fields
+                Flight flight = createDto.FlightId > 0
+                        ? await _flightRepository.GetByIdAsync(createDto.FlightId, cancellationToken)
+                            ?? throw new ArgumentException($"Flight with ID {createDto.FlightId} not found.", nameof(createDto.FlightId))
+                        : await CreateFlightFromDtoAsync(createDto, cancellationToken);
 
-            if (flight == null)
-            {
-                throw new ArgumentException($"Flight with ID {createDto.FlightId} not found.", nameof(createDto.FlightId));
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(createDto.FlightNumber)
-            || string.IsNullOrWhiteSpace(createDto.DepartureAirportCode)
-            || string.IsNullOrWhiteSpace(createDto.ArrivalAirportCode)
-            || !createDto.DepartureTimeUtc.HasValue
-            || !createDto.ArrivalTimeUtc.HasValue)
-        {
-            throw new ArgumentException("Missing fields to create a new Flight. Provide FlightNumber, departure/arrival airport codes, and both times.");
-        }
-
-        var depAirport = await _airportService.GetAirportByCodeAsync(createDto.DepartureAirportCode!, cancellationToken);
-        var arrAirport = await _airportService.GetAirportByCodeAsync(createDto.ArrivalAirportCode!, cancellationToken);
-        // TODO make api call wich finds the airport and inserts it in our database.
-        if (depAirport is null || arrAirport is null)
-        {
-            throw new ArgumentException("Invalid airport code(s) provided.");
-        }
-
-        flight = new Flight
-        {
-            FlightNumber = createDto.FlightNumber!,
-            Status = FlightStatus.Scheduled,
-            DepartureAirportId = depAirport.Id,
-            ArrivalAirportId = arrAirport.Id,
-            DepartureTimeUtc = createDto.DepartureTimeUtc!.Value,
-            ArrivalTimeUtc = createDto.ArrivalTimeUtc!.Value
-        };
-
-        flight = await _flightService.AddFlightAsync(flight, cancellationToken);
-
-        // Check if user has already recorded this flight
+        // Check duplicate user-flight record
         var hasFlown = await _userFlightRepository.HasUserFlownFlightAsync(userId, flight.Id, cancellationToken);
         if (hasFlown)
         {
@@ -118,12 +83,10 @@ public class UserFlightService : IUserFlightService
         };
 
         var savedUserFlight = await _userFlightRepository.AddAsync(userFlight, cancellationToken);
-        
-        // Reload to get navigation properties
         var reloadedUserFlight = await _userFlightRepository.GetByIdAsync(savedUserFlight.Id, cancellationToken);
-    return await MapToDtoAsync(reloadedUserFlight!, cancellationToken);
-    }
+        return await MapToDtoAsync(reloadedUserFlight!, cancellationToken);
 
+    }
     public async Task<UserFlightDto?> UpdateUserFlightAsync(int id, CreateUserFlightDto updateDto, CancellationToken cancellationToken = default)
     {
         var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
@@ -136,10 +99,10 @@ public class UserFlightService : IUserFlightService
         existingUserFlight.FlightClass = updateDto.FlightClass;
         existingUserFlight.SeatNumber = updateDto.SeatNumber;
         existingUserFlight.Notes = updateDto.Notes;
-    existingUserFlight.DidFly = updateDto.DidFly;
+        existingUserFlight.DidFly = updateDto.DidFly;
 
         var updatedUserFlight = await _userFlightRepository.UpdateAsync(existingUserFlight, cancellationToken);
-    return await MapToDtoAsync(updatedUserFlight, cancellationToken);
+        return await MapToDtoAsync(updatedUserFlight, cancellationToken);
     }
 
     public async Task<UserFlightDto?> UpdateUserFlightAndScheduleAsync(
@@ -148,49 +111,24 @@ public class UserFlightService : IUserFlightService
         FlightScheduleUpdateDto schedule,
         CancellationToken cancellationToken = default)
     {
-        var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
-        if (existingUserFlight == null)
-        {
-            return null;
-        }
+    var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
+    if (existingUserFlight == null) return null;
 
-        var flight = await _flightRepository.GetByIdAsync(schedule.FlightId, cancellationToken);
-        if (flight is null)
-        {
-            return null;
-        }
+    var flight = await _flightRepository.GetByIdAsync(schedule.FlightId, cancellationToken);
+    if (flight is null) return null;
 
-        // Resolve airports by code
-        var depAirport = await _airportService.GetAirportByCodeAsync(schedule.DepartureAirportCode, cancellationToken);
-        var arrAirport = await _airportService.GetAirportByCodeAsync(schedule.ArrivalAirportCode, cancellationToken);
-        if (depAirport is null || arrAirport is null)
-        {
-            throw new ArgumentException("Invalid airport code(s) provided.");
-        }
+    await UpdateFlightScheduleAsync(flight, schedule, cancellationToken);
 
-        if (schedule.ArrivalTimeUtc <= schedule.DepartureTimeUtc)
-        {
-            throw new ArgumentException("Arrival time must be after departure time.");
-        }
+    // Update user flight fields
+    existingUserFlight.FlightClass = userFlight.FlightClass;
+    existingUserFlight.SeatNumber = userFlight.SeatNumber;
+    existingUserFlight.Notes = userFlight.Notes;
+    existingUserFlight.DidFly = userFlight.DidFly;
+    var updatedUserFlight = await _userFlightRepository.UpdateAsync(existingUserFlight, cancellationToken);
 
-        // Update flight schedule/route
-        flight.FlightNumber = schedule.FlightNumber;
-        flight.DepartureAirportId = depAirport.Id;
-        flight.ArrivalAirportId = arrAirport.Id;
-        flight.DepartureTimeUtc = schedule.DepartureTimeUtc;
-        flight.ArrivalTimeUtc = schedule.ArrivalTimeUtc;
-        await _flightService.UpdateFlightAsync(flight, cancellationToken);
-
-        // Update user flight fields
-        existingUserFlight.FlightClass = userFlight.FlightClass;
-        existingUserFlight.SeatNumber = userFlight.SeatNumber;
-        existingUserFlight.Notes = userFlight.Notes;
-        existingUserFlight.DidFly = userFlight.DidFly;
-        var updatedUserFlight = await _userFlightRepository.UpdateAsync(existingUserFlight, cancellationToken);
-
-        // Reload with navs
-        var reloaded = await _userFlightRepository.GetByIdAsync(updatedUserFlight.Id, cancellationToken);
-        return await MapToDtoAsync(reloaded!, cancellationToken);
+    // Reload with navs
+    var reloaded = await _userFlightRepository.GetByIdAsync(updatedUserFlight.Id, cancellationToken);
+    return await MapToDtoAsync(reloaded!, cancellationToken);
     }
 
     public async Task<bool> DeleteUserFlightAsync(int id, CancellationToken cancellationToken = default)
@@ -254,12 +192,12 @@ public class UserFlightService : IUserFlightService
 
     private int GetFlightTimeInMinutes(UserFlight userFlight)
     {
-        var DepartureTimeUtc = userFlight.Flight?.DepartureTimeUtc;
-        var ArrivalTimeUtc = userFlight.Flight?.ArrivalTimeUtc;
+        var departureTimeUtc = userFlight.Flight?.DepartureTimeUtc;
+        var arrivalTimeUtc = userFlight.Flight?.ArrivalTimeUtc;
 
-        if (DepartureTimeUtc.HasValue && ArrivalTimeUtc.HasValue)
+        if (departureTimeUtc.HasValue && arrivalTimeUtc.HasValue)
         {
-            var time = (ArrivalTimeUtc.Value - DepartureTimeUtc.Value).TotalMinutes;
+            var time = (arrivalTimeUtc.Value - departureTimeUtc.Value).TotalMinutes;
             return (int)Math.Round(time, MidpointRounding.AwayFromZero);
         }
 
@@ -283,18 +221,14 @@ public class UserFlightService : IUserFlightService
             : null;
 
         // Resolve time zones via airport codes if available
-        string? depTz = null;
-        string? arrTz = null;
-        if (!string.IsNullOrWhiteSpace(userFlight.Flight?.DepartureAirport?.IataCode) || !string.IsNullOrWhiteSpace(userFlight.Flight?.DepartureAirport?.IcaoCode))
-        {
-            var code = userFlight.Flight!.DepartureAirport!.IataCode ?? userFlight.Flight!.DepartureAirport!.IcaoCode!;
-            depTz = await _airportService.GetTimeZoneIdByAirportCodeAsync(code, cancellationToken);
-        }
-        if (!string.IsNullOrWhiteSpace(userFlight.Flight?.ArrivalAirport?.IataCode) || !string.IsNullOrWhiteSpace(userFlight.Flight?.ArrivalAirport?.IcaoCode))
-        {
-            var code = userFlight.Flight!.ArrivalAirport!.IataCode ?? userFlight.Flight!.ArrivalAirport!.IcaoCode!;
-            arrTz = await _airportService.GetTimeZoneIdByAirportCodeAsync(code, cancellationToken);
-        }
+        var depCode = userFlight.Flight?.DepartureAirport?.IataCode ?? userFlight.Flight?.DepartureAirport?.IcaoCode;
+        var arrCode = userFlight.Flight?.ArrivalAirport?.IataCode ?? userFlight.Flight?.ArrivalAirport?.IcaoCode;
+        string? depTz = depCode is { Length: > 0 }
+            ? await _airportService.GetTimeZoneIdByAirportCodeAsync(depCode, cancellationToken)
+            : null;
+        string? arrTz = arrCode is { Length: > 0 }
+            ? await _airportService.GetTimeZoneIdByAirportCodeAsync(arrCode, cancellationToken)
+            : null;
 
         return new UserFlightDto
         {
@@ -328,5 +262,67 @@ public class UserFlightService : IUserFlightService
             ArrivalTimeZoneId = arrTz,
             Aircraft = aircraft
         };
+    }
+
+    private async Task<Flight> CreateFlightFromDtoAsync(CreateUserFlightDto dto, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(dto.FlightNumber)
+            || string.IsNullOrWhiteSpace(dto.DepartureAirportCode)
+            || string.IsNullOrWhiteSpace(dto.ArrivalAirportCode)
+            || !dto.DepartureTimeUtc.HasValue
+            || !dto.ArrivalTimeUtc.HasValue)
+        {
+            throw new ArgumentException("Missing fields to create a new Flight. Provide FlightNumber, departure/arrival airport codes, and both times.");
+        }
+
+        EnsureArrivalAfterDeparture(dto.DepartureTimeUtc!.Value, dto.ArrivalTimeUtc!.Value);
+
+        var depId = await ResolveAirportIdOrThrowAsync(dto.DepartureAirportCode!, cancellationToken);
+        var arrId = await ResolveAirportIdOrThrowAsync(dto.ArrivalAirportCode!, cancellationToken);
+
+        var flight = new Flight
+        {
+            FlightNumber = dto.FlightNumber!,
+            Status = FlightStatus.Scheduled,
+            DepartureAirportId = depId,
+            ArrivalAirportId = arrId,
+            DepartureTimeUtc = dto.DepartureTimeUtc!.Value,
+            ArrivalTimeUtc = dto.ArrivalTimeUtc!.Value
+        };
+
+        return await _flightService.AddFlightAsync(flight, cancellationToken);
+    }
+
+    private async Task UpdateFlightScheduleAsync(Flight flight, FlightScheduleUpdateDto schedule, CancellationToken cancellationToken)
+    {
+        EnsureArrivalAfterDeparture(schedule.DepartureTimeUtc, schedule.ArrivalTimeUtc);
+
+        var depId = await ResolveAirportIdOrThrowAsync(schedule.DepartureAirportCode, cancellationToken);
+        var arrId = await ResolveAirportIdOrThrowAsync(schedule.ArrivalAirportCode, cancellationToken);
+
+        flight.FlightNumber = schedule.FlightNumber;
+        flight.DepartureAirportId = depId;
+        flight.ArrivalAirportId = arrId;
+        flight.DepartureTimeUtc = schedule.DepartureTimeUtc;
+        flight.ArrivalTimeUtc = schedule.ArrivalTimeUtc;
+        await _flightService.UpdateFlightAsync(flight, cancellationToken);
+    }
+
+    private static void EnsureArrivalAfterDeparture(DateTime departureUtc, DateTime arrivalUtc)
+    {
+        if (arrivalUtc <= departureUtc)
+        {
+            throw new ArgumentException("Arrival time must be after departure time.");
+        }
+    }
+
+    private async Task<int> ResolveAirportIdOrThrowAsync(string code, CancellationToken cancellationToken)
+    {
+        var airport = await _airportService.GetAirportByCodeAsync(code, cancellationToken);
+        if (airport is null)
+        {
+            throw new ArgumentException("Invalid airport code(s) provided.");
+        }
+        return airport.Id;
     }
 }
