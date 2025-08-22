@@ -1,0 +1,132 @@
+@model YourApp.Models.PassportViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "My Passport";
+    var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+}
+
+@section HeaderContent {
+    <div class="ft-toolbar">
+        <h2 class="layout__title" style="margin:0">My Passport</h2>
+        <div class="ft-toolbar__actions">
+            <select aria-label="Filter by Year" class="rz-textbox" style="padding:.35rem .5rem;border:1px solid var(--rz-input-border, #E0E0E0);border-radius:6px;min-width:130px;">
+                <option value="">Filter by Year</option>
+                @foreach (var kv in Model.FlightsPerYear.OrderBy(k => k.Key))
+                {
+                    <option value="@kv.Key">@kv.Key</option>
+                }
+            </select>
+            <input type="search" aria-label="Search" placeholder="Search" class="rz-textbox" style="padding:.35rem .6rem;border:1px solid var(--rz-input-border, #E0E0E0);border-radius:999px;min-width:200px;" />
+        </div>
+    </div>
+}
+
+<!-- Passport Card -->
+<div class="rz-card" style="margin-bottom:1rem">
+    <div class="rz-card-body" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div style="width:56px;height:56px;border-radius:50%;background:#EEE;display:flex;align-items:center;justify-content:center;overflow:hidden">
+            @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
+            {
+                <img src="@Model.AvatarUrl" alt="@Model.UserName" style="width:100%;height:100%;object-fit:cover" />
+            }
+            else
+            {
+                <span class="material-icons" aria-hidden="true">account_circle</span>
+            }
+        </div>
+        <div style="min-width:200px">
+            <div style="font-weight:600;font-size:1.1rem">@Model.UserName</div>
+            <div style="display:flex;gap:1rem;color:#555;font-size:.9rem">
+                <div><span class="material-icons" style="font-size:1rem;vertical-align:middle">flight</span> @Model.TotalFlights Flights</div>
+                <div><span class="material-icons" style="font-size:1rem;vertical-align:middle">apartment</span> @Model.AirlinesVisited?.Count Airlines</div>
+                <div><span class="material-icons" style="font-size:1rem;vertical-align:middle">location_city</span> @Model.AirportsVisited?.Count Airports</div>
+            </div>
+        </div>
+        <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin-left:auto">
+            @if (Model.CountriesVisitedIso2 != null)
+            {
+                foreach (var cc in Model.CountriesVisitedIso2)
+                {
+                    var code = (cc ?? string.Empty).ToLowerInvariant();
+                    <span class="fi fi-@code" title="@cc" aria-label="@cc"></span>
+                }
+            }
+        </div>
+    </div>
+    <div class="rz-card-footer" style="font-size:.8rem;color:#666">Profile overview</div>
+    </div>
+
+<!-- Flight Routes section -->
+<div class="rz-card" style="margin-bottom:1rem">
+    <div class="rz-card-header" style="display:flex;align-items:center;gap:.5rem">
+        <span class="material-icons" aria-hidden="true">public</span>
+        <h3 style="margin:0">Flight Routes</h3>
+    </div>
+    <div class="rz-card-body">
+        <div id="passport-map" class="flight-map__map" style="min-height:60vh"></div>
+    </div>
+    <div class="rz-card-footer" style="font-size:.8rem;color:#666">Routes drawn from recorded flights</div>
+    </div>
+
+<!-- Stats grid -->
+<div class="ft-stats-grid" style="margin:1rem 0">
+    <div class="ft-stats-grid__item">
+        <div class="rz-card"><div class="rz-card-body">
+            <div style="display:flex;align-items:center;gap:.6rem"><span class="material-icons">timeline</span><div>
+                <div style="font-weight:600">Total Miles</div><div>@Model.TotalMiles mi</div>
+            </div></div>
+        </div></div>
+    </div>
+    <div class="ft-stats-grid__item">
+        <div class="rz-card"><div class="rz-card-body">
+            <div style="display:flex;align-items:center;gap:.6rem"><span class="material-icons">trending_up</span><div>
+                <div style="font-weight:600">Longest Flight</div><div>@Model.LongestFlightMiles mi</div>
+            </div></div>
+        </div></div>
+    </div>
+    <div class="ft-stats-grid__item">
+        <div class="rz-card"><div class="rz-card-body">
+            <div style="display:flex;align-items:center;gap:.6rem"><span class="material-icons">trending_down</span><div>
+                <div style="font-weight:600">Shortest Flight</div><div>@Model.ShortestFlightMiles mi</div>
+            </div></div>
+        </div></div>
+    </div>
+    <div class="ft-stats-grid__item">
+        <div class="rz-card"><div class="rz-card-body">
+            <div style="display:flex;align-items:center;gap:.6rem"><span class="material-icons">airlines</span><div>
+                <div style="font-weight:600">Favorite Airline</div><div>@Model.FavoriteAirline</div>
+            </div></div>
+        </div></div>
+    </div>
+    <div class="ft-stats-grid__item">
+        <div class="rz-card"><div class="rz-card-body">
+            <div style="display:flex;align-items:center;gap:.6rem"><span class="material-icons">public</span><div>
+                <div style="font-weight:600">Countries Visited</div><div>@(Model.CountriesVisitedIso2?.Count ?? 0)</div>
+            </div></div>
+        </div></div>
+    </div>
+    <div class="ft-stats-grid__item">
+        <div class="rz-card"><div class="rz-card-body">
+            <div style="display:flex;align-items:center;gap:.6rem"><span class="material-icons">flight_land</span><div>
+                <div style="font-weight:600">Airports Visited</div><div>@(Model.AirportsVisited?.Count ?? 0)</div>
+            </div></div>
+        </div></div>
+    </div>
+</div>
+
+<!-- Flights per Year chart -->
+<div class="rz-card" style="margin:1rem 0 2rem">
+    <div class="rz-card-header" style="display:flex;align-items:center;gap:.5rem">
+        <span class="material-icons" aria-hidden="true">bar_chart</span>
+        <h3 style="margin:0">Flights Per Year</h3>
+    </div>
+    <div class="rz-card-body">
+        <div id="passport-chart" style="min-height:300px"></div>
+    </div>
+    <div class="rz-card-footer" style="font-size:.8rem;color:#666">Yearly flight counts</div>
+    </div>
+
+@section Scripts {
+    <script type="application/json" id="passportRoutes">@Html.Raw(JsonSerializer.Serialize(Model.Routes ?? new(), jsonOpts))</script>
+    <script type="application/json" id="passportFlightsPerYear">@Html.Raw(JsonSerializer.Serialize(Model.FlightsPerYear ?? new(), jsonOpts))</script>
+}

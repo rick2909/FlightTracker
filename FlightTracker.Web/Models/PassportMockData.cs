@@ -9,6 +9,11 @@ namespace YourApp.Models;
 /// </summary>
 public static class PassportMockData
 {
+    /// <summary>
+    /// Returns a sample PassportViewModel.
+    /// </summary>
+    public static PassportViewModel Get() => CreateSample();
+
     public static PassportViewModel CreateSample()
     {
         // Example profile
