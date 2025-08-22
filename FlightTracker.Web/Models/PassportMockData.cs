@@ -28,7 +28,7 @@ public static class PassportMockData
             ShortestFlightMiles = 123,
             AirlinesVisited = new() { "Delta", "KLM", "Air France", "British Airways", "JAL" },
             AirportsVisited = new() { "ATL", "JFK", "LAX", "SEA", "SFO", "AMS", "CDG", "LHR", "NRT" },
-            CountriesVisitedIso2 = new() { "us", "nl", "fr", "gb", "jp", "de", "es" },
+            CountriesVisitedIso2 = new() { "us", "nl", "fr", "gb", "jp", "de", "es", "it", "br", "cn", "au", "pt", "cw" },
             FlightsPerYear = new()
             {
                 { 2018, 3 },
