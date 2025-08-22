@@ -15,8 +15,10 @@
         try{const parsed=JSON.parse(raw);return parsed;}catch(e){console.warn('[flight-map] JSON parse error',e);return [];}
     }
 
+    // Use worldCopyJump for seamless horizontal panning; Canvas renderer for better path perf
     const map=L.map('flightMap',{center:[20,0],zoom:2,worldCopyJump:true});
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+    const renderer=L.canvas({padding:0.2});
 
     const layers={past:L.layerGroup().addTo(map),upcoming:L.layerGroup().addTo(map)};
     const flightIndex=new Map();
@@ -27,7 +29,8 @@
     };
     const normal={
         past:{color:colorPast,weight:3,opacity:0.75},
-        upcoming:{radius:7,color:colorUpcoming,fillColor:colorUpcoming,fillOpacity:0.9,weight:2}
+        upcoming:{radius:7,color:colorUpcoming,fillColor:colorUpcoming,fillOpacity:0.9,weight:2},
+        upcomingPath:{color:colorUpcoming,weight:2.25,opacity:0.65,dashArray:'6,6'}
     };
 
     function render(){
@@ -36,6 +39,7 @@
         if(!flights.length){console.log('[flight-map] no flights');return;}
         const polys=[];const markers=[];
         // Utility: create a geodesic (great-circle) arc as a polyline between two lat/lon points
+        // Ensures continuity across the antimeridian by unwrapping longitudes.
         function createGeodesic(from, to, style){
             // Haversine-based interpolation along great-circle
             const lat1=from[0]*Math.PI/180, lon1=from[1]*Math.PI/180;
@@ -44,7 +48,7 @@
                 Math.sin((lat2-lat1)/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin((lon2-lon1)/2)**2
             )) || 0;
             const segments=Math.max(8, Math.min(128, Math.ceil(d*30))); // more distance -> more segments
-            if(d===0){ return L.polyline([from,to], style); }
+            if(d===0){ return L.polyline([from,to], {...style, renderer, noClip:true}); }
             const coords=[];
             for(let i=0;i<=segments;i++){
                 const f=i/segments;
@@ -58,7 +62,19 @@
                 const lon=Math.atan2(y,x);
                 coords.push([lat*180/Math.PI, lon*180/Math.PI]);
             }
-            return L.polyline(coords, style);
+            // Unwrap longitudes to avoid short straight line across the dateline
+            let prevLon=coords[0][1];
+            let offset=0;
+            const unwrapped=coords.map(([la,lo],idx)=>{
+                if(idx===0){ prevLon=lo; return [la, lo]; }
+                let delta=lo - prevLon;
+                if(delta > 180) { offset -= 360; }
+                else if(delta < -180) { offset += 360; }
+                const adjLon=lo + offset;
+                prevLon=lo;
+                return [la, adjLon];
+            });
+            return L.polyline(unwrapped, {...style, renderer, noClip:true});
         }
 
         flights.forEach(f=>{
@@ -71,17 +87,25 @@
                     m.bindPopup(`<strong>${f.flightNumber}</strong><br/>Departs ${f.departureAirportCode}<br/>${new Date(f.departureTimeUtc).toUTCString()}`);
                     markers.push(m);
                     flightIndex.set(key,{flight:f,type:'upcoming',layer:m});
+
+                    // Draw planned path if arrival is known
+                    if(arrOk){
+                        const from=[f.departureLat,f.departureLon];
+                        const to=[f.arrivalLat,f.arrivalLon];
+                        const pl=createGeodesic(from,to,normal.upcomingPath).addTo(layers.upcoming);
+                        polys.push(pl);
+                    }
                 }
             }
             else if(depOk&&arrOk){
                 const from=[f.departureLat,f.departureLon];
                 const to=[f.arrivalLat,f.arrivalLon];
-                const pl=createGeodesic(from,to,normal.past).addTo(layers.past);
+        const pl=createGeodesic(from,to,normal.past).addTo(layers.past);
                 polys.push(pl);
                 flightIndex.set(key,{flight:f,type:'past',layer:pl});
             }
         });
-        let bounds=null;polys.forEach(pl=>bounds=bounds?bounds.extend(pl.getBounds()):pl.getBounds());markers.forEach(m=>{const ll=m.getLatLng();bounds=bounds?bounds.extend(ll):L.latLngBounds(ll,ll);});if(bounds)map.fitBounds(bounds.pad(0.15));
+    let bounds=null;polys.forEach(pl=>bounds=bounds?bounds.extend(pl.getBounds()):pl.getBounds());markers.forEach(m=>{const ll=m.getLatLng();bounds=bounds?bounds.extend(ll):L.latLngBounds(ll,ll);});if(bounds)map.fitBounds(bounds.pad(0.15));
     }
 
     window.flightMapClearFilter=function(){};

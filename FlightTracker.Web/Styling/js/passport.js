@@ -37,53 +37,7 @@
     } catch (_) { /* no-op */ }
   }
 
-  function initPassportMap(routes){
-    try {
-      if (!w.L) { return; }
-      const el = document.getElementById('passport-map');
-      if (!el) { return; }
 
-      const map = w.L.map(el, { zoomControl: true, attributionControl: true });
-      const tiles = w.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '&copy; OpenStreetMap contributors'
-      });
-      tiles.addTo(map);
-
-      const list = Array.isArray(routes) ? routes : [];
-      const bounds = w.L.latLngBounds([]);
-
-  list.forEach(r => {
-        const fromLat = r.departureLat ?? r.DepartureLat;
-        const fromLng = r.departureLon ?? r.DepartureLon;
-        const toLat = r.arrivalLat ?? r.ArrivalLat;
-        const toLng = r.arrivalLon ?? r.ArrivalLon;
-        if (typeof fromLat !== 'number' || typeof fromLng !== 'number' || typeof toLat !== 'number' || typeof toLng !== 'number') {
-          return;
-        }
-
-        const from = [fromLat, fromLng];
-        const to = [toLat, toLng];
-
-        const line = w.L.polyline([from, to], { color: PRIMARY, weight: 2, opacity: 0.8 });
-        line.addTo(map);
-
-        const start = w.L.circleMarker(from, { radius: 3, color: PRIMARY, weight: 1, fillColor: PRIMARY, fillOpacity: 0.9 });
-        const end = w.L.circleMarker(to, { radius: 3, color: PRIMARY, weight: 1, fillColor: PRIMARY, fillOpacity: 0.9 });
-        start.addTo(map);
-        end.addTo(map);
-
-        bounds.extend(from);
-        bounds.extend(to);
-      });
-
-      if (bounds.isValid()) {
-        map.fitBounds(bounds.pad(0.2));
-      } else {
-        map.setView([20, 0], 2);
-      }
-    } catch (_) { /* no-op */ }
-  }
-
-  w.Passport = { initPassportChart, initPassportMap };
+  // Only chart initializer here. Map rendering handled by shared flight-map.js
+  w.Passport = { initPassportChart };
 })(window);
