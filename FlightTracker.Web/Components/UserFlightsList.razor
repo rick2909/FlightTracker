@@ -2,6 +2,9 @@
 @using FlightTracker.Domain.Enums
 @using Radzen
 @using Radzen.Blazor
+@using Microsoft.AspNetCore.WebUtilities
+@using FlightTracker.Web.Components.Cards
+@inject NavigationManager Nav
 
 @if (Flights is null || !Flights.Any())
 {
@@ -9,6 +12,46 @@
 }
 else
 {
+    @if (ShowFilters)
+    {
+        <div class="rz-pb-2 rz-pr-2 rz-pl-2">
+            <RadzenRow Gap="2">
+                <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="3">
+                    <label>Flight number</label>
+                    <RadzenTextBox @bind-Value="filterFlightNumber" Style="width:100%" Placeholder="e.g., AA123" Change="@(args => OnFiltersChanged())" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="2">
+                    <label>Class</label>
+                    <RadzenDropDown TValue="FlightClass?"
+                                    @bind-Value="filterClass"
+                                    Data="@flightClassOptions"
+                                    TextProperty="Text"
+                                    ValueProperty="Value"
+                                    Style="width:100%" Change="@(args => OnFiltersChanged())" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="2">
+                    <label>Status</label>
+                    <RadzenDropDown TValue="bool?"
+                                    @bind-Value="filterDidFly"
+                                    Data="@didFlyOptions"
+                                    TextProperty="Text"
+                                    ValueProperty="Value"
+                                    Style="width:100%" Change="@(args => OnFiltersChanged())" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="2">
+                    <label>From (UTC)</label>
+                    <RadzenDatePicker TValue="DateTime?" @bind-Value="filterFromUtc" DateFormat="dd-MM-yyyy" Style="width:100%" Change="@(args => OnFiltersChanged())" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="2">
+                    <label>To (UTC)</label>
+                    <RadzenDatePicker TValue="DateTime?" @bind-Value="filterToUtc" DateFormat="dd-MM-yyyy" Style="width:100%" Change="@(args => OnFiltersChanged())" />
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="1" class="filters__actions">
+                    <RadzenButton Style="width:100%" ButtonStyle="ButtonStyle.Secondary" Click="@ClearFilters" Text="Clear" />
+                </RadzenColumn>
+            </RadzenRow>
+        </div>
+    }
     <RadzenDataList Data="@FlightsOrdered"
                     TItem="UserFlightDto"
                     AllowPaging="true"
@@ -18,7 +61,7 @@ else
                     WrapItems="true"
                     AllowVirtualization="false">
         <Template Context="flight">
-            <FlightTracker.Web.Components.Cards.FlightCard Flight="@flight" />
+            <FlightCard Flight="@flight" />
         </Template>
     </RadzenDataList>
 }
@@ -27,9 +70,135 @@ else
     [Parameter]
     public IEnumerable<UserFlightDto>? Flights { get; set; }
 
+    [Parameter]
+    public bool ShowFilters { get; set; } = true;
+
+    private string? filterFlightNumber;
+    private FlightClass? filterClass;
+    private bool? filterDidFly;
+    private DateTime? filterFromUtc;
+    private DateTime? filterToUtc;
+
+    private sealed record Option<T>(string Text, T? Value);
+
+    private readonly IEnumerable<Option<FlightClass>> flightClassOptions = new[]
+    {
+        new Option<FlightClass>("All", default),
+        new Option<FlightClass>("Economy", FlightClass.Economy),
+        new Option<FlightClass>("Premium Economy", FlightClass.PremiumEconomy),
+        new Option<FlightClass>("Business", FlightClass.Business),
+        new Option<FlightClass>("First", FlightClass.First)
+    };
+
+    private readonly IEnumerable<Option<bool>> didFlyOptions = new[]
+    {
+        new Option<bool>("All", default),
+        new Option<bool>("Completed", true),
+        new Option<bool>("No Show", false)
+    };
+
     private IEnumerable<UserFlightDto> FlightsOrdered =>
-        (Flights ?? Enumerable.Empty<UserFlightDto>())
+        FilteredFlights()
             .OrderByDescending(f => f.DepartureTimeUtc);
+
+    protected override void OnInitialized()
+    {
+        // Parse filters from query string on initial load
+        var uri = new Uri(Nav.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        if (query.TryGetValue("q", out var q) && !string.IsNullOrWhiteSpace(q))
+        {
+            filterFlightNumber = q!;
+        }
+        if (query.TryGetValue("class", out var cls) && Enum.TryParse<FlightClass>(cls!, out var parsedClass))
+        {
+            filterClass = parsedClass;
+        }
+        if (query.TryGetValue("didFly", out var df) && bool.TryParse(df!, out var parsedDidFly))
+        {
+            filterDidFly = parsedDidFly;
+        }
+        if (query.TryGetValue("fromUtc", out var from) && DateTime.TryParse(from!, out var fromDt))
+        {
+            filterFromUtc = DateTime.SpecifyKind(fromDt.Date, DateTimeKind.Utc);
+        }
+        if (query.TryGetValue("toUtc", out var to) && DateTime.TryParse(to!, out var toDt))
+        {
+            filterToUtc = DateTime.SpecifyKind(toDt.Date, DateTimeKind.Utc);
+        }
+    // no-op
+    }
+
+    private IEnumerable<UserFlightDto> FilteredFlights()
+    {
+        var source = Flights ?? Enumerable.Empty<UserFlightDto>();
+
+        if (!string.IsNullOrWhiteSpace(filterFlightNumber))
+        {
+            var term = filterFlightNumber.Trim();
+            source = source.Where(f => f.FlightNumber?.Contains(term, StringComparison.OrdinalIgnoreCase) == true);
+        }
+
+        if (filterClass.HasValue)
+        {
+            var cls = filterClass.Value;
+            source = source.Where(f => f.FlightClass == cls);
+        }
+
+        if (filterDidFly.HasValue)
+        {
+            var flag = filterDidFly.Value;
+            source = source.Where(f => f.DidFly == flag);
+        }
+
+        if (filterFromUtc.HasValue)
+        {
+            var from = filterFromUtc.Value.Date; // start of day UTC
+            source = source.Where(f => f.DepartureTimeUtc >= from);
+        }
+
+        if (filterToUtc.HasValue)
+        {
+            var to = filterToUtc.Value.Date.AddDays(1).AddTicks(-1); // end of day UTC
+            source = source.Where(f => f.DepartureTimeUtc <= to);
+        }
+
+        return source;
+    }
+
+    private void ClearFilters()
+    {
+        filterFlightNumber = null;
+        filterClass = null;
+        filterDidFly = null;
+        filterFromUtc = null;
+        filterToUtc = null;
+        UpdateUrl();
+    }
+
+    private void OnFiltersChanged()
+    {
+        UpdateUrl();
+    }
+
+    private void UpdateUrl()
+    {
+        var uri = new Uri(Nav.Uri);
+        var basePath = uri.GetLeftPart(UriPartial.Path);
+
+        var qs = new Dictionary<string, string?>();
+        if (!string.IsNullOrWhiteSpace(filterFlightNumber)) qs["q"] = filterFlightNumber;
+        if (filterClass.HasValue) qs["class"] = filterClass.Value.ToString();
+        if (filterDidFly.HasValue) qs["didFly"] = filterDidFly.Value.ToString();
+        if (filterFromUtc.HasValue) qs["fromUtc"] = filterFromUtc.Value.ToString("yyyy-MM-dd");
+        if (filterToUtc.HasValue) qs["toUtc"] = filterToUtc.Value.ToString("yyyy-MM-dd");
+
+        var newUrl = QueryHelpers.AddQueryString(basePath, qs);
+        if (!string.Equals(Nav.Uri, newUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            Nav.NavigateTo(newUrl, replace: true);
+        }
+    }
 
 }
 

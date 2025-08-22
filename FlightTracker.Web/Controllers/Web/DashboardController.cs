@@ -9,27 +9,18 @@ namespace FlightTracker.Web.Controllers.Web;
 /// Main dashboard controller for authenticated users.
 /// Shows user's flight history, statistics, and quick actions.
 /// </summary>
-public class DashboardController : Controller
+public class DashboardController(
+    ILogger<DashboardController> logger,
+    IUserFlightService userFlightService,
+    IFlightService flightService,
+IAirportService airportService,
+IMapFlightService mapFlightService) : Controller
 {
-    private readonly ILogger<DashboardController> _logger;
-    private readonly IUserFlightService _userFlightService;
-    private readonly IFlightService _flightService;
-    private readonly IAirportService _airportService;
-    private readonly IMapFlightService _mapFlightService;
-
-    public DashboardController(
-        ILogger<DashboardController> logger,
-        IUserFlightService userFlightService,
-        IFlightService flightService,
-    IAirportService airportService,
-    IMapFlightService mapFlightService)
-    {
-        _logger = logger;
-        _userFlightService = userFlightService;
-        _flightService = flightService;
-        _airportService = airportService;
-        _mapFlightService = mapFlightService;
-    }
+    private readonly ILogger<DashboardController> _logger = logger;
+    private readonly IUserFlightService _userFlightService = userFlightService;
+    private readonly IFlightService _flightService = flightService;
+    private readonly IAirportService _airportService = airportService;
+    private readonly IMapFlightService _mapFlightService = mapFlightService;
 
     /// <summary>
     /// Main dashboard view showing user's flight overview.
@@ -77,28 +68,6 @@ public class DashboardController : Controller
             };
 
             return View(emptyViewModel);
-        }
-    }
-
-    /// <summary>
-    /// Shows all user flights with pagination and filtering options.
-    /// </summary>
-    /// <returns>User flights view</returns>
-    public async Task<IActionResult> MyFlights()
-    {
-        try
-        {
-            // TODO: Get actual user ID from authentication context
-            var userId = 2;
-
-            var userFlights = await _userFlightService.GetUserFlightsAsync(userId);
-
-            return View(userFlights);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error loading user flights");
-            return View(new List<UserFlightDto>());
         }
     }
 
