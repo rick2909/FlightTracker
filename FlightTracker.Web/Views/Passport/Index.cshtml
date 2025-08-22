@@ -127,6 +127,36 @@
     </div>
 
 @section Scripts {
+    <!-- Data payloads -->
     <script type="application/json" id="passportRoutes">@Html.Raw(JsonSerializer.Serialize(Model.Routes ?? new(), jsonOpts))</script>
     <script type="application/json" id="passportFlightsPerYear">@Html.Raw(JsonSerializer.Serialize(Model.FlightsPerYear ?? new(), jsonOpts))</script>
+
+    <!-- Dependencies (ApexCharts for charting) -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- Page script -->
+    <script src="~/js/js/passport.js" asp-append-version="true"></script>
+
+    <script>
+        (function(){
+            function safeParseJson(elId, fallback){
+                try {
+                    const el = document.getElementById(elId);
+                    if(!el) return fallback;
+                    const txt = (el.textContent||'').trim();
+                    if(!txt) return fallback;
+                    return JSON.parse(txt);
+                } catch { return fallback; }
+            }
+            document.addEventListener('DOMContentLoaded', function(){
+                try {
+                    const routesJson = safeParseJson('passportRoutes', []);
+                    const flightsPerYearJson = safeParseJson('passportFlightsPerYear', []);
+                    if (window.Passport) {
+                        try { window.Passport.initPassportChart && window.Passport.initPassportChart(flightsPerYearJson); } catch {}
+                        try { window.Passport.initPassportMap && window.Passport.initPassportMap(routesJson); } catch {}
+                    }
+                } catch { /* swallow */ }
+            });
+        })();
+    </script>
 }
