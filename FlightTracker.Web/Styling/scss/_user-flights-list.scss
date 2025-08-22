@@ -90,3 +90,24 @@
   border-top: 1px solid $color-divider;
   margin: $spacing-2 0 0 0;
 }
+
+/* Filters: make the Clear button match input height on larger screens
+   without adding extra spacing when stacked on small screens. */
+@include up-sm {
+  .filters__actions {
+    display: flex;
+    align-items: flex-end; // baseline align with inputs
+  }
+  .filters__actions .rz-button {
+    height: 40px; // approx. input height in Radzen Material
+  }
+}
+
+@media (max-width: ($bp-sm - 1px)) {
+  .filters__actions {
+    display: block; // natural flow when stacked
+  }
+  .filters__actions .rz-button {
+    height: auto;
+  }
+}
