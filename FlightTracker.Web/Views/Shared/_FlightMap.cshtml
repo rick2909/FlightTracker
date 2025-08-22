@@ -8,10 +8,19 @@
 @{
     var flightsJson = "[]";
     int mapFlightCount = 0;
+    IEnumerable<FlightTracker.Application.Dtos.MapFlightDto> compFlights = Array.Empty<FlightTracker.Application.Dtos.MapFlightDto>();
     if (Model is FlightTracker.Web.Models.ViewModels.DashboardViewModel dvm && dvm.MapFlights != null)
     {
         var list = dvm.MapFlights.ToList();
         mapFlightCount = list.Count;
+        compFlights = list;
+        flightsJson = JsonSerializer.Serialize(list, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
+    else if (Model is FlightTracker.Web.Models.ViewModels.StatsViewModel svm && svm.MapFlights != null)
+    {
+        var list = svm.MapFlights.ToList();
+        mapFlightCount = list.Count;
+        compFlights = list;
         flightsJson = JsonSerializer.Serialize(list, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     }
 }
@@ -23,7 +32,7 @@
             <script>window.flightMapFilter = window.flightMapFilter || function(){ /* stub until map script loads */ };</script>
             <component type="typeof(FlightTracker.Web.Components.FlightMapSearch)" 
                        render-mode="ServerPrerendered" 
-                       param-MapFlights="((FlightTracker.Web.Models.ViewModels.DashboardViewModel)Model).MapFlights" />
+                       param-MapFlights="compFlights" />
         </div>
     </div>
     <div id="flightMap" class="flight-map__map" style="min-height:@mapHeight;" aria-label="Flight map" role="region"></div>

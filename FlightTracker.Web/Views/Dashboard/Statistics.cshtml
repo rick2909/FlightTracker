@@ -1,255 +1,77 @@
-@model FlightTracker.Application.Dtos.UserFlightStatsDto
+@model FlightTracker.Web.Models.ViewModels.StatsViewModel
 @{
-    ViewData["Title"] = "Flight Statistics";
+    ViewData["Title"] = "Passport / Stats";
 }
 
-<div class="ft-stats-grid">
-    <div class="ft-stats-grid__header">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Flight Statistics</h1>
-            <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary">← Back to Dashboard</a>
-        </div>
-    </div>
+@section HeaderContent {
+    <div class="remove__header"></div>
+}
+
+<partial name="_FlightMap" view-data='new ViewDataDictionary(ViewData) { ["FlightMapHeight"] = "65vh" }' />
+
+<div class="ft-stats-grid" style="margin-top:1rem">
     <div class="ft-stats-grid__item">
         @(await Html.RenderComponentAsync<FlightTracker.Web.Components.Cards.StatCard>(RenderMode.ServerPrerendered, new {
             Title = "Total Flights",
-            Data = Model.TotalFlights.ToString(),
+            Data = Model.Stats.TotalFlights.ToString(),
             Icon = "flight",
-            SubTitle = "Lifetime",
-            DataLabel = "flights",
-            SubData = Model.FirstClassFlights.ToString(),
-            SubDataLabel = "First Class",
-        }))
-    </div>
-
-    <div class="ft-stats-grid__item">
-        @(await Html.RenderComponentAsync<FlightTracker.Web.Components.Cards.StatCard>(RenderMode.ServerPrerendered, new {
-            Title = "Total Airports Visited",
-            Data = Model.UniqueAirports.ToString(),
-            Icon = "flight_land",
             SubTitle = "Lifetime"
         }))
     </div>
-
+    <div class="ft-stats-grid__item">
+        @(await Html.RenderComponentAsync<FlightTracker.Web.Components.Cards.StatCard>(RenderMode.ServerPrerendered, new {
+            Title = "Airports Visited",
+            Data = Model.Stats.UniqueAirports.ToString(),
+            Icon = "flight_land",
+            SubTitle = "Unique"
+        }))
+    </div>
     <div class="ft-stats-grid__item">
         @(await Html.RenderComponentAsync<FlightTracker.Web.Components.Cards.StatCard>(RenderMode.ServerPrerendered, new {
             Title = "Countries Visited",
-            Data = Model.UniqueCountries.ToString(),
+            Data = Model.Stats.UniqueCountries.ToString(),
             Icon = "public",
-            SubTitle = "Lifetime"
+            SubTitle = "Unique"
         }))
     </div>
 </div>
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1>Flight Statistics</h1>
-                <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary">← Back to Dashboard</a>
-            </div>
+
+<div class="rz-card" style="margin-top:1rem">
+    <div class="rz-card-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:.5rem">
+            <span class="material-icons" aria-hidden="true">bar_chart</span>
+            <h3 style="margin:0">Flights per year</h3>
         </div>
     </div>
-
-    <div class="row mb-4">
-        <!-- Total Flights Card -->
-        <div class="col-md-3">
-            <div class="card bg-primary text-white h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-plane fa-3x mb-3"></i>
-                    <h2>@Model.TotalFlights</h2>
-                    <p class="card-text">Total Flights</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Unique Airports Card -->
-        <div class="col-md-3">
-            <div class="card bg-success text-white h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-map-marker-alt fa-3x mb-3"></i>
-                    <h2>@Model.UniqueAirports</h2>
-                    <p class="card-text">Airports Visited</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Unique Countries Card -->
-        <div class="col-md-3">
-            <div class="card bg-info text-white h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-globe fa-3x mb-3"></i>
-                    <h2>@Model.UniqueCountries</h2>
-                    <p class="card-text">Countries Visited</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Average Class Card -->
-        <div class="col-md-3">
-            <div class="card bg-warning text-dark h-100">
-                <div class="card-body text-center">
-                    <i class="fas fa-star fa-3x mb-3"></i>
-                    <h2>@GetMostUsedClass()</h2>
-                    <p class="card-text">Preferred Class</p>
-                </div>
-            </div>
-        </div>
+    <div class="rz-card-body">
+        <div id="apx-flights-per-year" style="min-height:300px"></div>
+        <script type="application/json" id="apxFlightsPerYearData">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FlightsPerYear))</script>
     </div>
-
-    <div class="row">
-        <!-- Flight Class Breakdown -->
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Flight Class Distribution</h5>
-                </div>
-                <div class="card-body">
-                    @if (Model.TotalFlights > 0)
-                    {
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span>Economy</span>
-                                <span class="badge bg-primary">@Model.EconomyFlights flights (@GetPercentage(Model.EconomyFlights)%)</span>
-                            </div>
-                            <div class="progress mb-2" style="height: 20px;">
-                                <div class="progress-bar bg-primary" role="progressbar" style="width: @GetPercentage(Model.EconomyFlights)%"></div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span>Premium Economy</span>
-                                <span class="badge bg-secondary">@Model.PremiumEconomyFlights flights (@GetPercentage(Model.PremiumEconomyFlights)%)</span>
-                            </div>
-                            <div class="progress mb-2" style="height: 20px;">
-                                <div class="progress-bar bg-secondary" role="progressbar" style="width: @GetPercentage(Model.PremiumEconomyFlights)%"></div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span>Business Class</span>
-                                <span class="badge bg-info">@Model.BusinessFlights flights (@GetPercentage(Model.BusinessFlights)%)</span>
-                            </div>
-                            <div class="progress mb-2" style="height: 20px;">
-                                <div class="progress-bar bg-info" role="progressbar" style="width: @GetPercentage(Model.BusinessFlights)%"></div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span>First Class</span>
-                                <span class="badge bg-warning text-dark">@Model.FirstClassFlights flights (@GetPercentage(Model.FirstClassFlights)%)</span>
-                            </div>
-                            <div class="progress mb-2" style="height: 20px;">
-                                <div class="progress-bar bg-warning" role="progressbar" style="width: @GetPercentage(Model.FirstClassFlights)%"></div>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-4">
-                            <p class="text-muted">No flight data available</p>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- Flight Summary -->
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Flight Summary</h5>
-                </div>
-                <div class="card-body">
-                    @if (Model.TotalFlights > 0)
-                    {
-                        <div class="row">
-                            <div class="col-12">
-                                <h6 class="text-muted">Travel Experience</h6>
-                                <ul class="list-unstyled">
-                                    <li><i class="fas fa-plane text-primary me-2"></i> <strong>@Model.TotalFlights</strong> total flights completed</li>
-                                    <li><i class="fas fa-map-marker-alt text-success me-2"></i> <strong>@Model.UniqueAirports</strong> different airports visited</li>
-                                    <li><i class="fas fa-globe text-info me-2"></i> <strong>@Model.UniqueCountries</strong> different countries explored</li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <hr />
-
-                        <div class="row">
-                            <div class="col-12">
-                                <h6 class="text-muted">Class Preferences</h6>
-                                <div class="row text-center">
-                                    <div class="col-6 col-md-3 mb-2">
-                                        <div class="border rounded p-2">
-                                            <div class="h5 mb-1 text-primary">@Model.EconomyFlights</div>
-                                            <small class="text-muted">Economy</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-3 mb-2">
-                                        <div class="border rounded p-2">
-                                            <div class="h5 mb-1 text-secondary">@Model.PremiumEconomyFlights</div>
-                                            <small class="text-muted">Premium</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-3 mb-2">
-                                        <div class="border rounded p-2">
-                                            <div class="h5 mb-1 text-info">@Model.BusinessFlights</div>
-                                            <small class="text-muted">Business</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 col-md-3 mb-2">
-                                        <div class="border rounded p-2">
-                                            <div class="h5 mb-1 text-warning">@Model.FirstClassFlights</div>
-                                            <small class="text-muted">First</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-4">
-                            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">No statistics available yet</p>
-                            <p class="small text-muted">Start recording your flights to see detailed statistics!</p>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
+    <div class="rz-card-footer" style="font-size:.8rem;color:#666">Counts based on recorded flights</div>
     </div>
-</div>
-
-@functions {
-    string GetMostUsedClass()
-    {
-        var max = Math.Max(
-            Math.Max(Model.EconomyFlights, Model.PremiumEconomyFlights),
-            Math.Max(Model.BusinessFlights, Model.FirstClassFlights)
-        );
-
-        if (max == 0) return "N/A";
-
-        if (Model.FirstClassFlights == max) return "First";
-        if (Model.BusinessFlights == max) return "Business";
-        if (Model.PremiumEconomyFlights == max) return "Premium";
-        return "Economy";
-    }
-
-    int GetPercentage(int value)
-    {
-        if (Model.TotalFlights == 0) return 0;
-        return (int)Math.Round((double)value / Model.TotalFlights * 100);
-    }
-}
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="~/js/flight-map.js" asp-append-version="true"></script>
     <script>
-        // Future: Add charts using ApexCharts here
-        console.log('Statistics loaded for user @Model.UserId');
+        (function(){
+            const el=document.getElementById('apxFlightsPerYearData');
+            const target=document.getElementById('apx-flights-per-year');
+            if(!el||!target||!window.ApexCharts){ return; }
+            let data=[]; try{ data=JSON.parse(el.textContent||'[]'); }catch{}
+            const years=data.map(p=>p.year);
+            const counts=data.map(p=>p.count);
+            const options={
+                chart:{ type:'bar', height:320, toolbar:{show:false}},
+                series:[{ name:'Flights', data:counts}],
+                xaxis:{ categories:years, tickPlacement:'on'},
+                colors:['#3f51b5'],
+                grid:{ borderColor:'#E0E0E0' },
+                dataLabels:{ enabled:false },
+                tooltip:{ theme:'light' }
+            };
+            const chart=new ApexCharts(target, options);
+            chart.render();
+        })();
     </script>
 }
