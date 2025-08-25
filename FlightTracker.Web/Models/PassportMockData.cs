@@ -20,7 +20,7 @@ public static class PassportMockData
         var vm = new PassportViewModel
         {
             UserName = "Alex Doe",
-            AvatarUrl = "https://example.com/avatar.png",
+            AvatarUrl = "https://i.pravatar.cc/56",
             TotalFlights = 128,
             TotalMiles = 345_678,
             FavoriteAirline = "Delta",

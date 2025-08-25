@@ -38,11 +38,27 @@
         ? nextDepartureUtc.Value.ToString("HH:mm") 
         : "None";
     string statusCss = nextFlightStatus?.ToString().ToLowerInvariant() ?? "none";
+
+    var profileImageUrl = ViewBag.ProfileImageUrl as string
+        ?? User?.Claims?.FirstOrDefault(c => c.Type == "picture")?.Value;
 }
 <aside class="sidebar" aria-label="Primary navigation" data-sidebar>
     <div class="sidebar__scroll">
     <div class="sidebar__profile-card sidebar__section">
-    <div class="sidebar__avatar" aria-hidden="true">@initials</div>
+    <div class="sidebar__avatar" aria-hidden="true">
+        @if (!string.IsNullOrWhiteSpace(profileImageUrl))
+        {
+            <img src="@profileImageUrl"
+                 alt="@displayName"
+                 class="sidebar__avatar-img"
+                 style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"
+                 onerror="this.style.display='none'; var f=this.nextElementSibling; if(f) f.style.display='inline-flex';" />
+        }
+        <span class="sidebar__avatar-fallback"
+              style="display:@(string.IsNullOrWhiteSpace(profileImageUrl) ? "inline-flex" : "none");width:100%;height:100%;align-items:center;justify-content:center;font-weight:600;">
+            @initials
+        </span>
+    </div>
     <div class="sidebar__profile-text sidebar__profile-text-transition">
             <div class="sidebar__name" title="@displayName">@displayName</div>
             <div class="sidebar__role">Traveler</div>
