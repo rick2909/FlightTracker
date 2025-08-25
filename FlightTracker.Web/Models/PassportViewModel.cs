@@ -38,6 +38,16 @@ public class PassportViewModel
     public Dictionary<int, int> FlightsPerYear { get; init; } = new();
 
     /// <summary>
+    /// Breakdown for charts: flights grouped by airline name.
+    /// </summary>
+    public Dictionary<string, int> FlightsByAirline { get; init; } = new();
+
+    /// <summary>
+    /// Breakdown for charts: flights grouped by aircraft type/model.
+    /// </summary>
+    public Dictionary<string, int> FlightsByAircraftType { get; init; } = new();
+
+    /// <summary>
     /// Routes to render on the map (past and upcoming).
     /// </summary>
     public List<MapFlightDto> Routes { get; init; } = new();

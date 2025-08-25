@@ -97,6 +97,8 @@ public class PassportController : Controller
             AirportsVisited = data.AirportsVisited,
             CountriesVisitedIso2 = data.CountriesVisitedIso2,
             FlightsPerYear = data.FlightsPerYear,
+            FlightsByAirline = data.FlightsByAirline,
+            FlightsByAircraftType = data.FlightsByAircraftType,
             Routes = data.Routes
         };
         return View(model);

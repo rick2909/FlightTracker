@@ -127,6 +127,23 @@ public class PassportService : IPassportService
             .GroupBy(uf => uf.Flight!.DepartureTimeUtc.Year)
             .ToDictionary(g => g.Key, g => g.Count());
 
+        // Breakdown: flights by airline (OperatingAirline.Name)
+        var flightsByAirline = flown
+            .Select(uf => uf.Flight!.OperatingAirline?.Name)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Select(n => n!)
+            .GroupBy(n => n, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+
+        // Breakdown: flights by aircraft type (Model or ICAO type)
+        var flightsByAircraftType = flown
+            .Select(uf => uf.Flight!.Aircraft)
+            .Where(a => a != null)
+            .Select(a => string.IsNullOrWhiteSpace(a!.Model) ? a!.IcaoTypeCode ?? string.Empty : a!.Model)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .GroupBy(s => s!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+
         // Map routes (reuse existing service, include upcoming too)
         var routes = (await _mapFlightService.GetUserMapFlightsAsync(userId, maxPast: 1000, maxUpcoming: 1000, cancellationToken)).ToList();
 
@@ -144,6 +161,8 @@ public class PassportService : IPassportService
             AirportsVisited = airportsVisited,
             CountriesVisitedIso2 = countriesVisited,
             FlightsPerYear = flightsPerYear,
+            FlightsByAirline = flightsByAirline,
+            FlightsByAircraftType = flightsByAircraftType,
             Routes = routes
         };
     }

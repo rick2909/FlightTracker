@@ -29,6 +29,10 @@ public record PassportDataDto
     // Year → count
     public Dictionary<int, int> FlightsPerYear { get; init; } = new();
 
+    // Breakdowns for charts
+    public Dictionary<string, int> FlightsByAirline { get; init; } = new();
+    public Dictionary<string, int> FlightsByAircraftType { get; init; } = new();
+
     // Map routes (past + upcoming)
     public List<MapFlightDto> Routes { get; init; } = new();
 }

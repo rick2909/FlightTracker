@@ -37,7 +37,30 @@
     } catch (_) { /* no-op */ }
   }
 
+  function initPie(targetId, dict, label){
+    try {
+      if (!w.ApexCharts) { return; }
+      const el = document.getElementById(targetId);
+      if (!el) { return; }
+
+      const keys = Object.keys(dict || {});
+      const series = keys.map(k => dict[k] ?? 0);
+      const options = {
+        chart: { type: 'donut', height: 260, toolbar: { show: false } },
+        series,
+        labels: keys,
+        legend: { position: 'bottom' },
+        dataLabels: { enabled: true },
+        tooltip: { y: { formatter: (val) => `${val}` } },
+        noData: { text: 'No data' },
+        title: label ? { text: '', align: 'center' } : undefined
+      };
+      const chart = new w.ApexCharts(el, options);
+      chart.render();
+    } catch (_) { /* no-op */ }
+  }
+
 
   // Only chart initializer here. Map rendering handled by shared flight-map.js
-  w.Passport = { initPassportChart };
+  w.Passport = { initPassportChart, initPie };
 })(window);
