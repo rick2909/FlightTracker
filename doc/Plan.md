@@ -42,6 +42,8 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Define external provider abstraction: IFlightDataProvider (live flight & track retrieval)
 - [ ] Define IFlightStatsService + DTOs for passport/stats (TotalFlights, TotalHours, MonthlyCounts)
 - [ ] Pagination & filtering strategy abstraction (FlightQueryOptions) (Deferred)
+ - [x] Add IPassportService + PassportService (aggregate stats + routes)
+ - [x] Add PassportDataDto (single payload for Passport page)
 
 ## 4. Infrastructure Layer
 
@@ -78,11 +80,18 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 - [x] Create `FlightTracker.Web` project (WASM)
 - [x] Integrate Radzen components (only UI layer)
-- [ ] Integrate ApexCharts for stats (passport charts)
+- [x] Choose charting library: ApexCharts
+- [ ] *Integrate ApexCharts for stats (passport charts)*
 - [x] Map component via JS interop (MapLibre or Leaflet) spike
 - [ ] Flight list & selection panel
 - [ ] Airport detail page
 - [ ] Passport / Stats dashboard (charts + summary cards)
+		- [x] Summary cards bound to DB data via IPassportService
+		- [x] Flights Per Year chart (ApexCharts)
+		- [ ] Pie chart: Airlines flown (ApexCharts)
+		- [ ] Pie chart: Aircraft types flown (ApexCharts)
+	- [ ] *Charts wiring (ApexCharts) and interactions*  
+			Note: Scripts included; finalize dataset + rendering hooks
 - [ ] State-based flight views (Pre-flight, At airport, Post-flight) UI workflow
 - [ ] Auth UI (login/register) once API auth ready
 - [ ] Light/Dark theme toggle + Material design tokens
@@ -113,6 +122,11 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [ ] Expose API endpoint /stats/user/{id}
 - [ ] Provide chart-friendly DTOs (MonthlyFlightCounts etc.)
 - [ ] Integrate charts in UI (ApexCharts) once Web project exists
+ - [x] Implement IPassportService returning PassportDataDto (aggregates + routes)
+ - [x] Wire Web to DB (replace mock): `PassportController` maps PassportDataDto => PassportViewModel
+ - [x] Routing: support `/passport/{id?}` with fallback to current user or redirect when unauthenticated
+ - [ ] Add privacy/sharing option for viewing someone else’s passport (Deferred)
+ - [ ] Normalize country codes to ISO-3166-1 alpha-2 for flag rendering
 
 ## 10. Testing Strategy
 
