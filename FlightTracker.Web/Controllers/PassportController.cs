@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using YourApp.Models;
 using FlightTracker.Application.Services.Interfaces;
 using System.Security.Claims;
+using System.Linq;
 
 namespace FlightTracker.Web.Controllers;
 
@@ -14,18 +15,34 @@ public class PassportController : Controller
     {
         _passportService = passportService;
     }
-    [HttpGet]
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    [HttpGet("{id?}")]
+    public async Task<IActionResult> Index(int? id, CancellationToken cancellationToken)
     {
-        // Resolve current user id; fall back to demo user id = 0 (service can decide default) if unauthenticated
-        int userId = 0;
-        if (User?.Identity?.IsAuthenticated == true)
+        // TODO make this an optional parameter that a user can block this and or later only can share it (temporary with an outher user).
+        // Choose target user id:
+        // - If id provided: use it.
+        // - Else if authenticated: use current user id.
+        // - Else: redirect back (or Dashboard) and render nothing.
+        int? userId = id;
+        if (userId is null)
         {
-            var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (int.TryParse(idStr, out var parsed)) userId = parsed;
+            if (User?.Identity?.IsAuthenticated == true)
+            {
+                var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (int.TryParse(idStr, out var parsed)) userId = parsed;
+            }
+            else
+            {
+                var referer = Request.Headers["Referer"].FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(referer))
+                {
+                    return Redirect(referer);
+                }
+                return RedirectToAction("Index", "Dashboard");
+            }
         }
 
-        var data = await _passportService.GetPassportDataAsync(userId, cancellationToken);
+        var data = await _passportService.GetPassportDataAsync(userId!.Value, cancellationToken);
 
         var model = new PassportViewModel
         {
