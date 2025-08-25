@@ -78,8 +78,11 @@
     <div class="rz-card-footer" style="font-size:.8rem;color:#666">Routes drawn from recorded flights</div>
     </div>
 
-<!-- Stats grid -->
-<div class="ft-stats-grid" style="margin:1rem 0">
+<!-- Cards + Charts responsive grid -->
+<div class="ft-passport-grid" style="margin:1rem 0">
+    <div class="ft-passport-grid__cards">
+    <!-- Stats grid -->
+    <div class="ft-stats-grid">
     <div class="ft-stats-grid__item">
         <div class="rz-card">
             <div class="rz-card-body">
@@ -186,11 +189,10 @@
             </div>
         </div>
     </div>
-</div>
+        </div>
+    </div>
 
-<!-- Right-side charts: Airlines flown (pie), Aircraft types (pie) -->
-<div class="ft-stats-grid" style="margin:1rem 0; display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:1rem;">
-    <div class="ft-stats-grid__item" style="grid-column:auto / span 1;">
+    <aside class="ft-passport-grid__charts">
         <div class="rz-card">
             <div class="rz-card-header" style="display:flex;align-items:center;gap:.5rem">
                 <span class="material-icons" aria-hidden="true">apartment</span>
@@ -200,8 +202,7 @@
                 <div id="passport-airlines-pie" style="min-height:260px"></div>
             </div>
         </div>
-    </div>
-    <div class="ft-stats-grid__item" style="grid-column:auto / span 1;">
+
         <div class="rz-card">
             <div class="rz-card-header" style="display:flex;align-items:center;gap:.5rem">
                 <span class="material-icons" aria-hidden="true">flight</span>
@@ -211,11 +212,7 @@
                 <div id="passport-aircraft-pie" style="min-height:260px"></div>
             </div>
         </div>
-    </div>
-    <div class="ft-stats-grid__item" style="grid-column:1 / -1;">
-        <!-- reserved for future full-width chart/card under these two -->
-    </div>
-    
+    </aside>
 </div>
 
 <!-- Flights per Year chart -->
