@@ -156,7 +156,7 @@
                 <div style="display:flex;align-items:center;gap:.6rem">
                     <span class="material-symbols-outlined">multiple_airports</span>
                     <div>
-                        <div style="font-weight:600">Favorite Airport</div><div> @*@(Model.FavoriteAirport ?? "None")*@ None</div>
+                        <div style="font-weight:600">Favorite Airport</div><div>@(string.IsNullOrWhiteSpace(Model.FavoriteAirport) ? "None" : Model.FavoriteAirport)</div>
                     </div>
                 </div>
             </div>
@@ -168,7 +168,7 @@
                 <div style="display:flex;align-items:center;gap:.6rem">
                     <span class="material-icons">flight</span>
                     <div>
-                        <div style="font-weight:600">Most flown aircraft type</div><div> @*@(Model.MostFlownAircraftType ?? "None")*@ None</div>
+                        <div style="font-weight:600">Most flown aircraft type</div><div>@(string.IsNullOrWhiteSpace(Model.MostFlownAircraftType) ? "None" : Model.MostFlownAircraftType)</div>
                     </div>
                 </div>
             </div>
@@ -180,7 +180,7 @@
                 <div style="display:flex;align-items:center;gap:.6rem">
                     <span class="material-icons">flight_class</span>
                     <div>
-                        <div style="font-weight:600">Favorite class</div><div> @*@(Model.FavoriteClass ?? "None")*@ Economy</div>
+                        <div style="font-weight:600">Favorite class</div><div>@(string.IsNullOrWhiteSpace(Model.FavoriteClass) ? "None" : Model.FavoriteClass)</div>
                     </div>
                 </div>
             </div>

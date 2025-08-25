@@ -1,44 +1,34 @@
-using System;
 using System.Collections.Generic;
 using FlightTracker.Application.Dtos;
 
-namespace YourApp.Models;
+namespace FlightTracker.Application.Dtos;
 
 /// <summary>
-/// ViewModel for the Passport screen (Flighty-style).
-/// Reuses MapFlightDto for map routes.
+/// Aggregated dataset for the Passport page, derived from the user's flights.
+/// Does not include UI identity fields (name/avatar).
 /// </summary>
-public class PassportViewModel
+public record PassportDataDto
 {
-    // Profile
-    public string UserName { get; init; } = string.Empty;
-    public string? AvatarUrl { get; init; }
-
-    // Aggregate stats
+    // Aggregates
     public int TotalFlights { get; init; }
     public int TotalMiles { get; init; }
+    public int LongestFlightMiles { get; init; }
+    public int ShortestFlightMiles { get; init; }
+
+    // Favorites/Top
     public string FavoriteAirline { get; init; } = string.Empty;
     public string FavoriteAirport { get; init; } = string.Empty;
     public string MostFlownAircraftType { get; init; } = string.Empty;
     public string FavoriteClass { get; init; } = string.Empty;
-    public int LongestFlightMiles { get; init; }
-    public int ShortestFlightMiles { get; init; }
 
     // Collections
     public List<string> AirlinesVisited { get; init; } = new();
     public List<string> AirportsVisited { get; init; } = new();
-    /// <summary>
-    /// ISO-3166-1 alpha-2 country codes (lowercase preferred, e.g., "us").
-    /// </summary>
     public List<string> CountriesVisitedIso2 { get; init; } = new();
 
-    /// <summary>
-    /// Year → number of flights.
-    /// </summary>
+    // Year → count
     public Dictionary<int, int> FlightsPerYear { get; init; } = new();
 
-    /// <summary>
-    /// Routes to render on the map (past and upcoming).
-    /// </summary>
+    // Map routes (past + upcoming)
     public List<MapFlightDto> Routes { get; init; } = new();
 }
