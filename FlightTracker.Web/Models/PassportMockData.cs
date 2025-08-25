@@ -23,9 +23,9 @@ public static class PassportMockData
             AvatarUrl = "https://i.pravatar.cc/56",
             TotalFlights = 128,
             TotalMiles = 345_678,
-            FavoriteAirline = "Delta",
+            FavoriteAirline = "FlightTracker Virtual",
             FavoriteAirport = "SFO",
-            MostFlownAircraftType = "Boeing 737-800",
+            MostFlownAircraftType = "A350-900",
             FavoriteClass = "Economy",
             LongestFlightMiles = 8_765,
             ShortestFlightMiles = 123,
@@ -40,6 +40,21 @@ public static class PassportMockData
                 { 2021, 12 },
                 { 2022, 18 },
                 { 2023, 26 }
+            },
+            FlightsByAirline = new()
+            {
+                { "FlightTracker Virtual", 8 },
+                { "Delta", 6 },
+                { "KLM", 4 },
+                { "Air France", 3 },
+                { "British Airways", 2 }
+            },
+            FlightsByAircraftType = new()
+            {
+                { "A350-900", 6 },
+                { "A320", 6 },
+                { "Boeing 737-800", 4 },
+                { "787-9", 3 }
             },
             Routes = new()
             {
