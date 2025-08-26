@@ -99,7 +99,7 @@
   }
 
   async function loadFlights(airportId){
-    const url = `/Airports/${airportId}/Flights`;
+    const url = `/Airports/${airportId}/Flights?live=${useLive}`;
     try{
       const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
       if(!res.ok) throw new Error('HTTP '+res.status);
@@ -111,6 +111,15 @@
       (data.departing ?? []).forEach(f => depEl.appendChild(renderFlightItem(f)));
       (data.arriving ?? []).forEach(f => arrEl.appendChild(renderFlightItem(f)));
     }catch(e){ console.warn('[airports-map] flights error', e); }
+  }
+
+  const toggle = document.getElementById('airportsToggleFlights');
+  if(toggle){
+    useLive = !!toggle.checked;
+    toggle.addEventListener('change', () => {
+      useLive = !!toggle.checked;
+      if(selectedAirport){ loadFlights(selectedAirport.id); }
+    });
   }
 
   map.on('moveend zoomend', () => loadAirports());

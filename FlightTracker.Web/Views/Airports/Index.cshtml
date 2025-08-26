@@ -2,8 +2,22 @@
     ViewData["Title"] = "Airports";
 }
 
+@section HeaderContent {
+    <div class="ft-toolbar">
+        <h2 class="layout__title" style="margin:0">Airport Overview</h2>
+        <div class="ft-toolbar__actions">
+            <label for="airportsToggleFlights" class="rz-text-secondary" style="display:inline-flex;align-items:center;gap:.75rem;user-select:none;">
+                <span>Use live Aviationstack</span>
+                <span class="rz-switch">
+                    <input id="airportsToggleFlights" type="checkbox" class="rz-switch-input" aria-label="Use live Aviationstack" />
+                    <span class="rz-switch-slider"></span>
+                </span>
+            </label>
+        </div>
+    </div>
+}
+
 <section class="container py-3">
-    <h1 class="mb-3">Airport Overview</h1>
 
     <div id="airportsMap" class="flight-map__map" style="min-height:70vh" role="region" aria-label="Airports map"></div>
 

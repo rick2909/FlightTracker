@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Application.Repositories.Interfaces;
 using FlightTracker.Domain.Entities;
+using FlightTracker.Application.Dtos;
 
 namespace FlightTracker.Web.Controllers.Web;
 
@@ -12,11 +13,131 @@ namespace FlightTracker.Web.Controllers.Web;
 [Route("[controller]")]
 public class AirportsController(ILogger<AirportsController> logger,
     IAirportService airportService,
-    IFlightRepository flightRepository) : Controller
+    IFlightRepository flightRepository,
+    IAirportLiveService airportLiveService) : Controller
 {
     private readonly ILogger<AirportsController> _logger = logger;
     private readonly IAirportService _airportService = airportService;
     private readonly IFlightRepository _flightRepository = flightRepository;
+    private readonly IAirportLiveService _airportLiveService = airportLiveService;
+
+    // Helper types and methods for live merge
+    private sealed record FlightListItem(
+        int? Id,
+        string FlightNumber,
+        string Route,
+        string? Airline,
+        string? Aircraft,
+        string? DepartureTimeUtc,
+        string? ArrivalTimeUtc
+    );
+
+    private static string BuildRoute(string? dep, string? arr) => $"{(dep ?? "?")} → {(arr ?? "?")}";
+
+    private static FlightListItem MapDbFlight(Flight f)
+    {
+        var route = BuildRoute(
+            f.DepartureAirport is null ? null : (f.DepartureAirport.IataCode ?? f.DepartureAirport.IcaoCode ?? f.DepartureAirport.Name),
+            f.ArrivalAirport is null ? null : (f.ArrivalAirport.IataCode ?? f.ArrivalAirport.IcaoCode ?? f.ArrivalAirport.Name));
+        var aircraft = f.Aircraft != null
+            ? (string.IsNullOrWhiteSpace(f.Aircraft.Registration) ? f.Aircraft.Model : $"{f.Aircraft.Model} • {f.Aircraft.Registration}")
+            : null;
+        return new FlightListItem(
+            f.Id,
+            f.FlightNumber ?? string.Empty,
+            route,
+            f.OperatingAirline?.Name,
+            aircraft,
+            f.DepartureTimeUtc.ToString("o", CultureInfo.InvariantCulture),
+            f.ArrivalTimeUtc.ToString("o", CultureInfo.InvariantCulture)
+        );
+    }
+
+    private static FlightListItem MapLiveFlight(LiveFlightDto l)
+    {
+        var route = BuildRoute(l.DepartureIata ?? l.DepartureIcao, l.ArrivalIata ?? l.ArrivalIcao);
+        var aircraft = !string.IsNullOrWhiteSpace(l.AircraftRegistration)
+            ? (string.IsNullOrWhiteSpace(l.AircraftIcaoType) ? l.AircraftRegistration : $"{l.AircraftIcaoType} • {l.AircraftRegistration}")
+            : l.AircraftIcaoType;
+        return new FlightListItem(
+            null,
+            l.FlightNumber,
+            route,
+            l.AirlineName ?? l.AirlineIata ?? l.AirlineIcao,
+            aircraft,
+            (l.DepartureActualUtc ?? l.DepartureScheduledUtc)?.ToString("o", CultureInfo.InvariantCulture),
+            (l.ArrivalActualUtc ?? l.ArrivalScheduledUtc)?.ToString("o", CultureInfo.InvariantCulture)
+        );
+    }
+
+    private static string DedupKey(FlightListItem i)
+        => $"{i.FlightNumber?.Trim().ToUpperInvariant()}|{i.Route?.Trim().ToUpperInvariant()}";
+
+    private static FlightListItem Combine(FlightListItem primary, FlightListItem secondary)
+    {
+        return new FlightListItem(
+            primary.Id ?? secondary.Id,
+            string.IsNullOrWhiteSpace(primary.FlightNumber) ? secondary.FlightNumber : primary.FlightNumber,
+            string.IsNullOrWhiteSpace(primary.Route) ? secondary.Route : primary.Route,
+            string.IsNullOrWhiteSpace(primary.Airline) ? secondary.Airline : primary.Airline,
+            string.IsNullOrWhiteSpace(primary.Aircraft) ? secondary.Aircraft : primary.Aircraft,
+            string.IsNullOrWhiteSpace(primary.DepartureTimeUtc) ? secondary.DepartureTimeUtc : primary.DepartureTimeUtc,
+            string.IsNullOrWhiteSpace(primary.ArrivalTimeUtc) ? secondary.ArrivalTimeUtc : primary.ArrivalTimeUtc
+        );
+    }
+
+    private static IEnumerable<FlightListItem> BuildMerged(IEnumerable<Flight> db, IEnumerable<LiveFlightDto> live)
+    {
+        var dict = new Dictionary<string, FlightListItem>();
+        foreach (var f in db)
+        {
+            var item = MapDbFlight(f);
+            dict[DedupKey(item)] = item; // DB primary
+        }
+        foreach (var l in live)
+        {
+            var item = MapLiveFlight(l);
+            var key = DedupKey(item);
+            if (dict.TryGetValue(key, out var existing))
+            {
+                dict[key] = Combine(existing, item);
+            }
+            else
+            {
+                dict[key] = item;
+            }
+        }
+
+        return dict.Values
+            .OrderByDescending(i => i.DepartureTimeUtc)
+            .Take(100);
+    }
+
+    private async Task<object> BuildMergedLivePayloadAsync(string code, string? dir, CancellationToken ct)
+    {
+        var dbDepTask = _flightRepository.SearchByRouteAsync(code, null, null, ct);
+        var dbArrTask = _flightRepository.SearchByRouteAsync(null, code, null, ct);
+        var liveDepTask = _airportLiveService.GetDeparturesAsync(code, 50, ct);
+        var liveArrTask = _airportLiveService.GetArrivalsAsync(code, 50, ct);
+
+        await Task.WhenAll(dbDepTask, dbArrTask, liveDepTask, liveArrTask);
+
+        var lowered = dir?.ToLowerInvariant();
+        if (lowered == "departing")
+        {
+            var departing = BuildMerged(dbDepTask.Result, liveDepTask.Result);
+            return new { departing };
+        }
+        if (lowered == "arriving")
+        {
+            var arriving = BuildMerged(dbArrTask.Result, liveArrTask.Result);
+            return new { arriving };
+        }
+
+        var mergedDeparting = BuildMerged(dbDepTask.Result, liveDepTask.Result);
+        var mergedArriving = BuildMerged(dbArrTask.Result, liveArrTask.Result);
+        return new { departing = mergedDeparting, arriving = mergedArriving };
+    }
 
     [HttpGet("")]
     public IActionResult Index()
@@ -101,7 +222,7 @@ public class AirportsController(ILogger<AirportsController> logger,
     /// Returns flights for an airport (both departing and arriving).
     /// </summary>
     [HttpGet("{id:int}/Flights")]
-    public async Task<IActionResult> Flights(int id, string? dir = null)
+    public async Task<IActionResult> Flights(int id, string? dir = null, bool live = false)
     {
         try
         {
@@ -114,6 +235,12 @@ public class AirportsController(ILogger<AirportsController> logger,
 
             // Prefer IATA code for search, else ICAO, else name as fallback
             var code = airport.IataCode ?? airport.IcaoCode ?? airport.Name;
+
+            if (live)
+            {
+                var livePayload = await BuildMergedLivePayloadAsync(code!, dir, HttpContext.RequestAborted);
+                return Json(livePayload);
+            }
 
             // Fetch by route using repository to include nav properties
             var allDeparting = await _flightRepository.SearchByRouteAsync(code, null, null, HttpContext.RequestAborted);
@@ -164,3 +291,4 @@ public class AirportsController(ILogger<AirportsController> logger,
         }
     }
 }
+
