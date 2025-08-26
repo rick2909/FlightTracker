@@ -42,6 +42,26 @@
         m.addTo(markersLayer);
         markerIndex.set(a.id, m);
       });
+
+      // Keep selected airport visible and highlighted across zoom/bounds
+      if(selectedAirport && selectedAirport.lat != null && selectedAirport.lon != null){
+        let sm = markerIndex.get(selectedAirport.id);
+        if(!sm){
+          const label = `${selectedAirport.name}${selectedAirport.iata?` (${selectedAirport.iata})`: (selectedAirport.icao?` (${selectedAirport.icao})`: '')}`;
+          const base = getCssVar('--airports-marker') || '#3f51b5';
+          const outline = getCssVar('--airports-marker-outline') || base;
+          sm = L.circleMarker([selectedAirport.lat, selectedAirport.lon], { radius:6, color:outline, weight:2, fill:true, fillOpacity:0.85, fillColor: base });
+          sm.bindTooltip(label);
+          sm.on('click', () => selectAirport(selectedAirport));
+          sm.addTo(markersLayer);
+          markerIndex.set(selectedAirport.id, sm);
+        }
+        if(selectedMarker && selectedMarker !== sm){
+          setMarkerSelected(selectedMarker, false);
+        }
+        setMarkerSelected(sm, true);
+        selectedMarker = sm;
+      }
     }catch(e){ console.warn('[airports-map] load error', e); }
   }
 
