@@ -15,6 +15,7 @@
     private bool isOpen;
     private CreateUserFlightDto draft = new();
     private DotNetObjectReference<AddFlightLauncher>? dotnetRef;
+    private bool _registeredWithJs;
     [Parameter]
     public bool ShowButton { get; set; } = true;
 
@@ -48,10 +49,18 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (!_registeredWithJs)
         {
-            dotnetRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("FT.registerAddFlight", dotnetRef);
+            try
+            {
+                dotnetRef ??= DotNetObjectReference.Create(this);
+                await JS.InvokeVoidAsync("FT.registerAddFlight", dotnetRef);
+                _registeredWithJs = true;
+            }
+            catch
+            {
+                // JS not available during prerender; will retry on next render when circuit connects
+            }
         }
     }
 
@@ -75,11 +84,12 @@
             ArrivalTimeUtc = arrUtc
         };
 
-        // Open dialog
-        isOpen = true;
+    // Open dialog
+    isOpen = true;
 
         // After it opens, ask tabs to switch to Manual via a small timer (handled in tabs component via cascading value or param in future if needed)
-        StateHasChanged();
+    StateHasChanged();
+    _ = JS.InvokeVoidAsync("console.debug", "[AddFlightLauncher] isOpen:", isOpen);
     }
 
     private static DateTime? TryParseUtc(string? iso)
@@ -94,7 +104,7 @@
 
     public async ValueTask DisposeAsync()
     {
-        dotnetRef?.Dispose();
+    dotnetRef?.Dispose();
         await Task.CompletedTask;
     }
 

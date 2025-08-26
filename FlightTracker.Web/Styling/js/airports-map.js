@@ -108,9 +108,22 @@
     btn.type = 'button';
     btn.title = 'Add to my flights';
     btn.textContent = 'Add flight';
-    // Hook for later wiring
+    // Wire to open Blazor dialog via interop
     btn.addEventListener('click', () => {
-      console.log('Add flight clicked for', f);
+      const data = {
+        id: f.id,
+        flightNumber: f.flightNumber,
+        route: f.route,
+        departureCode: f.departureCode ?? null,
+        arrivalCode: f.arrivalCode ?? null,
+        departureTimeUtc: f.departureTimeUtc,
+        arrivalTimeUtc: f.arrivalTimeUtc
+      };
+      if(window.FT && typeof window.FT.openAddFlight === 'function'){
+        window.FT.openAddFlight(data);
+      } else {
+        console.warn('[airports-map] FT.openAddFlight not available');
+      }
     });
     right.appendChild(btn);
     div.appendChild(left);

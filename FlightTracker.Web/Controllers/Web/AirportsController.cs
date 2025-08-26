@@ -29,7 +29,9 @@ public class AirportsController(ILogger<AirportsController> logger,
         string? Airline,
         string? Aircraft,
         string? DepartureTimeUtc,
-        string? ArrivalTimeUtc
+        string? ArrivalTimeUtc,
+        string? DepartureCode,
+        string? ArrivalCode
     );
 
     private static string BuildRoute(string? dep, string? arr) => $"{(dep ?? "?")} → {(arr ?? "?")}";
@@ -39,6 +41,8 @@ public class AirportsController(ILogger<AirportsController> logger,
         var route = BuildRoute(
             f.DepartureAirport is null ? null : (f.DepartureAirport.IataCode ?? f.DepartureAirport.IcaoCode ?? f.DepartureAirport.Name),
             f.ArrivalAirport is null ? null : (f.ArrivalAirport.IataCode ?? f.ArrivalAirport.IcaoCode ?? f.ArrivalAirport.Name));
+        var depCode = f.DepartureAirport is null ? null : (f.DepartureAirport.IataCode ?? f.DepartureAirport.IcaoCode ?? f.DepartureAirport.Name);
+        var arrCode = f.ArrivalAirport is null ? null : (f.ArrivalAirport.IataCode ?? f.ArrivalAirport.IcaoCode ?? f.ArrivalAirport.Name);
         var aircraft = f.Aircraft != null
             ? (string.IsNullOrWhiteSpace(f.Aircraft.Registration) ? f.Aircraft.Model : $"{f.Aircraft.Model} • {f.Aircraft.Registration}")
             : null;
@@ -49,7 +53,9 @@ public class AirportsController(ILogger<AirportsController> logger,
             f.OperatingAirline?.Name,
             aircraft,
             f.DepartureTimeUtc.ToString("o", CultureInfo.InvariantCulture),
-            f.ArrivalTimeUtc.ToString("o", CultureInfo.InvariantCulture)
+            f.ArrivalTimeUtc.ToString("o", CultureInfo.InvariantCulture),
+            depCode,
+            arrCode
         );
     }
 
@@ -66,7 +72,9 @@ public class AirportsController(ILogger<AirportsController> logger,
             l.AirlineName ?? l.AirlineIata ?? l.AirlineIcao,
             aircraft,
             (l.DepartureActualUtc ?? l.DepartureScheduledUtc)?.ToString("o", CultureInfo.InvariantCulture),
-            (l.ArrivalActualUtc ?? l.ArrivalScheduledUtc)?.ToString("o", CultureInfo.InvariantCulture)
+            (l.ArrivalActualUtc ?? l.ArrivalScheduledUtc)?.ToString("o", CultureInfo.InvariantCulture),
+            l.DepartureIata ?? l.DepartureIcao,
+            l.ArrivalIata ?? l.ArrivalIcao
         );
     }
 
@@ -82,7 +90,9 @@ public class AirportsController(ILogger<AirportsController> logger,
             string.IsNullOrWhiteSpace(primary.Airline) ? secondary.Airline : primary.Airline,
             string.IsNullOrWhiteSpace(primary.Aircraft) ? secondary.Aircraft : primary.Aircraft,
             string.IsNullOrWhiteSpace(primary.DepartureTimeUtc) ? secondary.DepartureTimeUtc : primary.DepartureTimeUtc,
-            string.IsNullOrWhiteSpace(primary.ArrivalTimeUtc) ? secondary.ArrivalTimeUtc : primary.ArrivalTimeUtc
+            string.IsNullOrWhiteSpace(primary.ArrivalTimeUtc) ? secondary.ArrivalTimeUtc : primary.ArrivalTimeUtc,
+            string.IsNullOrWhiteSpace(primary.DepartureCode) ? secondary.DepartureCode : primary.DepartureCode,
+            string.IsNullOrWhiteSpace(primary.ArrivalCode) ? secondary.ArrivalCode : primary.ArrivalCode
         );
     }
 
@@ -247,7 +257,7 @@ public class AirportsController(ILogger<AirportsController> logger,
             var allArriving = await _flightRepository.SearchByRouteAsync(null, code, null, HttpContext.RequestAborted);
 
             // Map to lightweight JSON
-            var departing = allDeparting
+        var departing = allDeparting
                 .OrderByDescending(f => f.DepartureTimeUtc)
                 .Take(100)
                 .Select(f => new
@@ -255,13 +265,15 @@ public class AirportsController(ILogger<AirportsController> logger,
                     id = f.Id,
                     flightNumber = f.FlightNumber,
                     route = $"{(f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode ?? f.DepartureAirport?.Name)} → {(f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode ?? f.ArrivalAirport?.Name)}",
+            departureCode = f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode ?? f.DepartureAirport?.Name,
+            arrivalCode = f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode ?? f.ArrivalAirport?.Name,
                     airline = f.OperatingAirline?.Name,
                     aircraft = f.Aircraft != null ? (string.IsNullOrWhiteSpace(f.Aircraft.Registration) ? f.Aircraft.Model : $"{f.Aircraft.Model} • {f.Aircraft.Registration}") : null,
                     departureTimeUtc = f.DepartureTimeUtc.ToString("o", CultureInfo.InvariantCulture),
                     arrivalTimeUtc = f.ArrivalTimeUtc.ToString("o", CultureInfo.InvariantCulture)
                 });
 
-            var arriving = allArriving
+        var arriving = allArriving
                 .OrderByDescending(f => f.DepartureTimeUtc)
                 .Take(100)
                 .Select(f => new
@@ -269,6 +281,8 @@ public class AirportsController(ILogger<AirportsController> logger,
                     id = f.Id,
                     flightNumber = f.FlightNumber,
                     route = $"{(f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode ?? f.DepartureAirport?.Name)} → {(f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode ?? f.ArrivalAirport?.Name)}",
+            departureCode = f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode ?? f.DepartureAirport?.Name,
+            arrivalCode = f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode ?? f.ArrivalAirport?.Name,
                     airline = f.OperatingAirline?.Name,
                     aircraft = f.Aircraft != null ? (string.IsNullOrWhiteSpace(f.Aircraft.Registration) ? f.Aircraft.Model : $"{f.Aircraft.Model} • {f.Aircraft.Registration}") : null,
                     departureTimeUtc = f.DepartureTimeUtc.ToString("o", CultureInfo.InvariantCulture),

@@ -3,7 +3,7 @@
 
 @if (IsOpen)
 {
-    <div class="ft-dialog__backdrop" @onclick="HandleBackdropClick">
+    <div class="ft-dialog__backdrop" style="position:fixed; inset:0; z-index:1000;" @onclick="HandleBackdropClick">
         <div class="ft-dialog" role="dialog" aria-modal="true" @onclick:stopPropagation>
             <div class="ft-dialog__header">
                 <h3 class="ft-dialog__title">Add Flight</h3>
