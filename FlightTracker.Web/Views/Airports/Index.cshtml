@@ -9,13 +9,23 @@
 
     <div id="airportSelection" class="mt-4" hidden>
         <h2 class="h4"><span id="selectedAirportName"></span></h2>
-        <div class="mt-3">
-            <h3 class="h5">Departing flights</h3>
-            <div id="departingList" class="list-group"></div>
-        </div>
-        <div class="mt-4">
-            <h3 class="h5">Arriving flights</h3>
-            <div id="arrivingList" class="list-group"></div>
+        <div class="airport-flights-grid">
+            <div class="airport-flights-grid__col">
+                <div class="rz-card">
+                    <div class="rz-card-header">
+                        <div class="rz-card-title">Departing flights</div>
+                    </div>
+                    <div class="rz-card-body" id="departingList"></div>
+                </div>
+            </div>
+            <div class="airport-flights-grid__col">
+                <div class="rz-card">
+                    <div class="rz-card-header">
+                        <div class="rz-card-title">Arriving flights</div>
+                    </div>
+                    <div class="rz-card-body" id="arrivingList"></div>
+                </div>
+            </div>
         </div>
     </div>
 </section>

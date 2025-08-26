@@ -50,13 +50,14 @@
 
   function renderFlightItem(f){
     const div = document.createElement('div');
-    div.className = 'list-group-item d-flex justify-content-between align-items-center';
+    div.className = 'airport-flight-item rz-p-2';
     const left = document.createElement('div');
-    left.innerHTML = `<div class="fw-semibold">${f.flightNumber} • ${f.route}</div>
-                      <div class="text-muted small">${f.airline ?? '—'}${f.aircraft? ` • ${f.aircraft}`:''}</div>`;
+    left.className = 'airport-flight-item__left';
+    left.innerHTML = `<div class="airport-flight-item__title">${f.flightNumber} • ${f.route}</div>
+                      <div class="airport-flight-item__subtitle">${f.airline ?? '—'}${f.aircraft? ` • ${f.aircraft}`:''}</div>`;
     const right = document.createElement('div');
     const btn = document.createElement('button');
-    btn.className = 'btn btn-sm btn-primary';
+    btn.className = 'rz-button rz-primary rz-sm';
     btn.type = 'button';
     btn.title = 'Add to my flights';
     btn.textContent = 'Add flight';

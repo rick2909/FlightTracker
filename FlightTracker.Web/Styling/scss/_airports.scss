@@ -1,0 +1,36 @@
+@use 'variables' as *;
+
+/* Airports page styles (BEM) */
+.airport-flights-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $spacing-4;
+
+  @include up-xs { // phones and up -> 2 columns
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.airport-flight-item {
+  display: flex; /* positioning */
+  align-items: center; /* positioning */
+  justify-content: space-between; /* positioning */
+  padding: $spacing-3; /* box model */
+  border-top: 1px solid $color-divider; /* visual */
+
+  &:first-child { border-top: 0; }
+
+  &__left {
+    min-width: 0; /* box model */
+  }
+
+  &__title {
+    font-weight: 600; /* typography */
+    line-height: 1.3; /* typography */
+  }
+
+  &__subtitle {
+    color: $color-text-secondary; /* typography */
+    font-size: .85rem; /* typography */
+  }
+}
