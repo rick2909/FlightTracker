@@ -1,6 +1,13 @@
 @use 'variables' as *;
 
 /* Airports page styles (BEM) */
+.rz-material, :root {
+  /* Airports map marker variables sourced from theme tokens */
+  --airports-marker: #{$color-primary};
+  --airports-marker-selected: #{$color-highlight};
+  --airports-marker-outline: #{$color-primary-variant};
+}
+
 .airport-flights-grid {
   display: grid;
   grid-template-columns: 1fr;

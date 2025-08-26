@@ -12,6 +12,8 @@
 
   const markersLayer = L.layerGroup().addTo(map);
   let lastReq = 0;
+  let markerIndex = new Map();
+  let selectedMarker = null;
 
   function boundsQuery(){
     const b = map.getBounds();
@@ -28,21 +30,46 @@
       const list = await res.json();
       if(reqId !== lastReq) return; // stale
       markersLayer.clearLayers();
+      markerIndex = new Map();
       list.forEach(a => {
         if(a.lat == null || a.lon == null) return;
         const label = `${a.name}${a.iata?` (${a.iata})`: (a.icao?` (${a.icao})`: '')}`;
-        const m = L.circleMarker([a.lat, a.lon], { radius:6, color:'#1976d2', weight:2, fill:true, fillOpacity:0.7 });
+        const color = getCssVar('--airports-marker') || '#3f51b5';
+        const outline = getCssVar('--airports-marker-outline') || color;
+        const m = L.circleMarker([a.lat, a.lon], { radius:6, color:outline, weight:2, fill:true, fillOpacity:0.85, fillColor: color });
         m.bindTooltip(label);
         m.on('click', () => selectAirport(a));
         m.addTo(markersLayer);
+        markerIndex.set(a.id, m);
       });
     }catch(e){ console.warn('[airports-map] load error', e); }
   }
 
   let selectedAirport = null;
 
+  function getCssVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function setMarkerSelected(marker, isSelected){
+    const base = getCssVar('--airports-marker') || '#3f51b5';
+    const selected = getCssVar('--airports-marker-selected') || '#29B6F6';
+    const outline = getCssVar('--airports-marker-outline') || base;
+    const color = isSelected ? selected : base;
+    marker.setStyle({
+      color: outline,
+      fillColor: color,
+      weight: isSelected ? 3 : 2,
+      radius: isSelected ? 8 : 6,
+      fillOpacity: isSelected ? 0.95 : 0.85
+    });
+  }
+
   async function selectAirport(a){
     selectedAirport = a;
+    if(selectedMarker){ setMarkerSelected(selectedMarker, false); }
+    const m = markerIndex.get(a.id);
+    if(m){ setMarkerSelected(m, true); selectedMarker = m; }
     document.getElementById('airportSelection').hidden = false;
     document.getElementById('selectedAirportName').textContent = `${a.name}${a.iata?` (${a.iata})`: (a.icao?` (${a.icao})`: '')}`;
     await loadFlights(a.id);
