@@ -165,6 +165,10 @@
     [Parameter]
     public CreateUserFlightDto? Value { get; set; }
 
+    // Optional: when true, switch to Manual tab on initial render/when Value changes
+    [Parameter]
+    public bool PreferManualTab { get; set; }
+
     [Parameter]
     public EventCallback<CreateUserFlightDto> OnSave { get; set; }
 
@@ -215,6 +219,18 @@
             validation.SeatNumber = Value.SeatNumber;
             flightClass = Value.FlightClass;
             notes = Value.Notes;
+
+            // Prefill manual fields when provided
+            validation.FlightNumber = Value.FlightNumber;
+            validation.DepartureAirportCode = Value.DepartureAirportCode;
+            validation.ArrivalAirportCode = Value.ArrivalAirportCode;
+            validation.DepartureTimeUtc = Value.DepartureTimeUtc;
+            validation.ArrivalTimeUtc = Value.ArrivalTimeUtc;
+
+            if (PreferManualTab)
+            {
+                _tabIndex = 2;
+            }
         }
         else
         {

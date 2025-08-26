@@ -42,6 +42,12 @@
             </div>
         </div>
     </div>
+    <!-- Hidden Blazor launcher to provide JS interop target for opening Add Flight dialog -->
+    <div style="display:none">
+        <component type="typeof(FlightTracker.Web.Components.Flights.AddFlightLauncher)"
+                   render-mode="ServerPrerendered"
+                   param-ShowButton="false" />
+    </div>
 </section>
 
 @section Scripts {
