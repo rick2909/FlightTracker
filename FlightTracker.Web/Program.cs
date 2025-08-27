@@ -11,6 +11,7 @@ using Radzen;
 using FlightTracker.Web;
 using AutoMapper;
 using FlightTracker.Application.Mapping;
+using FlightTracker.Infrastructure.External;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,7 @@ builder.Services.AddScoped<IAirportRepository, AirportRepository>();
 builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 builder.Services.AddScoped<IUserFlightRepository, UserFlightRepository>();
 builder.Services.AddScoped<IAircraftRepository, AircraftRepository>();
+builder.Services.AddScoped<IAirlineRepository, AirlineRepository>();
 
 // Register application services
 builder.Services.AddScoped<IAirportService, AirportService>();
@@ -52,6 +54,13 @@ builder.Services.AddHttpClient<IAirportLiveService, FlightTracker.Infrastructure
 {
     c.Timeout = TimeSpan.FromSeconds(6);
 });
+
+// ADSBdb route lookup and metadata provisioner
+builder.Services.AddHttpClient<IFlightRouteLookupClient, AdsBdbClient>(c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(6);
+});
+builder.Services.AddScoped<IFlightMetadataProvisionService, FlightMetadataProvisionService>();
 
 // External provider(s)
 builder.Services.AddScoped<IFlightDataProvider, FlightTracker.Infrastructure.External.OpenSkyClient>();

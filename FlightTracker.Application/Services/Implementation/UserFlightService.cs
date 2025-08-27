@@ -17,17 +17,23 @@ public class UserFlightService : IUserFlightService
     private readonly IFlightRepository _flightRepository;
     private readonly IAirportService _airportService;
     private readonly IFlightService _flightService;
+    private readonly IFlightMetadataProvisionService _metadataProvisionService;
+    private readonly IAirlineRepository _airlineRepository;
 
     public UserFlightService(
-        IUserFlightRepository userFlightRepository,
-        IFlightRepository flightRepository,
-        IAirportService airportService,
-        IFlightService flightService)
+    IUserFlightRepository userFlightRepository,
+    IFlightRepository flightRepository,
+    IAirportService airportService,
+    IFlightService flightService,
+    IFlightMetadataProvisionService metadataProvisionService,
+    IAirlineRepository airlineRepository)
     {
         _userFlightRepository = userFlightRepository;
         _flightRepository = flightRepository;
         _airportService = airportService;
         _flightService = flightService;
+    _metadataProvisionService = metadataProvisionService;
+    _airlineRepository = airlineRepository;
     }
 
     public async Task<IEnumerable<UserFlightDto>> GetUserFlightsAsync(int userId, CancellationToken cancellationToken = default)
@@ -60,13 +66,13 @@ public class UserFlightService : IUserFlightService
 
     public async Task<UserFlightDto> AddUserFlightAsync(int userId, CreateUserFlightDto createDto, CancellationToken cancellationToken = default)
     {
-    // Validate input
-    new CreateUserFlightDtoValidator().ValidateAndThrow(createDto);
-                // Use existing flight if provided; otherwise create from fields
-                Flight flight = createDto.FlightId > 0
-                        ? await _flightRepository.GetByIdAsync(createDto.FlightId, cancellationToken)
-                            ?? throw new ArgumentException($"Flight with ID {createDto.FlightId} not found.", nameof(createDto.FlightId))
-                        : await CreateFlightFromDtoAsync(createDto, cancellationToken);
+        // Validate input
+        new CreateUserFlightDtoValidator().ValidateAndThrow(createDto);
+        // Use existing flight if provided; otherwise create from fields
+    Flight flight = createDto.FlightId > 0
+            ? await _flightRepository.GetByIdAsync(createDto.FlightId, cancellationToken)
+                ?? throw new ArgumentException($"Flight with ID {createDto.FlightId} not found.", nameof(createDto.FlightId))
+            : await CreateFlightFromDtoAsync(createDto, cancellationToken);
 
         // Check duplicate user-flight record
         var hasFlown = await _userFlightRepository.HasUserFlownFlightAsync(userId, flight.Id, cancellationToken);
@@ -284,6 +290,16 @@ public class UserFlightService : IUserFlightService
 
         EnsureArrivalAfterDeparture(dto.DepartureTimeUtc!.Value, dto.ArrivalTimeUtc!.Value);
 
+        // Provision airports and airline (idempotent) using callsign/flight number
+        try
+        {
+            await _metadataProvisionService.EnsureAirlineAndAirportsForCallsignAsync(dto.FlightNumber!, cancellationToken);
+        }
+        catch
+        {
+            // Non-fatal; continue with local lookup
+        }
+
         var depId = await ResolveAirportIdOrThrowAsync(dto.DepartureAirportCode!, cancellationToken);
         var arrId = await ResolveAirportIdOrThrowAsync(dto.ArrivalAirportCode!, cancellationToken);
 
@@ -296,6 +312,19 @@ public class UserFlightService : IUserFlightService
             DepartureTimeUtc = dto.DepartureTimeUtc!.Value,
             ArrivalTimeUtc = dto.ArrivalTimeUtc!.Value
         };
+
+        // Try to assign operating airline from prefix (IATA/ICAO) after provisioning
+        try
+        {
+            var prefix = new string(dto.FlightNumber!.TakeWhile(char.IsLetter).ToArray()).ToUpperInvariant();
+            if (!string.IsNullOrWhiteSpace(prefix))
+            {
+                var al = await _airlineRepository.GetByIataAsync(prefix, cancellationToken)
+                         ?? await _airlineRepository.GetByIcaoAsync(prefix, cancellationToken);
+                if (al is not null) flight.OperatingAirlineId = al.Id;
+            }
+        }
+        catch { /* optional */ }
 
         return await _flightService.AddFlightAsync(flight, cancellationToken);
     }
