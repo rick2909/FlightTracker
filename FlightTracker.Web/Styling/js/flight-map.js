@@ -68,7 +68,7 @@
             if(f.isUpcoming){
                 if(depOk){
                     const m=L.circleMarker([f.departureLat,f.departureLon],normal.upcoming).addTo(layers.upcoming);
-                    m.bindPopup(`<strong>${f.flightNumber}</strong><br/>Departs ${f.departureAirportCode}<br/>${new Date(f.departureTimeUtc).toUTCString()}`);
+                    m.bindPopup(`<strong>${f.flightNumber}</strong><br/>Departs for ${f.arrivalAirportCode}<br/>${new Date(f.departureTimeUtc).toUTCString()}`);
                     markers.push(m);
                     flightIndex.set(key,{flight:f,type:'upcoming',layer:m});
                 }
