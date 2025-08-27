@@ -158,6 +158,8 @@ public class SettingsController : Controller
         var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
 
         var sb = new StringBuilder();
+    // Hint Excel about the separator to avoid locale issues (e.g., semicolon locales)
+    sb.AppendLine("sep=,");
         sb.AppendLine("FlightNumber,DepartureTimeUtc,ArrivalTimeUtc,DepartureAirport,ArrivalAirport,FlightClass,SeatNumber,DidFly,BookedOnUtc,Notes");
 
         foreach (var f in flights)
@@ -178,8 +180,13 @@ public class SettingsController : Controller
             sb.AppendLine();
         }
 
-        var bytes = Encoding.UTF8.GetBytes(sb.ToString());
-        return File(bytes, "text/csv; charset=utf-8", fileDownloadName: "user-flights.csv");
+    // Prepend UTF-8 BOM so Excel detects encoding and respects separator directive
+    var preamble = Encoding.UTF8.GetPreamble();
+    var contentBytes = Encoding.UTF8.GetBytes(sb.ToString());
+    var bytes = new byte[preamble.Length + contentBytes.Length];
+    Buffer.BlockCopy(preamble, 0, bytes, 0, preamble.Length);
+    Buffer.BlockCopy(contentBytes, 0, bytes, preamble.Length, contentBytes.Length);
+    return File(bytes, "text/csv; charset=utf-8", fileDownloadName: "user-flights.csv");
     }
 
     [HttpGet("/Settings/Export/All.json")]
