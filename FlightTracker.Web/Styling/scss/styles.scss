@@ -8,6 +8,7 @@
 @use 'flight-form';
 @use 'airports';
 @use 'radzen-overrides';
+@use 'settings';
 
 .layout {
   display: flex;

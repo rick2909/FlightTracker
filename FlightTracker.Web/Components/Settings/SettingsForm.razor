@@ -20,6 +20,7 @@
     private ProfileModel profile = new();
     private PasswordModel pwd = new();
     private string visibility = "private";
+    private bool isPublic;
     private string theme = "system";
     private record Option(string Text, string Value);
     private IReadOnlyList<Option> visibilityOptions = new[] { new Option("Public", "public"), new Option("Private", "private") };
@@ -39,6 +40,7 @@
         {
             var v = await GetCookieAsync("ft_profile_visibility");
             if (!string.IsNullOrWhiteSpace(v)) visibility = v!;
+            isPublic = string.Equals(visibility, "public", StringComparison.OrdinalIgnoreCase);
             var t = await GetCookieAsync("ft_theme");
             if (!string.IsNullOrWhiteSpace(t)) theme = t!;
             StateHasChanged();
@@ -102,7 +104,8 @@
 
     private async Task SavePreferencesAsync()
     {
-        await SetCookieAsync("ft_profile_visibility", visibility);
+    visibility = isPublic ? "public" : "private";
+    await SetCookieAsync("ft_profile_visibility", visibility);
         await SetCookieAsync("ft_theme", theme);
         await ApplyThemeAsync(theme);
     await NotifyAsync("Preferences saved", Radzen.NotificationSeverity.Success);
@@ -135,48 +138,50 @@
 <RadzenTabs>
     <Tabs>
         <RadzenTabsItem Text="Profile">
-            <div class="rz-p-2 rz-mt-2">
-                <div class="rz-mb-3">
+            <div class="settings-form">
+                <div class="settings-form__row">
                     <label class="rz-label">Username</label>
-                    <RadzenTextBox @bind-Value="profile.UserName" Style="width: 320px" />
+                    <RadzenTextBox @bind-Value="profile.UserName" Style="width: 100%" />
                 </div>
-                <div class="rz-mb-3">
+                <div class="settings-form__row">
                     <label class="rz-label">Email</label>
-                    <RadzenTextBox @bind-Value="profile.Email" Style="width: 320px" />
+                    <RadzenTextBox @bind-Value="profile.Email" Style="width: 100%" />
                 </div>
                 <RadzenButton Text="Save profile" Click="@(_ => SaveProfileAsync())" ButtonStyle="ButtonStyle.Primary" Icon="save" />
             </div>
     </RadzenTabsItem>
 
     <RadzenTabsItem Text="Password">
-            <div class="rz-p-2 rz-mt-2">
-                <div class="rz-mb-3">
+            <div class="settings-form">
+                <div class="settings-form__row">
                     <label class="rz-label">Current password</label>
-                    <RadzenPassword @bind-Value="pwd.CurrentPassword" Style="width: 320px" />
+                    <RadzenPassword @bind-Value="pwd.CurrentPassword" Style="width: 100%" />
                 </div>
-                <div class="rz-mb-3">
+                <div class="settings-form__row">
                     <label class="rz-label">New password</label>
-                    <RadzenPassword @bind-Value="pwd.NewPassword" Style="width: 320px" />
+                    <RadzenPassword @bind-Value="pwd.NewPassword" Style="width: 100%" />
                 </div>
-                <div class="rz-mb-3">
+                <div class="settings-form__row">
                     <label class="rz-label">Confirm new password</label>
-                    <RadzenPassword @bind-Value="pwd.ConfirmNewPassword" Style="width: 320px" />
+                    <RadzenPassword @bind-Value="pwd.ConfirmNewPassword" Style="width: 100%" />
                 </div>
                 <RadzenButton Text="Change password" Click="@(_ => ChangePasswordAsync())" Icon="key" />
             </div>
     </RadzenTabsItem>
 
     <RadzenTabsItem Text="Preferences">
-            <div class="rz-p-2 rz-mt-2">
-                <div class="rz-mb-4">
-                    <label class="rz-label rz-mr-2">Profile visibility</label>
-            <RadzenRadioButtonList @bind-Value="visibility" TValue="string" Orientation="Orientation.Horizontal"
-                       Data="@visibilityOptions" TextProperty="Text" ValueProperty="Value" />
+            <div class="settings-form">
+                <div class="settings-form__row">
+                    <div class="settings-form__switch-row">
+                        <label class="rz-label">Public profile</label>
+                        <RadzenSwitch @bind-Value="isPublic" />
+                    </div>
+                    <small class="settings-form__hint">Toggle to make your profile visible to others.</small>
                 </div>
 
-                <div class="rz-mb-4">
-                    <label class="rz-label rz-mr-2">Theme</label>
-            <RadzenDropDown @bind-Value="theme" TValue="string" Data="@themeOptions" Style="width: 220px" />
+                <div class="settings-form__row">
+                    <label class="rz-label">Theme</label>
+                    <RadzenDropDown @bind-Value="theme" TValue="string" Data="@themeOptions" Style="width: 100%" />
                 </div>
 
                 <RadzenButton Text="Save preferences" Click="@(_ => SavePreferencesAsync())" Icon="settings" />

@@ -1,0 +1,22 @@
+.settings-form {
+  max-width: 32rem; // ~512px
+  padding: 0.5rem 0.75rem;
+
+  &__row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    margin-bottom: 0.75rem;
+  }
+
+  &__switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__hint {
+    color: var(--rz-text-secondary, #666);
+    font-size: 0.875rem;
+  }
+}
