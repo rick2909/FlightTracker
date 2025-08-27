@@ -1,6 +1,7 @@
 @using FlightTracker.Infrastructure.Data
 @inject Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
 @inject Radzen.NotificationService NotificationService
+@inject Radzen.DialogService DialogService
 @inject IJSRuntime JS
 
 @code {
@@ -135,6 +136,9 @@
     }
 }
 
+<RadzenDialog />
+<RadzenNotification />
+
 <RadzenTabs>
     <Tabs>
         <RadzenTabsItem Text="Profile">
@@ -205,7 +209,7 @@
             <div class="settings-form">
                 <div class="settings-form__row">
                     <p>Delete your profile and all your recorded flights. This cannot be undone.</p>
-                    <RadzenButton Text="Delete profile" Icon="delete" ButtonStyle="ButtonStyle.Danger" Click="@(_ => ConfirmDeleteProfileAsync())" />
+                    <RadzenButton Text="Delete profile" Icon="delete" ButtonStyle="ButtonStyle.Danger" Click="@ConfirmDeleteProfileAsync" />
                 </div>
             </div>
         </RadzenTabsItem>
@@ -244,11 +248,20 @@
 
     private async Task ConfirmDeleteProfileAsync()
     {
-        var ok = await JS.InvokeAsync<bool>("eval", @"(function(){return confirm('Delete your profile and all recorded flights? This cannot be undone.');})()");
-        if (!ok) return;
+        var ok = await DialogService.Confirm(
+            "Delete your profile and all recorded flights? This cannot be undone.",
+            "Confirm deletion",
+            new Radzen.ConfirmOptions
+            {
+                OkButtonText = "Delete",
+                CancelButtonText = "Cancel",
+                ShowClose = false
+            }
+        );
+        if (ok != true) return;
         try
         {
-            await JS.InvokeVoidAsync("fetch", "/Settings/DeleteProfile", new { method = "POST" });
+            @* await JS.InvokeVoidAsync("fetch", "/Settings/DeleteProfile", new { method = "POST" }); *@
             await NotifyAsync("Profile deleted (demo)", Radzen.NotificationSeverity.Success);
         }
         catch
