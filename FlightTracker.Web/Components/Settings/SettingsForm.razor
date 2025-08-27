@@ -187,5 +187,73 @@
                 <RadzenButton Text="Save preferences" Click="@(_ => SavePreferencesAsync())" Icon="settings" />
             </div>
         </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Export">
+            <div class="settings-form">
+                <div class="settings-form__row">
+                    <p>Download your profile and flights.</p>
+                    <div class="settings-form__actions">
+                        <RadzenButton Text="Export flights (CSV)" Icon="download" ButtonStyle="ButtonStyle.Secondary" Click="@ExportCsv" />
+                        <RadzenButton Text="Export all (JSON)" Icon="download" Click="@ExportAllJson" />
+                    </div>
+                    <small class="settings-form__hint">Export includes your preferences and flights.</small>
+                </div>
+            </div>
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Danger zone">
+            <div class="settings-form">
+                <div class="settings-form__row">
+                    <p>Delete your profile and all your recorded flights. This cannot be undone.</p>
+                    <RadzenButton Text="Delete profile" Icon="delete" ButtonStyle="ButtonStyle.Danger" Click="@(_ => ConfirmDeleteProfileAsync())" />
+                </div>
+            </div>
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Connections">
+            <div class="settings-form">
+                <div class="settings-form__row">
+                    <p>Connect external data sources (coming soon).</p>
+                    <ul>
+                        <li>OpenSky Network – view live positions</li>
+                        <li>ADS-B Exchange – enrich flight metadata</li>
+                        <li>FR24 – historical schedule lookup</li>
+                    </ul>
+                    <small class="settings-form__hint">This section will allow adding API keys or OAuth connections later.</small>
+                </div>
+            </div>
+        </RadzenTabsItem>
     </Tabs>
 </RadzenTabs>
+
+@code {
+    private Task ExportCsv() => DownloadAsync("/Settings/Export/Flights.csv");
+    private Task ExportAllJson() => DownloadAsync("/Settings/Export/All.json");
+
+    private async Task DownloadAsync(string url)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("eval", "(u=>{var a=document.createElement('a');a.href=u;a.download='';document.body.appendChild(a);a.click();a.remove();})(" + System.Text.Json.JsonSerializer.Serialize(url) + ")");
+        }
+        catch
+        {
+            await NotifyAsync("Failed to start download", Radzen.NotificationSeverity.Error);
+        }
+    }
+
+    private async Task ConfirmDeleteProfileAsync()
+    {
+        var ok = await JS.InvokeAsync<bool>("eval", @"(function(){return confirm('Delete your profile and all recorded flights? This cannot be undone.');})()");
+        if (!ok) return;
+        try
+        {
+            await JS.InvokeVoidAsync("fetch", "/Settings/DeleteProfile", new { method = "POST" });
+            await NotifyAsync("Profile deleted (demo)", Radzen.NotificationSeverity.Success);
+        }
+        catch
+        {
+            await NotifyAsync("Delete failed", Radzen.NotificationSeverity.Error);
+        }
+    }
+}

@@ -19,4 +19,10 @@
     color: var(--rz-text-secondary, #666);
     font-size: 0.875rem;
   }
+
+  &__actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
 }

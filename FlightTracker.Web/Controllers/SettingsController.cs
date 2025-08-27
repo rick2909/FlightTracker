@@ -2,16 +2,21 @@ using FlightTracker.Infrastructure.Data;
 using FlightTracker.Web.Models.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using FlightTracker.Application.Services.Interfaces;
+using System.Text;
+using System.Text.Json;
 
 namespace FlightTracker.Web.Controllers;
 
 public class SettingsController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IUserFlightService _userFlightService;
 
-    public SettingsController(UserManager<ApplicationUser> userManager)
+    public SettingsController(UserManager<ApplicationUser> userManager, IUserFlightService userFlightService)
     {
         _userManager = userManager;
+        _userFlightService = userFlightService;
     }
 
     [HttpGet]
@@ -143,5 +148,127 @@ public class SettingsController : Controller
         };
         ViewData["Title"] = "Settings";
         return View("Index", vm);
+    }
+
+    // ===== Export =====
+    [HttpGet("/Settings/Export/Flights.csv")]
+    public async Task<IActionResult> ExportFlightsCsv(CancellationToken cancellationToken = default)
+    {
+        const int userId = 1; // demo user until auth is wired
+        var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
+
+        var sb = new StringBuilder();
+        sb.AppendLine("FlightNumber,DepartureTimeUtc,ArrivalTimeUtc,DepartureAirport,ArrivalAirport,FlightClass,SeatNumber,DidFly,BookedOnUtc,Notes");
+
+        foreach (var f in flights)
+        {
+            static string Esc(string? v)
+                => v is null ? string.Empty : "\"" + v.Replace("\"", "\"\"") + "\"";
+
+            sb.Append(Esc(f.FlightNumber)); sb.Append(',');
+            sb.Append(Esc(f.DepartureTimeUtc.ToString("o"))); sb.Append(',');
+            sb.Append(Esc(f.ArrivalTimeUtc.ToString("o"))); sb.Append(',');
+            sb.Append(Esc(f.DepartureIataCode ?? f.DepartureIcaoCode ?? f.DepartureAirportCode)); sb.Append(',');
+            sb.Append(Esc(f.ArrivalIataCode ?? f.ArrivalIcaoCode ?? f.ArrivalAirportCode)); sb.Append(',');
+            sb.Append(Esc(f.FlightClass.ToString())); sb.Append(',');
+            sb.Append(Esc(f.SeatNumber)); sb.Append(',');
+            sb.Append(f.DidFly ? "true" : "false"); sb.Append(',');
+            sb.Append(Esc(f.BookedOnUtc.ToString("o"))); sb.Append(',');
+            sb.Append(Esc(f.Notes));
+            sb.AppendLine();
+        }
+
+        var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+        return File(bytes, "text/csv; charset=utf-8", fileDownloadName: "user-flights.csv");
+    }
+
+    [HttpGet("/Settings/Export/All.json")]
+    public async Task<IActionResult> ExportAllJson(CancellationToken cancellationToken = default)
+    {
+        const int userId = 1; // demo user until auth is wired
+
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
+
+        // Collect preferences from cookies (client-side persistence in this demo)
+        var theme = Request.Cookies["ft_theme"] ?? "system";
+        var visibility = Request.Cookies["ft_profile_visibility"] ?? "private";
+
+        var shaped = new
+        {
+            profile = new
+            {
+                userName = user?.UserName ?? "demo",
+                email = user?.Email ?? "demo@example.com",
+                preferences = new { theme, profileVisibility = visibility }
+            },
+            flights = flights.Select(f => new
+            {
+                flightNumber = f.FlightNumber,
+                status = f.FlightStatus.ToString(),
+                departureTimeUtc = f.DepartureTimeUtc,
+                arrivalTimeUtc = f.ArrivalTimeUtc,
+                departure = new
+                {
+                    code = f.DepartureIataCode ?? f.DepartureIcaoCode ?? f.DepartureAirportCode,
+                    name = f.DepartureAirportName,
+                    city = f.DepartureCity,
+                    timeZoneId = f.DepartureTimeZoneId
+                },
+                arrival = new
+                {
+                    code = f.ArrivalIataCode ?? f.ArrivalIcaoCode ?? f.ArrivalAirportCode,
+                    name = f.ArrivalAirportName,
+                    city = f.ArrivalCity,
+                    timeZoneId = f.ArrivalTimeZoneId
+                },
+                airline = new
+                {
+                    name = f.OperatingAirlineName,
+                    iata = f.OperatingAirlineIataCode,
+                    icao = f.OperatingAirlineIcaoCode
+                },
+                flightClass = f.FlightClass.ToString(),
+                seatNumber = f.SeatNumber,
+                didFly = f.DidFly,
+                bookedOnUtc = f.BookedOnUtc,
+                notes = f.Notes
+            })
+        };
+
+        var json = JsonSerializer.SerializeToUtf8Bytes(shaped, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+        return File(json, "application/json; charset=utf-8", fileDownloadName: "user-profile-export.json");
+    }
+
+    // ===== Danger zone: delete all user flights (demo only) =====
+    [HttpPost("/Settings/DeleteProfile")]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> DeleteProfile(CancellationToken cancellationToken = default)
+    {
+        const int userId = 1; // demo user until auth is wired
+        // Delete user flights first
+        var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
+        var deletedFlights = 0;
+        foreach (var f in flights)
+        {
+            if (await _userFlightService.DeleteUserFlightAsync(f.Id, cancellationToken))
+            {
+                deletedFlights++;
+            }
+        }
+
+        // Then delete the user profile
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        var userDeleted = false;
+        if (user != null)
+        {
+            var res = await _userManager.DeleteAsync(user);
+            userDeleted = res.Succeeded;
+        }
+
+        return Json(new { deletedFlights, userDeleted });
     }
 }
