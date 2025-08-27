@@ -227,10 +227,7 @@
             validation.DepartureTimeUtc = Value.DepartureTimeUtc;
             validation.ArrivalTimeUtc = Value.ArrivalTimeUtc;
 
-            if (PreferManualTab)
-            {
-                _tabIndex = 2;
-            }
+            _tabIndex = PreferManualTab ? 2 : 0;
         }
         else
         {
@@ -240,6 +237,7 @@
             validation.SeatNumber = null;
             flightClass = FlightClass.Economy;
             notes = null;
+            _tabIndex = PreferManualTab ? 2 : 0;
         }
     }
 

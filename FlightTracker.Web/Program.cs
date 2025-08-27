@@ -42,6 +42,7 @@ builder.Services.AddScoped<IAirportService, AirportService>();
 builder.Services.AddScoped<IFlightService, FlightService>();
 builder.Services.AddScoped<IUserFlightService, UserFlightService>();
 builder.Services.AddScoped<IMapFlightService, MapFlightService>();
+builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
 builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
 {
     c.Timeout = TimeSpan.FromSeconds(3);

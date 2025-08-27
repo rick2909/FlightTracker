@@ -32,7 +32,7 @@ IMapFlightService mapFlightService) : Controller
         {
             // TODO: Get actual user ID from authentication context
             // For now, using a hardcoded user ID (1 = admin user from seed data)
-            var userId = 2;
+            var userId = 1;
 
             // Get user flight statistics
             var stats = await _userFlightService.GetUserFlightStatsAsync(userId);

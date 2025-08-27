@@ -1,7 +1,11 @@
 @using FlightTracker.Application.Dtos
+@using FlightTracker.Application.Services.Interfaces
 @using FlightTracker.Web.Components.Flights
 @inject Microsoft.JSInterop.IJSRuntime JS
 @implements IAsyncDisposable
+@inject IUserFlightService UserFlightService
+@inject NavigationManager Nav
+@inject NotificationService NotificationService
 
 
 @if (ShowButton)
@@ -9,19 +13,21 @@
     <RadzenButton Click=Open Text="Add New Flight" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" />
 }
 
-<AddFlightDialog IsOpen="isOpen" Value="draft" OnSave="HandleSave" OnClose="Close" />
+<AddFlightDialog IsOpen="isOpen" Value="draft" PreferManualTab="preferManual" OnSave="HandleSave" OnClose="Close" />
 
 @code {
     private bool isOpen;
     private CreateUserFlightDto draft = new();
     private DotNetObjectReference<AddFlightLauncher>? dotnetRef;
     private bool _registeredWithJs;
+    private bool preferManual;
     [Parameter]
     public bool ShowButton { get; set; } = true;
 
     private void Open()
     {
         isOpen = true;
+    preferManual = false; // default to By number
     }
 
     private void Close()
@@ -31,20 +37,31 @@
 
     private async Task HandleSave(CreateUserFlightDto dto)
     {
-        // Temporary: print to browser console
-        await JS.InvokeVoidAsync("console.log", new
+        // TODO: replace demo user id with actual identity user id when auth is wired
+        const int demoUserId = 1;
+        try
         {
-            dto.FlightNumber,
-            dto.FlightId,
-            FlightClass = dto.FlightClass.ToString(),
-            dto.SeatNumber,
-            dto.Notes,
-            dto.DepartureAirportCode,
-            dto.ArrivalAirportCode,
-            dto.DepartureTimeUtc,
-            dto.ArrivalTimeUtc,
-        });
-        Close();
+            var created = await UserFlightService.AddUserFlightAsync(demoUserId, dto);
+            isOpen = false;
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Flight added",
+                Detail = $"Saved {created.FlightNumber} — seat {created.SeatNumber}",
+                Duration = 2000
+            });
+            Nav.NavigateTo($"/UserFlights/Details/{created.Id}", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Save failed",
+                Detail = ex.Message,
+                Duration = 4000
+            });
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -84,12 +101,13 @@
             ArrivalTimeUtc = arrUtc
         };
 
-    // Open dialog
+        // Open dialog
     isOpen = true;
+    preferManual = true; // airports interop opens on Manual
 
         // After it opens, ask tabs to switch to Manual via a small timer (handled in tabs component via cascading value or param in future if needed)
-    StateHasChanged();
-    _ = JS.InvokeVoidAsync("console.debug", "[AddFlightLauncher] isOpen:", isOpen);
+        StateHasChanged();
+        _ = JS.InvokeVoidAsync("console.debug", "[AddFlightLauncher] isOpen:", isOpen);
     }
 
     private static DateTime? TryParseUtc(string? iso)
