@@ -117,7 +117,6 @@ public class AirportsController(ILogger<AirportsController> logger,
             var code = airport.IataCode ?? airport.IcaoCode ?? airport.Name;
 
             var result = await _airportOverviewService.GetFlightsAsync(code!, dir, live, 100, HttpContext.RequestAborted);
-            // Keep existing JSON shape for client JS compatibility
             object payload = dir?.ToLowerInvariant() switch
             {
                 "departing" => new { departing = result.Departing.Select(ShapeForClient) },

@@ -1,6 +1,6 @@
 // Airports overview map
 (function(){
-  if(!window.L){ console.warn('[airports-map] Leaflet missing'); return; }
+  if(!window.L){ try{ console.error('[airports-map] Leaflet missing'); }catch{} return; }
 
   const el = document.getElementById('airportsMap');
   if(!el){ return; }
@@ -62,7 +62,7 @@
         setMarkerSelected(sm, true);
         selectedMarker = sm;
       }
-    }catch(e){ console.warn('[airports-map] load error', e); }
+  }catch(e){ try{ console.error('[airports-map] load error', e); }catch{} }
   }
 
   let selectedAirport = null;
@@ -122,7 +122,7 @@
       if(window.FT && typeof window.FT.openAddFlight === 'function'){
         window.FT.openAddFlight(data);
       } else {
-        console.warn('[airports-map] FT.openAddFlight not available');
+        try{ console.error('[airports-map] FT.openAddFlight not available'); }catch{}
       }
     });
     right.appendChild(btn);
@@ -143,7 +143,7 @@
       arrEl.innerHTML = '';
       (data.departing ?? []).forEach(f => depEl.appendChild(renderFlightItem(f)));
       (data.arriving ?? []).forEach(f => arrEl.appendChild(renderFlightItem(f)));
-    }catch(e){ console.warn('[airports-map] flights error', e); }
+  }catch(e){ try{ console.error('[airports-map] flights error', e); }catch{} }
   }
 
   const toggle = document.getElementById('airportsToggleFlights');
