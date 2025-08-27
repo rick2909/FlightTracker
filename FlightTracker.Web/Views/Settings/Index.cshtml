@@ -1,0 +1,78 @@
+@model FlightTracker.Web.Models.ViewModels.SettingsViewModel
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<div class="settings">
+    @if (TempData["Status"] is string statusMsg)
+    {
+        <div class="alert alert-success" role="status">@statusMsg</div>
+    }
+
+    <section class="card">
+        <h2>Profile</h2>
+        <form asp-action="UpdateProfile" method="post">
+            @Html.AntiForgeryToken()
+            <div class="form-field">
+                <label asp-for="UserName"></label>
+                <input asp-for="UserName" class="rz-input" />
+                <span asp-validation-for="UserName" class="text-danger"></span>
+            </div>
+            <div class="form-field">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" class="rz-input" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <button type="submit" class="rz-button rz-primary">Save profile</button>
+        </form>
+    </section>
+
+    <section class="card">
+        <h2>Password</h2>
+        <form asp-action="ChangePassword" method="post">
+            @Html.AntiForgeryToken()
+            <div class="form-field">
+                <label asp-for="ChangePassword.CurrentPassword"></label>
+                <input asp-for="ChangePassword.CurrentPassword" class="rz-input" />
+                <span asp-validation-for="ChangePassword.CurrentPassword" class="text-danger"></span>
+            </div>
+            <div class="form-field">
+                <label asp-for="ChangePassword.NewPassword"></label>
+                <input asp-for="ChangePassword.NewPassword" class="rz-input" />
+                <span asp-validation-for="ChangePassword.NewPassword" class="text-danger"></span>
+            </div>
+            <div class="form-field">
+                <label asp-for="ChangePassword.ConfirmNewPassword"></label>
+                <input asp-for="ChangePassword.ConfirmNewPassword" class="rz-input" />
+                <span asp-validation-for="ChangePassword.ConfirmNewPassword" class="text-danger"></span>
+            </div>
+            <button type="submit" class="rz-button">Change password</button>
+        </form>
+    </section>
+
+    <section class="card">
+        <h2>Preferences</h2>
+        <form asp-action="UpdatePreferences" method="post">
+            @Html.AntiForgeryToken()
+            <fieldset>
+                <legend>Profile visibility</legend>
+                <label><input type="radio" name="ProfileVisibility" value="public" @(Model.ProfileVisibility == "public" ? "checked" : null) /> Public</label>
+                <label><input type="radio" name="ProfileVisibility" value="private" @(Model.ProfileVisibility == "private" ? "checked" : null) /> Private</label>
+            </fieldset>
+
+            <div class="form-field">
+                <label for="theme">Theme</label>
+                <select id="theme" name="Theme" class="rz-dropdown">
+                    @if (Model.Theme == "system") { <option value="system" selected>System</option> } else { <option value="system">System</option> }
+                    @if (Model.Theme == "light") { <option value="light" selected>Light</option> } else { <option value="light">Light</option> }
+                    @if (Model.Theme == "dark") { <option value="dark" selected>Dark</option> } else { <option value="dark">Dark</option> }
+                </select>
+            </div>
+            <button type="submit" class="rz-button">Save preferences</button>
+        </form>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
