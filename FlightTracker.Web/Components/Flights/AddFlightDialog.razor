@@ -3,7 +3,7 @@
 
 @if (IsOpen)
 {
-    <div class="ft-dialog__backdrop" @onclick="HandleBackdropClick">
+    <div class="ft-dialog__backdrop" style="position:fixed; inset:0; z-index:1000;" @onclick="HandleBackdropClick">
         <div class="ft-dialog" role="dialog" aria-modal="true" @onclick:stopPropagation>
             <div class="ft-dialog__header">
                 <h3 class="ft-dialog__title">Add Flight</h3>
@@ -12,7 +12,7 @@
                 </button>
             </div>
             <div class="ft-dialog__content">
-                <AddUserFlightTabs Value="Value" OnSave="HandleSave" OnCancel="Close" />
+                <AddUserFlightTabs Value="Value" PreferManualTab="PreferManualTab" OnSave="HandleSave" OnCancel="Close" />
             </div>
         </div>
     </div>
@@ -30,6 +30,9 @@
 
     [Parameter]
     public EventCallback<CreateUserFlightDto> OnSave { get; set; }
+
+    [Parameter]
+    public bool PreferManualTab { get; set; }
 
     private async Task HandleSave(CreateUserFlightDto dto)
     {

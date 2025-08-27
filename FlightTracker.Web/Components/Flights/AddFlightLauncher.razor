@@ -1,19 +1,33 @@
 @using FlightTracker.Application.Dtos
+@using FlightTracker.Application.Services.Interfaces
 @using FlightTracker.Web.Components.Flights
 @inject Microsoft.JSInterop.IJSRuntime JS
+@implements IAsyncDisposable
+@inject IUserFlightService UserFlightService
+@inject NavigationManager Nav
+@inject NotificationService NotificationService
 
 
-<RadzenButton Click=Open Text="Add New Flight" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" />
+@if (ShowButton)
+{
+    <RadzenButton Click=Open Text="Add New Flight" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" />
+}
 
-<AddFlightDialog IsOpen="isOpen" Value="draft" OnSave="HandleSave" OnClose="Close" />
+<AddFlightDialog IsOpen="isOpen" Value="draft" PreferManualTab="preferManual" OnSave="HandleSave" OnClose="Close" />
 
 @code {
     private bool isOpen;
     private CreateUserFlightDto draft = new();
+    private DotNetObjectReference<AddFlightLauncher>? dotnetRef;
+    private bool _registeredWithJs;
+    private bool preferManual;
+    [Parameter]
+    public bool ShowButton { get; set; } = true;
 
     private void Open()
     {
         isOpen = true;
+        preferManual = false;
     }
 
     private void Close()
@@ -23,19 +37,101 @@
 
     private async Task HandleSave(CreateUserFlightDto dto)
     {
-        // Temporary: print to browser console
-        await JS.InvokeVoidAsync("console.log", new
+        const int demoUserId = 1;
+        try
         {
-            dto.FlightNumber,
-            dto.FlightId,
-            FlightClass = dto.FlightClass.ToString(),
-            dto.SeatNumber,
-            dto.Notes,
-            dto.DepartureAirportCode,
-            dto.ArrivalAirportCode,
-            dto.DepartureTimeUtc,
-            dto.ArrivalTimeUtc,
-        });
-        Close();
+            var created = await UserFlightService.AddUserFlightAsync(demoUserId, dto);
+            isOpen = false;
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "Flight added",
+                Detail = $"Saved {created.FlightNumber} — seat {created.SeatNumber}",
+                Duration = 2000
+            });
+            Nav.NavigateTo($"/UserFlights/Details/{created.Id}", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Save failed",
+                Detail = ex.Message,
+                Duration = 4000
+            });
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_registeredWithJs)
+        {
+            try
+            {
+                dotnetRef ??= DotNetObjectReference.Create(this);
+                await JS.InvokeVoidAsync("FT.registerAddFlight", dotnetRef);
+                _registeredWithJs = true;
+            }
+            catch
+            {
+                // JS not available during prerender; will retry on next render when circuit connects
+            }
+        }
+    }
+
+    [JSInvokable]
+    public void OpenWithData(InteropFlightData data)
+    {
+        // Build a draft from incoming data
+        var depUtc = TryParseUtc(data.DepartureTimeUtc);
+        var arrUtc = TryParseUtc(data.ArrivalTimeUtc);
+
+        draft = new CreateUserFlightDto
+        {
+            FlightId = data.Id,
+            FlightNumber = data.FlightNumber,
+            FlightDate = depUtc.HasValue ? DateOnly.FromDateTime(depUtc.Value.Date) : null,
+            SeatNumber = string.Empty,
+            Notes = null,
+            DepartureAirportCode = data.DepartureCode,
+            ArrivalAirportCode = data.ArrivalCode,
+            DepartureTimeUtc = depUtc,
+            ArrivalTimeUtc = arrUtc
+        };
+
+        // Open dialog
+    isOpen = true;
+    preferManual = true;
+
+        // After it opens, ask tabs to switch to Manual via a small timer (handled in tabs component via cascading value or param in future if needed)
+        StateHasChanged();
+    }
+
+    private static DateTime? TryParseUtc(string? iso)
+    {
+        if (string.IsNullOrWhiteSpace(iso)) return null;
+        if (DateTime.TryParse(iso, null, System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal, out var dt))
+        {
+            return DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+        }
+        return null;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        dotnetRef?.Dispose();
+        await Task.CompletedTask;
+    }
+
+    public sealed class InteropFlightData
+    {
+        public int Id { get; set; }
+        public string? FlightNumber { get; set; }
+        public string? DepartureCode { get; set; }
+        public string? ArrivalCode { get; set; }
+        public string? DepartureTimeUtc { get; set; }
+        public string? ArrivalTimeUtc { get; set; }
+        public string? Route { get; set; }
     }
 }

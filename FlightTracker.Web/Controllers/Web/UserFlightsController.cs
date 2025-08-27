@@ -13,6 +13,8 @@ namespace FlightTracker.Web.Controllers.Web;
 
 public class UserFlightsController(IUserFlightService userFlightService, IFlightService flightService, IFlightLookupService flightLookupService) : Controller
 {
+    private const int DemoUserId = 1; // TODO: Replace with actual auth user id when wired
+
     [HttpGet("/UserFlights/{userId:int?}")]
     public async Task<IActionResult> Index(
         int? userId,
@@ -25,52 +27,14 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
         int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        // TODO: Replace with actual current user id when auth is wired
-        const int demoUserId = 1;
-        var effectiveUserId = (userId.HasValue && userId.Value > 0) ? userId.Value : demoUserId;
+        var effectiveUserId = GetEffectiveUserId(userId);
         var flights = await userFlightService.GetUserFlightsAsync(effectiveUserId, cancellationToken);
         ViewData["RequestedUserId"] = userId;
 
-        // Apply optional server-side filters (helps on large lists)
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var term = q.Trim();
-            flights = flights.Where(f => f.FlightNumber?.Contains(term, StringComparison.OrdinalIgnoreCase) == true);
-        }
-        if (@class.HasValue)
-        {
-            var cls = @class.Value;
-            flights = flights.Where(f => f.FlightClass == cls);
-        }
-        if (didFly.HasValue)
-        {
-            var flag = didFly.Value;
-            flights = flights.Where(f => f.DidFly == flag);
-        }
-        if (fromUtc.HasValue)
-        {
-            var from = DateTime.SpecifyKind(fromUtc.Value.Date, DateTimeKind.Utc);
-            flights = flights.Where(f => f.DepartureTimeUtc >= from);
-        }
-        if (toUtc.HasValue)
-        {
-            var to = DateTime.SpecifyKind(toUtc.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
-            flights = flights.Where(f => f.DepartureTimeUtc <= to);
-        }
+        flights = ApplyFilters(flights, q, @class, didFly, fromUtc, toUtc);
+        var pageItems = Paginate(flights, ref page, ref pageSize, out var totalCount, out var totalPages);
 
-        // Server-side paging (optional)
-        var ordered = flights.OrderByDescending(f => f.DepartureTimeUtc);
-        var totalCount = ordered.Count();
-        if (pageSize <= 0) pageSize = 20;
-        if (page <= 0) page = 1;
-        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-        if (page > totalPages && totalPages > 0) page = totalPages;
-        var pageItems = ordered
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-
-    ViewData["Page"] = page;
+        ViewData["Page"] = page;
         ViewData["PageSize"] = pageSize;
         ViewData["TotalCount"] = totalCount;
         ViewData["TotalPages"] = totalPages;
@@ -97,20 +61,7 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
         {
             return NotFound();
         }
-        var vm = new EditUserFlightViewModel
-        {
-            UserFlightId = dto.Id,
-            FlightId = dto.FlightId,
-            FlightClass = dto.FlightClass,
-            SeatNumber = dto.SeatNumber,
-            DidFly = dto.DidFly,
-            Notes = dto.Notes,
-            FlightNumber = dto.FlightNumber,
-            DepartureAirportCode = dto.DepartureIataCode ?? dto.DepartureIcaoCode ?? dto.DepartureAirportCode,
-            ArrivalAirportCode = dto.ArrivalIataCode ?? dto.ArrivalIcaoCode ?? dto.ArrivalAirportCode,
-            DepartureTimeUtc = dto.DepartureTimeUtc,
-            ArrivalTimeUtc = dto.ArrivalTimeUtc
-        };
+    var vm = MapToEditViewModel(dto);
         return View(vm);
     }
 
@@ -127,20 +78,7 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
                 return NotFound();
             }
             // map back into vm
-            var vm = new EditUserFlightViewModel
-            {
-                UserFlightId = current.Id,
-                FlightId = current.FlightId,
-                FlightClass = current.FlightClass,
-                SeatNumber = current.SeatNumber,
-                DidFly = current.DidFly,
-                Notes = current.Notes,
-                FlightNumber = current.FlightNumber,
-                DepartureAirportCode = current.DepartureIataCode ?? current.DepartureIcaoCode ?? current.DepartureAirportCode,
-                ArrivalAirportCode = current.ArrivalIataCode ?? current.ArrivalIcaoCode ?? current.ArrivalAirportCode,
-                DepartureTimeUtc = current.DepartureTimeUtc,
-                ArrivalTimeUtc = current.ArrivalTimeUtc
-            };
+            var vm = MapToEditViewModel(current);
             return View(vm);
         }
         try
@@ -201,20 +139,20 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
         var date = DateOnly.FromDateTime(dto.DepartureTimeUtc);
         var candidate = await flightLookupService.ResolveFlightAsync(dto.FlightNumber, date, cancellationToken);
 
-        if (candidate is null)
+    if (candidate is null)
         {
             return NotFound(new { status = "not_found", message = "No flight found via lookup." });
         }
 
         var currentFlight = await flightService.GetFlightByIdAsync(dto.FlightId, cancellationToken);
-        if (currentFlight is null)
+    if (currentFlight is null)
         {
             return NotFound(new { status = "not_found", message = "Current flight not found." });
         }
 
     var noChanges = currentFlight.HasSameScheduleAndRoute(candidate);
 
-        if (noChanges)
+    if (noChanges)
         {
             return Ok(new { status = "no_changes", message = "No changes found." });
         }
@@ -236,5 +174,84 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
                 arrivalAirportCode = arrCode
             }
         });
+    }
+
+    private static int GetEffectiveUserId(int? requestedUserId)
+    {
+        // Replace with actual current user id from auth when available
+        return (requestedUserId.HasValue && requestedUserId.Value > 0) ? requestedUserId.Value : DemoUserId;
+    }
+
+    private static IEnumerable<UserFlightDto> ApplyFilters(
+        IEnumerable<UserFlightDto> flights,
+        string? q,
+        FlightClass? @class,
+        bool? didFly,
+        DateTime? fromUtc,
+        DateTime? toUtc)
+    {
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var term = q.Trim();
+            flights = flights.Where(f => f.FlightNumber?.Contains(term, StringComparison.OrdinalIgnoreCase) == true);
+        }
+        if (@class.HasValue)
+        {
+            var cls = @class.Value;
+            flights = flights.Where(f => f.FlightClass == cls);
+        }
+        if (didFly.HasValue)
+        {
+            var flag = didFly.Value;
+            flights = flights.Where(f => f.DidFly == flag);
+        }
+        if (fromUtc.HasValue)
+        {
+            var from = DateTime.SpecifyKind(fromUtc.Value.Date, DateTimeKind.Utc);
+            flights = flights.Where(f => f.DepartureTimeUtc >= from);
+        }
+        if (toUtc.HasValue)
+        {
+            var to = DateTime.SpecifyKind(toUtc.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
+            flights = flights.Where(f => f.DepartureTimeUtc <= to);
+        }
+        return flights;
+    }
+
+    private static List<UserFlightDto> Paginate(
+        IEnumerable<UserFlightDto> flights,
+        ref int page,
+        ref int pageSize,
+        out int totalCount,
+        out int totalPages)
+    {
+        var ordered = flights.OrderByDescending(f => f.DepartureTimeUtc);
+        totalCount = ordered.Count();
+        if (pageSize <= 0) pageSize = 20;
+        if (page <= 0) page = 1;
+        totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+        if (page > totalPages && totalPages > 0) page = totalPages;
+        return ordered
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    private static EditUserFlightViewModel MapToEditViewModel(UserFlightDto dto)
+    {
+        return new EditUserFlightViewModel
+        {
+            UserFlightId = dto.Id,
+            FlightId = dto.FlightId,
+            FlightClass = dto.FlightClass,
+            SeatNumber = dto.SeatNumber,
+            DidFly = dto.DidFly,
+            Notes = dto.Notes,
+            FlightNumber = dto.FlightNumber,
+            DepartureAirportCode = dto.DepartureIataCode ?? dto.DepartureIcaoCode ?? dto.DepartureAirportCode,
+            ArrivalAirportCode = dto.ArrivalIataCode ?? dto.ArrivalIcaoCode ?? dto.ArrivalAirportCode,
+            DepartureTimeUtc = dto.DepartureTimeUtc,
+            ArrivalTimeUtc = dto.ArrivalTimeUtc
+        };
     }
 }
