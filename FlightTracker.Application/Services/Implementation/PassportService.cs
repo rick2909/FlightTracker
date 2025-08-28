@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -67,10 +68,10 @@ public class PassportService : IPassportService
         // Countries visited (we only have Country names in seed; map to upper ISO2 if already in ISO2)
         var countriesVisited = flown
             .SelectMany(uf => new[] { uf.Flight!.DepartureAirport?.Country, uf.Flight!.ArrivalAirport?.Country })
+            .Select(ToIso2)
             .Where(c => !string.IsNullOrWhiteSpace(c))
-            .Select(c => c!.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(c => c.Length == 2 ? c.ToLowerInvariant() : c) // keep names if not ISO2
+            .Select(c => c!) // keep names if not ISO2
             .OrderBy(c => c)
             .ToList();
 
@@ -165,5 +166,39 @@ public class PassportService : IPassportService
             FlightsByAircraftType = flightsByAircraftType,
             Routes = routes
         };
+    }
+
+    private string? ToIso2(string? country)
+    {
+        if (string.IsNullOrWhiteSpace(country)) return null;
+        var key = country.Trim().ToLowerInvariant();
+
+        // Already ISO-2?
+        if (key.Length == 2 && key.All(char.IsLetter))
+            return key.ToUpperInvariant();
+
+        // Normalize and convert to ISO-2
+        key = key.ToLowerInvariant();
+        return key.Length == 2 ? key : TryRegionInfoFallback(key);
+    }
+
+    private string? TryRegionInfoFallback(string value)
+    {
+        // Handle specific cases due to seed data but all other countries should be correctly named
+        if (value == "usa")
+            return "US";
+
+        try
+        {
+            // If value is a valid region/culture name (e.g., "en-US" or "US")
+            var regions = CultureInfo.GetCultures(CultureTypes.SpecificCultures).Select(x => new RegionInfo(x.Name));
+            var englishRegion = regions.FirstOrDefault(region => region.EnglishName.Contains(value, StringComparison.OrdinalIgnoreCase));
+            var countryAbbrev = englishRegion.TwoLetterISORegionName;
+            return countryAbbrev.ToUpperInvariant();
+        }
+        catch
+        {
+            return null;
+        }
     }
 }
