@@ -184,10 +184,6 @@ public class PassportService : IPassportService
 
     private string? TryRegionInfoFallback(string value)
     {
-        // Handle specific cases due to seed data but all other countries should be correctly named
-        if (value == "usa")
-            return "US";
-
         try
         {
             // If value is a valid region/culture name (e.g., "en-US" or "US")

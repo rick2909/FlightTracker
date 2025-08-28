@@ -80,16 +80,16 @@ public static class SeedData
     private static IReadOnlyList<Airport> GetSeedAirports() => new List<Airport>
     {
         // Original set with coordinates + IATA/ICAO
-    new() { IataCode = "JFK", IcaoCode = "KJFK", Name = "John F. Kennedy International", City = "New York", Country = "USA", Latitude = 40.6413, Longitude = -73.7781, TimeZoneId="America/New_York" },
-    new() { IataCode = "LAX", IcaoCode = "KLAX", Name = "Los Angeles International", City = "Los Angeles", Country = "USA", Latitude = 33.9416, Longitude = -118.4085 },
-    new() { IataCode = "LHR", IcaoCode = "EGLL", Name = "Heathrow", City = "London", Country = "UK", Latitude = 51.4700, Longitude = -0.4543 },
+    new() { IataCode = "JFK", IcaoCode = "KJFK", Name = "John F. Kennedy International", City = "New York", Country = "United States", Latitude = 40.6413, Longitude = -73.7781, TimeZoneId="America/New_York" },
+    new() { IataCode = "LAX", IcaoCode = "KLAX", Name = "Los Angeles International", City = "Los Angeles", Country = "United States", Latitude = 33.9416, Longitude = -118.4085 },
+    new() { IataCode = "LHR", IcaoCode = "EGLL", Name = "Heathrow", City = "London", Country = "United Kingdom", Latitude = 51.4700, Longitude = -0.4543 },
     new() { IataCode = "FRA", IcaoCode = "EDDF", Name = "Frankfurt am Main", City = "Frankfurt", Country = "Germany", Latitude = 50.0379, Longitude = 8.5622 },
     new() { IataCode = "NRT", IcaoCode = "RJAA", Name = "Narita International", City = "Tokyo", Country = "Japan", Latitude = 35.7719, Longitude = 140.3929 },
     new() { IataCode = "AMS", IcaoCode = "EHAM", Name = "Amsterdam Schiphol", City = "Amsterdam", Country = "Netherlands", Latitude = 52.3105, Longitude = 4.7683 },
     new() { IataCode = "CDG", IcaoCode = "LFPG", Name = "Charles de Gaulle", City = "Paris", Country = "France", Latitude = 49.0097, Longitude = 2.5479 },
-    new() { IataCode = "DXB", IcaoCode = "OMDB", Name = "Dubai International", City = "Dubai", Country = "UAE", Latitude = 25.2532, Longitude = 55.3657 },
+    new() { IataCode = "DXB", IcaoCode = "OMDB", Name = "Dubai International", City = "Dubai", Country = "United Arab Emirates", Latitude = 25.2532, Longitude = 55.3657 },
     new() { IataCode = "SIN", IcaoCode = "WSSS", Name = "Singapore Changi", City = "Singapore", Country = "Singapore", Latitude = 1.3644, Longitude = 103.9915 },
-    new() { IataCode = "ATL", IcaoCode = "KATL", Name = "Hartsfield-Jackson Atlanta International", City = "Atlanta", Country = "USA", Latitude = 33.6407, Longitude = -84.4277 }
+    new() { IataCode = "ATL", IcaoCode = "KATL", Name = "Hartsfield-Jackson Atlanta International", City = "Atlanta", Country = "United States", Latitude = 33.6407, Longitude = -84.4277 }
     };
 
     private static IReadOnlyList<Aircraft> GetSeedAircraft() => new List<Aircraft>
