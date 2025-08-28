@@ -43,6 +43,9 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Define airport live data abstraction: IAirportLiveService (departures/arrivals)
 - [x] Add AirportOverviewService (merges DB + live provider results with de-duplication)
 - [ ] Define IFlightStatsService + DTOs for passport/stats (TotalFlights, TotalHours, MonthlyCounts)
+- [ ] Add aggregation DTOs for Passport details: AirlineStatsDto { AirlineName, AirlineIata, Count }, AircraftTypeStatsDto { TypeCode, Count }
+- [ ] Implement IFlightStatsService (group-by airline and aircraft type for a user)
+- [ ] Extend PassportDataDto or add PassportDetailsDto to include AirlineStats and AircraftTypeStats (used by Passport details view)
 - [ ] Pagination & filtering strategy abstraction (FlightQueryOptions) (Deferred)
  - [x] Add IPassportService + PassportService (aggregate stats + routes)
  - [x] Add PassportDataDto (single payload for Passport page)
@@ -90,12 +93,21 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Airport overview/detail page (map + lists; initial version with live toggle)
 - [x] Settings page (profile basics + preferences cookies + CSV/JSON export)
 - [x] Wire Airports UI to AirportOverviewService with optional Aviationstack live data
-- [ ] Passport / Stats dashboard (charts + summary cards)
+- [ ] NEW: Passport details view (more in-depth stats inside Passport)
+	- [ ] Route: `/Passport/{id?}` gains a "Details" tab/section (or `/Passport/{id?}/Details` action)
+	- [ ] Two ApexCharts pie charts
+		- [ ] Airlines flown (click to filter list)
+		- [ ] Aircraft types flown (click to filter list)
+	- [ ] Filtered lists beneath charts (respect selected airline/type)
+	- [ ] Data source: IFlightStatsService with AirlineStatsDto & AircraftTypeStatsDto via PassportDetailsDto/PassportDataDto
+	- [ ] Accessibility: chart labels, table summaries, keyboard navigation
+	- [ ] Performance: AsNoTracking queries; scoped to current user; defer pagination initially
+- [x] Passport / Stats dashboard (charts + summary cards)
 		- [x] Summary cards bound to DB data via IPassportService
 		- [x] Flights Per Year chart (ApexCharts)
-		- [ ] Pie chart: Airlines flown (ApexCharts)
-		- [ ] Pie chart: Aircraft types flown (ApexCharts)
-	- [ ] *Charts wiring (ApexCharts) and interactions*  
+		- [x] Pie chart: Airlines flown (ApexCharts)
+		- [x] Pie chart: Aircraft types flown (ApexCharts)
+	- [x] *Charts wiring (ApexCharts) and interactions*  
 			Note: Scripts included; finalize dataset + rendering hooks
 - [ ] State-based flight views (Pre-flight, At airport, Post-flight) UI workflow
 - [ ] Auth UI (login/register) once API auth ready
@@ -199,7 +211,8 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 1. Wrap up Flight details/edit (done): unified update use case, validators, Web wired.
 2. Optional: Add Result wrapper for APIs; improve error surface in Presentation.
-3. Provider hardening: user-secrets config for Aviationstack key, add basic retry/backoff (Polly), and environment-based enable/disable.
-4. Add unit tests for Application services (UserFlightService happy-path + validation failures) and AirportOverviewService merge logic.
+3. Prepare Passport details spec (not implementation): define IFlightStatsService contract + AirlineStatsDto/AircraftTypeStatsDto and outline Passport UI (Details tab + charts and filtered lists).
+4. Provider hardening: ensure config key set via appsettings; keep Polly retry/backoff and consider a simple enable/disable flag for live providers.
+5. Add unit tests plan for forthcoming IFlightStatsService (grouping correctness, empty dataset, large dataset) and for AirportOverviewService merge logic.
 
 Keep this file updated; prune completed groups to maintain clarity.
