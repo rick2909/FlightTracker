@@ -43,7 +43,8 @@ public class PassportController : Controller
             if (currentUserId is null)
             {
                 var referer = Request.Headers["Referer"].FirstOrDefault();
-                if (!string.IsNullOrWhiteSpace(referer))
+                // Only allow safe local redirects; otherwise go to Dashboard
+                if (!string.IsNullOrWhiteSpace(referer) && Url.IsLocalUrl(referer))
                 {
                     return Redirect(referer);
                 }
