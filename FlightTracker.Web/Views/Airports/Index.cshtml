@@ -1,0 +1,52 @@
+@{
+    ViewData["Title"] = "Airports";
+}
+
+@section HeaderContent {
+    <div class="ft-toolbar">
+        <h2 class="layout__title" style="margin:0">Airport Overview</h2>
+        <div class="ft-toolbar__actions">
+            <label for="airportsToggleFlights" class="rz-text-secondary" style="display:inline-flex;align-items:center;gap:.75rem;user-select:none;">
+                <span>Use live Aviationstack</span>
+                <span class="rz-switch">
+                    <input id="airportsToggleFlights" type="checkbox" class="rz-switch-input" aria-label="Use live Aviationstack" />
+                    <span class="rz-switch-slider"></span>
+                </span>
+            </label>
+        </div>
+    </div>
+}
+
+<section class="container py-3">
+
+    <div id="airportsMap" class="flight-map__map" style="min-height:70vh" role="region" aria-label="Airports map"></div>
+
+    <div id="airportSelection" class="mt-4" hidden>
+        <h2 class="h4"><span id="selectedAirportName"></span></h2>
+        <div class="airport-flights-grid">
+            <div class="airport-flights-grid__col">
+                <div class="rz-card">
+                    <div class="rz-card-header">
+                        <div class="rz-card-title">Departing flights</div>
+                    </div>
+                    <div class="rz-card-body" id="departingList"></div>
+                </div>
+            </div>
+            <div class="airport-flights-grid__col">
+                <div class="rz-card">
+                    <div class="rz-card-header">
+                        <div class="rz-card-title">Arriving flights</div>
+                    </div>
+                    <div class="rz-card-body" id="arrivingList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <component type="typeof(FlightTracker.Web.Components.Flights.AddFlightLauncher)"
+               render-mode="Server"
+               param-ShowButton="false" />
+</section>
+
+@section Scripts {
+    <script src="~/js/airports-map.js" asp-append-version="true"></script>
+}
