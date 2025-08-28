@@ -10,6 +10,9 @@ using Microsoft.AspNetCore.Identity;
 using Radzen;
 using FlightTracker.Application.Mapping;
 using FlightTracker.Infrastructure.External;
+using Polly;
+using Polly.Contrib.WaitAndRetry;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,12 +49,34 @@ builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
 builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
 {
     c.Timeout = TimeSpan.FromSeconds(3);
-});
+})
+.AddPolicyHandler(
+    Policy<HttpResponseMessage>
+        .Handle<HttpRequestException>()
+        .OrResult(r => (int)r.StatusCode is >= 500 or 429)
+        .WaitAndRetryAsync(
+            Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(100), 2),
+            onRetry: (outcome, delay, attempt, ctx) => { }
+        )
+);
 builder.Services.AddScoped<IFlightLookupService, FlightLookupService>();
 builder.Services.AddHttpClient<IAirportLiveService, FlightTracker.Infrastructure.External.AviationstackService>(c =>
 {
     c.Timeout = TimeSpan.FromSeconds(6);
-});
+})
+// Basic transient fault-handling: retry a few times with exponential backoff + jitter
+.AddPolicyHandler(
+    Policy<HttpResponseMessage>
+        .Handle<HttpRequestException>()
+        .OrResult(r => (int)r.StatusCode is >= 500 or 429)
+        .WaitAndRetryAsync(
+            Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(200), 3),
+            onRetry: (outcome, delay, attempt, ctx) =>
+            {
+                // no logging in Presentation per guidelines; rely on provider/internal logs if needed
+            }
+        )
+);
 
 // ADSBdb route lookup and metadata provisioner
 builder.Services.AddHttpClient<IFlightRouteLookupClient, AdsBdbClient>(c =>
