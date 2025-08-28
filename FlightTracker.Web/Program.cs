@@ -8,20 +8,20 @@ using FlightTracker.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Radzen;
-using FlightTracker.Web;
-using AutoMapper;
 using FlightTracker.Application.Mapping;
 using FlightTracker.Infrastructure.External;
+using Polly;
+using Polly.Contrib.WaitAndRetry;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add MVC (Radzen/Blazor deferred until components added)
 builder.Services.AddControllersWithViews();
 builder.Services.AddServerSideBlazor().AddCircuitOptions(o =>
 {
     if (builder.Environment.IsDevelopment())
     {
-        o.DetailedErrors = true; // enable detailed circuit exception info
+        o.DetailedErrors = true;
     }
 });
 
@@ -44,16 +44,39 @@ builder.Services.AddScoped<IAirportService, AirportService>();
 builder.Services.AddScoped<IFlightService, FlightService>();
 builder.Services.AddScoped<IUserFlightService, UserFlightService>();
 builder.Services.AddScoped<IMapFlightService, MapFlightService>();
+builder.Services.AddScoped<IPassportService, PassportService>();
 builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
 builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
 {
     c.Timeout = TimeSpan.FromSeconds(3);
-});
+})
+.AddPolicyHandler(
+    Policy<HttpResponseMessage>
+        .Handle<HttpRequestException>()
+        .OrResult(r => (int)r.StatusCode is >= 500 or 429)
+        .WaitAndRetryAsync(
+            Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(100), 2),
+            onRetry: (outcome, delay, attempt, ctx) => { }
+        )
+);
 builder.Services.AddScoped<IFlightLookupService, FlightLookupService>();
 builder.Services.AddHttpClient<IAirportLiveService, FlightTracker.Infrastructure.External.AviationstackService>(c =>
 {
     c.Timeout = TimeSpan.FromSeconds(6);
-});
+})
+// Basic transient fault-handling: retry a few times with exponential backoff + jitter
+.AddPolicyHandler(
+    Policy<HttpResponseMessage>
+        .Handle<HttpRequestException>()
+        .OrResult(r => (int)r.StatusCode is >= 500 or 429)
+        .WaitAndRetryAsync(
+            Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(200), 3),
+            onRetry: (outcome, delay, attempt, ctx) =>
+            {
+                // no logging in Presentation per guidelines; rely on provider/internal logs if needed
+            }
+        )
+);
 
 // ADSBdb route lookup and metadata provisioner
 builder.Services.AddHttpClient<IFlightRouteLookupClient, AdsBdbClient>(c =>
@@ -98,7 +121,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// Always redirect to HTTPS in dev & prod (after ensuring dev cert trusted)
+
 app.UseHttpsRedirection();
 
 // Development seed (only if DB empty)
@@ -130,9 +153,6 @@ app.MapControllerRoute(
         pattern: "{controller=Dashboard}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-// Blazor hub (needed for Radzen components used via component tag helper)
 app.MapBlazorHub();
-
-// (Radzen/Blazor root removed – no interactive components yet)
 
 app.Run();

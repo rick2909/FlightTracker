@@ -10,7 +10,7 @@ Early foundation in place:
 - Development guidelines & contribution docs
 - Task plan: see `doc/Plan.md`
 
-> Next focus: move repository interfaces inward, add DTOs & services, introduce FlightStatus enum, OpenSky provider stub.
+> Next focus: Provider hardening (Aviationstack key via user-secrets, retries), tests for merge logic, OpenSky adapter stub.
 
 ## Architecture (Clean Architecture Inspired)
 Layering (inward dependencies only):
@@ -40,10 +40,10 @@ See `.github/copilot-instructions.md` for full rules.
 | Language | C# 12 / .NET 9 (preview packages currently) |
 | Auth | ASP.NET Core Identity (int keys) |
 | ORM | EF Core (preview) |
-| UI (planned) | Blazor WebAssembly + Radzen + ApexCharts |
+| UI (current) | ASP.NET Core MVC + Blazor Server, Radzen, ApexCharts |
 | Realtime (planned) | SignalR |
-| Mapping (planned) | AutoMapper |
-| External Flight Data (planned) | OpenSky first, later FR24 / Aviationstack / ADSBdb (aircraft registry) |
+| Mapping | AutoMapper |
+| External Flight Data (current/planned) | timeapi.io (current); Aviationstack (airport live departures/arrivals); ADSBdb (aircraft metadata); OpenSky/FR24 (planned) |
 | Caching (planned) | MemoryCache / Redis (later) |
 
 ## External APIs and Data Providers
@@ -63,10 +63,12 @@ This project integrates with external services via Application-layer interfaces,
     - Flightradar24 (FR24)
         - Use cases: schedules, status, historical tracks. FR24 APIs are not officially documented; terms and access must be carefully reviewed before use.
     - Aviationstack
-        - Use cases: schedules, flight status, basic enrichment (airline/aircraft). API key required; rate limits apply.
+        - Use cases: airport departures/arrivals, flight status, basic enrichment (airline/aircraft). API key required; rate limits apply.
+        - Current integration: `IAirportLiveService` implemented by `AviationstackService` and used by Airports page (toggle for live data).
     - ADSBdb
         - Use cases: aircraft registry lookup and enrichment (registration/tail, ICAO24/hex, type/model/manufacturer; possibly age/photos when available).
         - Notes: Useful to enrich flights and user aircraft with reliable metadata. Check API key requirements, rate limits, and ToS before use.
+        - Current integration: `IFlightRouteLookupClient` implementation is registered and used for route/metadata lookup.
 
 ### Integration approach
 - Abstractions live inward (Application): e.g., `ITimeApiService`, future `IFlightDataProvider` (name TBD).
@@ -77,7 +79,7 @@ This project integrates with external services via Application-layer interfaces,
 ### Configuration & resiliency
 - Timeouts kept short (few seconds) to avoid blocking pages; timeouts/errors return `null` and callers proceed without enrichment.
 - Consider caching (memory) for stable lookups like airport time zones and static references.
-- Provider credentials (when added) will be read from configuration and user secrets; never commit keys.
+- Provider credentials are read from configuration and user secrets; never commit keys. For Aviationstack, set `Aviationstack:ApiKey` in appsettings.Development.json or via user secrets on the Web project.
 - Add retries/backoff only where providers recommend it; respect rate limits and terms.
 
 ### Legal/usage notes

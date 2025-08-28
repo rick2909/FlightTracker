@@ -23,11 +23,6 @@
         // box model
         grid-column: span 1;
 
-        // up-md: each card spans 2 columns (3 per row)
-        @include up-md {
-            grid-column: span 2;
-        }
-
         // make the card fill the grid cell height
         .rz-card {
             height: 100%;

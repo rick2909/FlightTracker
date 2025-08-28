@@ -80,16 +80,40 @@ IMapFlightService mapFlightService) : Controller
         try
         {
             // TODO: Get actual user ID from authentication context
-            var userId = 1;
+            var userId = 2;
 
             var stats = await _userFlightService.GetUserFlightStatsAsync(userId);
+            var mapFlights = await _mapFlightService.GetUserMapFlightsAsync(userId, maxPast: 500, maxUpcoming: 50);
 
-            return View(stats);
+            // Aggregate flights per year from user's flights
+            var allFlights = await _userFlightService.GetUserFlightsAsync(userId);
+            var perYear = allFlights
+                .GroupBy(f => f.DepartureTimeUtc.Year)
+                .OrderBy(g => g.Key)
+                .Select(g => new FlightTracker.Web.Models.ViewModels.StatsViewModel.FlightsPerYearPoint(g.Key, g.Count()))
+                .ToList();
+
+            var vm = new FlightTracker.Web.Models.ViewModels.StatsViewModel
+            {
+                UserId = userId,
+                Stats = stats,
+                MapFlights = mapFlights,
+                FlightsPerYear = perYear
+            };
+
+            return View(vm);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading user statistics");
-            return View(new UserFlightStatsDto { UserId = 1 });
+            var vm = new FlightTracker.Web.Models.ViewModels.StatsViewModel
+            {
+                UserId = 1,
+                Stats = new UserFlightStatsDto { UserId = 1 },
+                MapFlights = Array.Empty<MapFlightDto>(),
+                FlightsPerYear = Array.Empty<FlightTracker.Web.Models.ViewModels.StatsViewModel.FlightsPerYearPoint>()
+            };
+            return View(vm);
         }
     }
 }
