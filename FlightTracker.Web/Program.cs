@@ -8,19 +8,16 @@ using FlightTracker.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Radzen;
-using FlightTracker.Web;
-using AutoMapper;
 using FlightTracker.Application.Mapping;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add MVC (Radzen/Blazor deferred until components added)
 builder.Services.AddControllersWithViews();
 builder.Services.AddServerSideBlazor().AddCircuitOptions(o =>
 {
     if (builder.Environment.IsDevelopment())
     {
-        o.DetailedErrors = true; // enable detailed circuit exception info
+        o.DetailedErrors = true;
     }
 });
 
@@ -82,7 +79,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// Always redirect to HTTPS in dev & prod (after ensuring dev cert trusted)
+
 app.UseHttpsRedirection();
 
 // Development seed (only if DB empty)
@@ -114,9 +111,6 @@ app.MapControllerRoute(
         pattern: "{controller=Dashboard}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-// Blazor hub (needed for Radzen components used via component tag helper)
 app.MapBlazorHub();
-
-// (Radzen/Blazor root removed – no interactive components yet)
 
 app.Run();
