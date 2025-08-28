@@ -69,7 +69,7 @@ public class UserFlightService : IUserFlightService
         // Validate input
         new CreateUserFlightDtoValidator().ValidateAndThrow(createDto);
         // Use existing flight if provided; otherwise create from fields
-    Flight flight = createDto.FlightId > 0
+        Flight flight = createDto.FlightId > 0
             ? await _flightRepository.GetByIdAsync(createDto.FlightId, cancellationToken)
                 ?? throw new ArgumentException($"Flight with ID {createDto.FlightId} not found.", nameof(createDto.FlightId))
             : await CreateFlightFromDtoAsync(createDto, cancellationToken);

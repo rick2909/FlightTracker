@@ -1,0 +1,272 @@
+@using FlightTracker.Infrastructure.Data
+@inject Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
+@inject Radzen.NotificationService NotificationService
+@inject Radzen.DialogService DialogService
+@inject IJSRuntime JS
+
+@code {
+    private class ProfileModel
+    {
+        public string UserName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+    }
+
+    private class PasswordModel
+    {
+        public string CurrentPassword { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
+        public string ConfirmNewPassword { get; set; } = string.Empty;
+    }
+
+    private ProfileModel profile = new();
+    private PasswordModel pwd = new();
+    private string visibility = "private";
+    private bool isPublic;
+    private string theme = "system";
+    private record Option(string Text, string Value);
+    private IReadOnlyList<Option> visibilityOptions = new[] { new Option("Public", "public"), new Option("Private", "private") };
+    private IReadOnlyList<string> themeOptions = new[] { "system", "light", "dark" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await UserManager.FindByIdAsync("1");
+        profile.UserName = user?.UserName ?? "demo";
+        profile.Email = user?.Email ?? "demo@example.com";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            var v = await GetCookieAsync("ft_profile_visibility");
+            if (!string.IsNullOrWhiteSpace(v)) visibility = v!;
+            isPublic = string.Equals(visibility, "public", StringComparison.OrdinalIgnoreCase);
+            var t = await GetCookieAsync("ft_theme");
+            if (!string.IsNullOrWhiteSpace(t)) theme = t!;
+            StateHasChanged();
+        }
+        catch { /* ignore during prerender */ }
+    }
+
+    private async Task SaveProfileAsync()
+    {
+        var user = await UserManager.FindByIdAsync("1");
+        if (user == null)
+        {
+            await NotifyAsync("Profile updated (session only)", Radzen.NotificationSeverity.Info);
+            return;
+        }
+        if (!string.Equals(user.UserName, profile.UserName, StringComparison.Ordinal))
+        {
+            var r1 = await UserManager.SetUserNameAsync(user, profile.UserName);
+            if (!r1.Succeeded)
+            {
+                await NotifyAsync(string.Join("; ", r1.Errors.Select(e => e.Description)), Radzen.NotificationSeverity.Error);
+                return;
+            }
+        }
+        if (!string.Equals(user.Email, profile.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            var r2 = await UserManager.SetEmailAsync(user, profile.Email);
+            if (!r2.Succeeded)
+            {
+                await NotifyAsync(string.Join("; ", r2.Errors.Select(e => e.Description)), Radzen.NotificationSeverity.Error);
+                return;
+            }
+            user.EmailConfirmed = true;
+            await UserManager.UpdateAsync(user);
+        }
+    await NotifyAsync("Profile updated", Radzen.NotificationSeverity.Success);
+    }
+
+    private async Task ChangePasswordAsync()
+    {
+        if (pwd.NewPassword != pwd.ConfirmNewPassword)
+        {
+            await NotifyAsync("Passwords do not match", Radzen.NotificationSeverity.Warning);
+            return;
+        }
+        var user = await UserManager.FindByIdAsync("1");
+        if (user == null)
+        {
+            await NotifyAsync("Password change requires sign-in", Radzen.NotificationSeverity.Warning);
+            return;
+        }
+        var res = await UserManager.ChangePasswordAsync(user, pwd.CurrentPassword, pwd.NewPassword);
+        if (!res.Succeeded)
+        {
+            await NotifyAsync(string.Join("; ", res.Errors.Select(e => e.Description)), Radzen.NotificationSeverity.Error);
+            return;
+        }
+        pwd = new();
+    await NotifyAsync("Password changed", Radzen.NotificationSeverity.Success);
+    }
+
+    private async Task SavePreferencesAsync()
+    {
+    visibility = isPublic ? "public" : "private";
+    await SetCookieAsync("ft_profile_visibility", visibility);
+        await SetCookieAsync("ft_theme", theme);
+        await ApplyThemeAsync(theme);
+    await NotifyAsync("Preferences saved", Radzen.NotificationSeverity.Success);
+    }
+
+    private async Task ApplyThemeAsync(string value)
+    {
+        await JS.InvokeVoidAsync("eval", @"(function(v){try{var c=document.documentElement.classList;c.remove('theme-dark','theme-light');if(v==='dark')c.add('theme-dark');if(v==='light')c.add('theme-light');}catch(e){}})(" +
+            System.Text.Json.JsonSerializer.Serialize(value) + ")");
+    }
+
+    private async Task<string?> GetCookieAsync(string name)
+    {
+        return await JS.InvokeAsync<string?>("eval", $"(function(){{var m=document.cookie.match(/(?:^|; ){name}=([^;]+)/);return m?decodeURIComponent(m[1]):null;}})()");
+    }
+
+    private async Task SetCookieAsync(string name, string value)
+    {
+        var js = $"document.cookie = '{name}=' + encodeURIComponent('{value}') + '; path=/; max-age=' + (3600*24*365) + '; samesite=lax';";
+        await JS.InvokeVoidAsync("eval", js);
+    }
+
+    private Task NotifyAsync(string message, Radzen.NotificationSeverity severity)
+    {
+        NotificationService.Notify(new Radzen.NotificationMessage { Summary = message, Severity = severity, Duration = 2500 });
+        return Task.CompletedTask;
+    }
+}
+
+<RadzenDialog />
+<RadzenNotification />
+
+<RadzenTabs>
+    <Tabs>
+        <RadzenTabsItem Text="Profile">
+            <div class="settings-form">
+                <div class="settings-form__row">
+                    <label class="rz-label">Username</label>
+                    <RadzenTextBox @bind-Value="profile.UserName" Style="width: 100%" />
+                </div>
+                <div class="settings-form__row">
+                    <label class="rz-label">Email</label>
+                    <RadzenTextBox @bind-Value="profile.Email" Style="width: 100%" />
+                </div>
+                <RadzenButton Text="Save profile" Click="@(_ => SaveProfileAsync())" ButtonStyle="ButtonStyle.Primary" Icon="save" />
+            </div>
+    </RadzenTabsItem>
+
+    <RadzenTabsItem Text="Password">
+            <div class="settings-form">
+                <div class="settings-form__row">
+                    <label class="rz-label">Current password</label>
+                    <RadzenPassword @bind-Value="pwd.CurrentPassword" Style="width: 100%" />
+                </div>
+                <div class="settings-form__row">
+                    <label class="rz-label">New password</label>
+                    <RadzenPassword @bind-Value="pwd.NewPassword" Style="width: 100%" />
+                </div>
+                <div class="settings-form__row">
+                    <label class="rz-label">Confirm new password</label>
+                    <RadzenPassword @bind-Value="pwd.ConfirmNewPassword" Style="width: 100%" />
+                </div>
+                <RadzenButton Text="Change password" Click="@(_ => ChangePasswordAsync())" Icon="key" />
+            </div>
+    </RadzenTabsItem>
+
+    <RadzenTabsItem Text="Preferences">
+            <div class="settings-form">
+                <div class="settings-form__row">
+                    <div class="settings-form__switch-row">
+                        <label class="rz-label">Public profile</label>
+                        <RadzenSwitch @bind-Value="isPublic" />
+                    </div>
+                    <small class="settings-form__hint">Toggle to make your profile visible to others.</small>
+                </div>
+
+                <div class="settings-form__row">
+                    <label class="rz-label">Theme</label>
+                    <RadzenDropDown @bind-Value="theme" TValue="string" Data="@themeOptions" Style="width: 100%" />
+                </div>
+
+                <RadzenButton Text="Save preferences" Click="@(_ => SavePreferencesAsync())" Icon="settings" />
+            </div>
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Export">
+            <div class="settings-form">
+                <div class="settings-form__row">
+                    <p>Download your profile and flights.</p>
+                    <div class="settings-form__actions">
+                        <RadzenButton Text="Export flights (CSV)" Icon="download" ButtonStyle="ButtonStyle.Secondary" Click="@ExportCsv" />
+                        <RadzenButton Text="Export all (JSON)" Icon="download" Click="@ExportAllJson" />
+                    </div>
+                    <small class="settings-form__hint">Export includes your preferences and flights.</small>
+                </div>
+            </div>
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Danger zone">
+            <div class="settings-form">
+                <div class="settings-form__row">
+                    <p>Delete your profile and all your recorded flights. This cannot be undone.</p>
+                    <RadzenButton Text="Delete profile" Icon="delete" ButtonStyle="ButtonStyle.Danger" Click="@ConfirmDeleteProfileAsync" />
+                </div>
+            </div>
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Connections">
+            <div class="settings-form">
+                <div class="settings-form__row">
+                    <p>Connect external data sources (coming soon).</p>
+                    <ul>
+                        <li>OpenSky Network – view live positions</li>
+                        <li>ADS-B Exchange – enrich flight metadata</li>
+                        <li>FR24 – historical schedule lookup</li>
+                    </ul>
+                    <small class="settings-form__hint">This section will allow adding API keys or OAuth connections later.</small>
+                </div>
+            </div>
+        </RadzenTabsItem>
+    </Tabs>
+</RadzenTabs>
+
+@code {
+    private Task ExportCsv() => DownloadAsync("/Settings/Export/Flights.csv");
+    private Task ExportAllJson() => DownloadAsync("/Settings/Export/All.json");
+
+    private async Task DownloadAsync(string url)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("eval", "(u=>{var a=document.createElement('a');a.href=u;a.download='';document.body.appendChild(a);a.click();a.remove();})(" + System.Text.Json.JsonSerializer.Serialize(url) + ")");
+        }
+        catch
+        {
+            await NotifyAsync("Failed to start download", Radzen.NotificationSeverity.Error);
+        }
+    }
+
+    private async Task ConfirmDeleteProfileAsync()
+    {
+        var ok = await DialogService.Confirm(
+            "Delete your profile and all recorded flights? This cannot be undone.",
+            "Confirm deletion",
+            new Radzen.ConfirmOptions
+            {
+                OkButtonText = "Delete",
+                CancelButtonText = "Cancel",
+                ShowClose = false
+            }
+        );
+        if (ok != true) return;
+        try
+        {
+            @* await JS.InvokeVoidAsync("fetch", "/Settings/DeleteProfile", new { method = "POST" }); *@
+            await NotifyAsync("Profile deleted (demo)", Radzen.NotificationSeverity.Success);
+        }
+        catch
+        {
+            await NotifyAsync("Delete failed", Radzen.NotificationSeverity.Error);
+        }
+    }
+}

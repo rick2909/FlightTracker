@@ -45,7 +45,7 @@ public sealed class FlightMetadataProvisionService : IFlightMetadataProvisionSer
             {
                 var newAirline = new Airline
                 {
-                    Name = al.Name ?? (al.Icao ?? al.Iata ?? "Unknown Airline"),
+                    Name = al.Name ?? al.Icao ?? al.Iata ?? "Unknown Airline",
                     IcaoCode = al.Icao ?? string.Empty,
                     IataCode = al.Iata,
                     Country = al.CountryName ?? string.Empty,

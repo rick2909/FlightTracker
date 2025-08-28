@@ -122,6 +122,61 @@
   box-shadow: 0 0 0 3px color.change($color-primary, $alpha: .15);
 }
 
+/* Dropdown panels and items: ensure accessible contrast */
+.rz-dropdown-panel,
+.rz-multiselect-panel {
+  background: var(--rz-surface);
+  color: var(--rz-text-primary);
+  border: 1px solid var(--rz-border);
+}
+
+.rz-dropdown-item,
+.rz-multiselect-item {
+  color: var(--rz-text-primary);
+}
+
+/* Hover state */
+.rz-dropdown-panel .rz-dropdown-item:hover,
+.rz-multiselect-panel .rz-multiselect-item:hover {
+  background: var(--rz-primary-light);
+  color: var(--rz-primary-contrast);
+  /* set scoped link colors inside hovered item */
+  --rz-link: var(--rz-primary-contrast);
+  --rz-link-hover: var(--rz-primary-contrast);
+}
+
+/* Selected/highlighted item */
+.rz-dropdown-panel .rz-dropdown-item.rz-state-highlight,
+.rz-dropdown-panel .rz-dropdown-item[aria-selected="true"],
+.rz-dropdown-panel .rz-dropdown-item.rz-state-active,
+.rz-multiselect-panel .rz-multiselect-item.rz-state-highlight,
+.rz-multiselect-panel .rz-multiselect-item[aria-selected="true"],
+.rz-multiselect-panel .rz-multiselect-item.rz-state-active {
+  background: var(--rz-primary);
+  color: var(--rz-primary-contrast);
+  /* set scoped link colors inside selected item */
+  --rz-link: var(--rz-primary-contrast);
+  --rz-link-hover: var(--rz-primary-contrast);
+}
+
+/* Selected + hover: keep strong contrast (slightly darker primary on hover) */
+.rz-dropdown-panel .rz-dropdown-item.rz-state-highlight:hover,
+.rz-dropdown-panel .rz-dropdown-item[aria-selected="true"]:hover,
+.rz-dropdown-panel .rz-dropdown-item.rz-state-active:hover,
+.rz-multiselect-panel .rz-multiselect-item.rz-state-highlight:hover,
+.rz-multiselect-panel .rz-multiselect-item[aria-selected="true"]:hover,
+.rz-multiselect-panel .rz-multiselect-item.rz-state-active:hover {
+  background: var(--rz-primary-dark);
+  color: var(--rz-primary-contrast);
+  --rz-link: var(--rz-primary-contrast);
+  --rz-link-hover: var(--rz-primary-contrast);
+}
+
+/* The label inside the closed dropdown */
+.rz-dropdown .rz-dropdown-label {
+  color: var(--rz-input-text);
+}
+
 /* Links */
 a { color: var(--rz-link); }
 a:hover { color: var(--rz-link-hover); }
