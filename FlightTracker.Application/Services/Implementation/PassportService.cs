@@ -193,8 +193,8 @@ public class PassportService : IPassportService
             // If value is a valid region/culture name (e.g., "en-US" or "US")
             var regions = CultureInfo.GetCultures(CultureTypes.SpecificCultures).Select(x => new RegionInfo(x.Name));
             var englishRegion = regions.FirstOrDefault(region => region.EnglishName.Contains(value, StringComparison.OrdinalIgnoreCase));
-            var countryAbbrev = englishRegion.TwoLetterISORegionName;
-            return countryAbbrev.ToUpperInvariant();
+            var countryAbbrev = englishRegion?.TwoLetterISORegionName;
+            return countryAbbrev?.ToUpperInvariant();
         }
         catch
         {
