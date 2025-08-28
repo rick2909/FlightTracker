@@ -39,6 +39,19 @@
     <!-- Blazor server script needed for interactive components rendered inside MVC views -->
     <script src="/_framework/blazor.server.js"></script>
     <script>
+        // Apply persisted theme early
+        (function(){
+            try{
+                var m=document.cookie.match(/(?:^|; )ft_theme=([^;]+)/);
+                var v=m?decodeURIComponent(m[1]):'system';
+                var cl=document.documentElement.classList;
+                cl.remove('theme-dark','theme-light');
+                if(v==='dark') cl.add('theme-dark');
+                if(v==='light') cl.add('theme-light');
+            }catch(e){}
+        })();
+    </script>
+    <script>
         (function(){
             const sidebar=document.querySelector('[data-sidebar]');
             const toggle=document.querySelector('[data-sidebar-toggle]');

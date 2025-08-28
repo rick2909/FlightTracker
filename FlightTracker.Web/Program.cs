@@ -76,7 +76,10 @@ builder.Services
         options.User.RequireUniqueEmail = true;
     })
     .AddRoles<IdentityRole<int>>()
-    .AddEntityFrameworkStores<FlightTrackerDbContext>();
+    .AddEntityFrameworkStores<FlightTrackerDbContext>()
+    .AddSignInManager();
+
+// Authentication temporarily disabled (no login UI yet). Keep Identity for seeding only.
 
 // Analytics services
 builder.Services.AddSingleton<IDistanceCalculator, DistanceCalculator>(); // stateless, safe as singleton

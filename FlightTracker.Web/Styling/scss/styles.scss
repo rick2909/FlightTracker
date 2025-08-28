@@ -9,6 +9,7 @@
 @use 'airports';
 @use 'radzen-overrides';
 @use 'passport';
+@use 'settings';
 
 .layout {
   display: flex;
