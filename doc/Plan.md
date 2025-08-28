@@ -16,7 +16,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Add Clean Architecture guidance (`.github/copilot-instructions.md`)
 - [x] Repository interfaces live in `FlightTracker.Application` (per guidance)
 - [x] Remove duplicate repository interfaces under `FlightTracker.Infrastructure/Repositories/Interfaces` (keep interfaces only in Application)
-- [ ] Add project references for forthcoming Presentation projects (once created)
+- [x] Add project references for Presentation project `FlightTracker.Web` (Blazor Server)
 - [ ] Introduce consistent namespace + folder templates (scaffolding script / README section)
 
 ## 2. Domain Layer
@@ -40,6 +40,8 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Add validation (FluentValidation) for create/update DTOs (CreateUserFlightDto, UpdateUserFlightDto, FlightScheduleUpdateDto)
 - [ ] Add cancellation token propagation tests
 - [x] Define external provider abstraction: IFlightDataProvider (live flight & track retrieval)
+- [x] Define airport live data abstraction: IAirportLiveService (departures/arrivals)
+- [x] Add AirportOverviewService (merges DB + live provider results with de-duplication)
 - [ ] Define IFlightStatsService + DTOs for passport/stats (TotalFlights, TotalHours, MonthlyCounts)
 - [ ] Pagination & filtering strategy abstraction (FlightQueryOptions) (Deferred)
  - [x] Add IPassportService + PassportService (aggregate stats + routes)
@@ -58,10 +60,11 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [ ] Add caching layer (MemoryCache) decorator for IFlightDataProvider
 - [ ] Add background hosted service for periodic flight refresh (pull + persist)
 - [ ] Introduce IClock implementation (UtcClock)
-- [ ] Add configuration binding (appsettings) for external API keys / endpoints
+- [x] Add configuration binding (appsettings) for external API keys / endpoints (Aviationstack:ApiKey)
 - [ ] Logging strategy: structured logs for repository & provider operations
 - [ ] Redis / distributed cache integration (Deferred)
-- [ ] FR24 / Aviationstack provider adapters (Deferred)
+- [x] Aviationstack provider adapter (IAirportLiveService implementation) for airport departures/arrivals
+- [ ] FR24 provider adapter (Deferred)
 
 ## 5. Presentation – API (to be created)
 
@@ -76,15 +79,17 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [ ] SignalR hub for live flight position updates
 - [ ] Health checks endpoint
 
-## 6. Presentation – Web (Blazor WASM)
+## 6. Presentation – Web (Blazor Server)
 
 - [x] Create `FlightTracker.Web` project (WASM)
 - [x] Integrate Radzen components (only UI layer)
 - [x] Choose charting library: ApexCharts
 - [ ] *Integrate ApexCharts for stats (passport charts)*
 - [x] Map component via JS interop (MapLibre or Leaflet) spike
-- [ ] Flight list & selection panel
-- [ ] Airport detail page
+- [x] Flight list & selection panel (Airports page: departing/arriving)
+- [x] Airport overview/detail page (map + lists; initial version with live toggle)
+- [x] Settings page (profile basics + preferences cookies + CSV/JSON export)
+- [x] Wire Airports UI to AirportOverviewService with optional Aviationstack live data
 - [ ] Passport / Stats dashboard (charts + summary cards)
 		- [x] Summary cards bound to DB data via IPassportService
 		- [x] Flights Per Year chart (ApexCharts)
@@ -113,6 +118,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [ ] Playback interpolation util (time-based position smoothing)
 - [ ] Add FR24 provider abstraction implementation (after MVP) (Deferred)
 - [ ] Historical playback (persisted tracks with timeframe query) (Deferred)
+- [x] Aviationstack departures/arrivals wired to Airports page via IAirportLiveService
 
 ## 9. Passport / Stats Feature
 
@@ -193,7 +199,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 1. Wrap up Flight details/edit (done): unified update use case, validators, Web wired.
 2. Optional: Add Result wrapper for APIs; improve error surface in Presentation.
-3. Implement external provider lookup (beyond stub) and consider background periodic refresh.
-4. Add unit tests for Application services (UserFlightService happy-path + validation failures).
+3. Provider hardening: user-secrets config for Aviationstack key, add basic retry/backoff (Polly), and environment-based enable/disable.
+4. Add unit tests for Application services (UserFlightService happy-path + validation failures) and AirportOverviewService merge logic.
 
 Keep this file updated; prune completed groups to maintain clarity.
