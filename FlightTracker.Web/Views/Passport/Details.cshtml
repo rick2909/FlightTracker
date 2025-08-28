@@ -1,0 +1,48 @@
+@model YourApp.Models.PassportDetailsViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Passport Details";
+    var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+}
+
+<h2>Passport Details for @Model.UserName</h2>
+
+<div class="ft-passport-details-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2rem">
+    <div>
+        <h3>Airlines Flown</h3>
+        <div id="passport-details-airlines-pie" style="min-height:260px"></div>
+        <ul>
+            @foreach (var stat in Model.AirlineStats)
+            {
+                <li><strong>@stat.AirlineName</strong> (@stat.Count flights)</li>
+            }
+        </ul>
+    </div>
+    <div>
+        <h3>Aircraft Types Flown</h3>
+        <div id="passport-details-aircraft-pie" style="min-height:260px"></div>
+        <ul>
+            @foreach (var kvp in Model.AircraftTypeStats)
+            {
+                <li>
+                    <strong>@kvp.Key</strong> (@kvp.Value flights)
+                </li>
+            }
+        </ul>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="~/js/passport.js" asp-append-version="true"></script>
+    <script>
+        (function(){
+            var airlines = @Html.Raw(JsonSerializer.Serialize(Model.FlightsByAirline ?? new(), jsonOpts));
+            var aircraftTypes = @Html.Raw(JsonSerializer.Serialize(Model.FlightsByAircraftType ?? new(), jsonOpts));
+            if (window.Passport) {
+                try { window.Passport.initPie && window.Passport.initPie('passport-details-airlines-pie', airlines, 'Airlines'); } catch {}
+                try { window.Passport.initPie && window.Passport.initPie('passport-details-aircraft-pie', aircraftTypes, 'Aircraft Types'); } catch {}
+            }
+        })();
+    </script>
+}

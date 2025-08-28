@@ -11,7 +11,7 @@ namespace FlightTracker.Web.Controllers;
 public class PassportController : Controller
 {
     private readonly IPassportService _passportService;
-     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly UserManager<ApplicationUser> _userManager;
 
     public PassportController(IPassportService passportService, UserManager<ApplicationUser> userManager)
     {
@@ -103,5 +103,54 @@ public class PassportController : Controller
             Routes = data.Routes
         };
         return View(model);
+    }
+
+    [HttpGet("Details")]
+    [HttpGet("{id?}/Details")]
+    public async Task<IActionResult> Details(int? id, CancellationToken cancellationToken)
+    {
+        // Resolve user
+        int? userId = 1;
+        string displayName;
+        string? avatarUrl = null;
+
+        if (!userId.HasValue)
+        {
+            var sub = User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!string.IsNullOrEmpty(sub) && int.TryParse(sub, out var parsed))
+            {
+                userId = parsed;
+            }
+        }
+
+        if (!userId.HasValue)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
+        var displayedUser = await _userManager.FindByIdAsync(userId.Value.ToString());
+        if (displayedUser is null)
+        {
+            return NotFound();
+        }
+
+        displayName = string.IsNullOrWhiteSpace(displayedUser.UserName) ? "User" : displayedUser.UserName!;
+        // AvatarUrl not present; fallback to null or derive from claims/profile extension if available
+        avatarUrl = null;
+
+        var passportData = await _passportService.GetPassportDataAsync(userId.Value, cancellationToken);
+        var airlineStats = await _passportService.GetPassportDetailsAsync(userId.Value, cancellationToken);
+
+        var vm = new PassportDetailsViewModel
+        {
+            UserName = displayName,
+            AvatarUrl = avatarUrl,
+            FlightsByAirline = passportData.FlightsByAirline,
+            FlightsByAircraftType = passportData.FlightsByAircraftType,
+            AirlineStats = airlineStats.AirlineStats,
+            AircraftTypeStats = airlineStats.AircraftTypeStats
+        };
+
+        return View(vm);
     }
 }
