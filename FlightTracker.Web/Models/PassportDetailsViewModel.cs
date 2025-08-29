@@ -14,4 +14,5 @@ public class PassportDetailsViewModel
     public Dictionary<string, int> FlightsByAircraftType { get; set; } = new();
     public List<AirlineStatsDto> AirlineStats { get; set; } = new();
    	public Dictionary<string, int> AircraftTypeStats { get; set; } = new();
+	public IEnumerable<UserFlightDto>? UserFlights { get; internal set; }
 }
