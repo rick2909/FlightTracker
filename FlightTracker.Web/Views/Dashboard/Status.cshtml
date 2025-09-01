@@ -7,7 +7,12 @@
     <div class="remove__header"></div>
 }
 
-<partial name="_FlightMap" view-data='new ViewDataDictionary(ViewData) { ["FlightMapHeight"] = "50vh", ["FlightMapSticky"] = "false" }' />
+<partial name="_FlightMap" view-data='new ViewDataDictionary(ViewData) {
+    ["FlightMapHeight"] = "70vh",
+    ["FlightMapSticky"] = "false",
+    ["FlightMapMinHeight"] = "420px",
+    ["FlightMapMaxVh"] = "88vh"
+}' />
 
 <div class="rz-mt-2">
     @(await Html.RenderComponentAsync<FlightTracker.Web.Components.Flights.FlightStateSheet>(RenderMode.ServerPrerendered, new {
