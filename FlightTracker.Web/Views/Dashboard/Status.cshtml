@@ -1,0 +1,21 @@
+@model FlightTracker.Web.Models.ViewModels.FlightStatusPageViewModel
+@{
+    ViewData["Title"] = "Flight Status";
+}
+
+@section HeaderContent {
+    <div class="remove__header"></div>
+}
+
+<partial name="_FlightMap" view-data='new ViewDataDictionary(ViewData) { ["FlightMapHeight"] = "50vh", ["FlightMapSticky"] = "false" }' />
+
+<div class="rz-mt-2">
+    @(await Html.RenderComponentAsync<FlightTracker.Web.Components.Flights.FlightStateSheet>(RenderMode.ServerPrerendered, new {
+        Model = Model.State,
+        Compact = false
+    }))
+</div>
+
+@section Scripts {
+    <script src="~/js/flight-map.js" asp-append-version="true"></script>
+}

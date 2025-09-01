@@ -1,0 +1,86 @@
+@using FlightTracker.Web.Models.ViewModels
+@namespace FlightTracker.Web.Components.Flights
+@using FlightTracker.Application.Dtos
+@inherits ComponentBase
+
+@code {
+    [Parameter] public FlightStateViewModel Model { get; set; } = default!;
+    [Parameter] public bool Compact { get; set; } = true; // Compact for dashboard card; false for full page
+}
+
+<div class="ft-state @(Compact ? "ft-state--compact" : "ft-state--full")" role="region" aria-label="Flight status panel">
+    <div class="ft-state__header">
+        <div class="ft-state__route">
+            <span class="ft-state__airline">@(!string.IsNullOrWhiteSpace(Model.Flight.OperatingAirlineIataCode) ? Model.Flight.OperatingAirlineIataCode : Model.Flight.OperatingAirlineIcaoCode)</span>
+            <span class="ft-state__flight">@Model.Flight.FlightNumber</span>
+            <span class="ft-state__sep">•</span>
+            <span class="ft-state__route-codes">@(Model.Flight.DepartureIataCode ?? Model.Flight.DepartureAirportCode) → @(Model.Flight.ArrivalIataCode ?? Model.Flight.ArrivalAirportCode)</span>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.CountdownLabel))
+        {
+            <div class="ft-state__countdown" aria-live="polite">@Model.CountdownLabel</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Note))
+        {
+            <div class="ft-state__note">@Model.Note</div>
+        }
+    </div>
+
+    @switch (Model.State)
+    {
+        case FlightStateViewModel.TravelState.PreFlight:
+            <div class="ft-state__grid">
+                <div class="ft-state__cell">
+                    <div class="ft-state__label">Departure</div>
+                    <div class="ft-state__value">
+                        <strong>@(Model.Flight.DepartureTimeUtc.ToString("HH:mm"))</strong>
+                        <div class="ft-state__sub">@Model.Flight.DepartureAirportName</div>
+                    </div>
+                </div>
+                <div class="ft-state__cell">
+                    <div class="ft-state__label">Gate</div>
+                    <div class="ft-state__value"><strong>@(Model.DepartureGate ?? "-")</strong> <span class="ft-state__sub">T@(Model.DepartureTerminal ?? "-")</span></div>
+                </div>
+                <div class="ft-state__cell">
+                    <div class="ft-state__label">Arrival (local)</div>
+                    <div class="ft-state__value">
+                        <strong>@(Model.Flight.ArrivalTimeUtc.ToString("HH:mm"))</strong>
+                        <div class="ft-state__sub">@Model.Flight.ArrivalAirportName</div>
+                    </div>
+                </div>
+            </div>
+            break;
+        case FlightStateViewModel.TravelState.AtAirport:
+            <div class="ft-state__grid">
+                <div class="ft-state__cell">
+                    <div class="ft-state__label">Boarding</div>
+                    <div class="ft-state__value"><strong>@(Model.BoardingStartUtc?.ToString("HH:mm") ?? "-")</strong> <span class="ft-state__sub">to @(Model.BoardingEndUtc?.ToString("HH:mm") ?? "-")</span></div>
+                </div>
+                <div class="ft-state__cell">
+                    <div class="ft-state__label">Gate</div>
+                    <div class="ft-state__value"><strong>@(Model.DepartureGate ?? "-")</strong> <span class="ft-state__sub">T@(Model.DepartureTerminal ?? "-")</span></div>
+                </div>
+                <div class="ft-state__cell">
+                    <div class="ft-state__label">Departure</div>
+                    <div class="ft-state__value"><strong>@(Model.Flight.DepartureTimeUtc.ToString("HH:mm"))</strong></div>
+                </div>
+            </div>
+            break;
+        default:
+            <div class="ft-state__grid">
+                <div class="ft-state__cell">
+                    <div class="ft-state__label">Landed</div>
+                    <div class="ft-state__value"><strong>@(Model.Flight.ArrivalTimeUtc.ToString("HH:mm"))</strong> <span class="ft-state__sub">Gate @(Model.ArrivalGate ?? "-")</span></div>
+                </div>
+                <div class="ft-state__cell">
+                    <div class="ft-state__label">Terminal</div>
+                    <div class="ft-state__value"><strong>@(Model.ArrivalTerminal ?? "-")</strong></div>
+                </div>
+                <div class="ft-state__cell">
+                    <div class="ft-state__label">Route</div>
+                    <div class="ft-state__value">@(Model.Flight.DepartureAirportCode) → @(Model.Flight.ArrivalAirportCode)</div>
+                </div>
+            </div>
+            break;
+    }
+</div>

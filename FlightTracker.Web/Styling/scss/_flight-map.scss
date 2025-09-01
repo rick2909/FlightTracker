@@ -120,4 +120,10 @@
   background: #e5e5e5;
 
   &.leaflet-container { font: inherit; }
+
+  &--sticky {
+    position: sticky;
+    top: calc(#{$navbar-height} + .5rem); // below header area
+    z-index: 1; // keep above page background, below overlays
+  }
 }

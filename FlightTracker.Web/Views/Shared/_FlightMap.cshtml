@@ -3,6 +3,8 @@
 @{
     var mapHeight = (ViewData["FlightMapHeight"] as string)?.Trim();
     if (string.IsNullOrWhiteSpace(mapHeight)) { mapHeight = "50vh"; }
+    var stickyRaw = (ViewData["FlightMapSticky"] as string)?.Trim();
+    var isSticky = string.Equals(stickyRaw, "true", System.StringComparison.OrdinalIgnoreCase);
 }
 @using System.Text.Json
 @{
@@ -23,6 +25,13 @@
         compFlights = list;
         flightsJson = JsonSerializer.Serialize(list, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     }
+    else if (Model is FlightTracker.Web.Models.ViewModels.FlightStatusPageViewModel fsp && fsp.MapFlights != null)
+    {
+        var list = fsp.MapFlights.ToList();
+        mapFlightCount = list.Count;
+        compFlights = list;
+        flightsJson = JsonSerializer.Serialize(list, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
 }
 
 <div class="flight-map" data-flight-map data-map-flight-count="@mapFlightCount">
@@ -35,6 +44,10 @@
                        param-MapFlights="compFlights" />
         </div>
     </div>
-    <div id="flightMap" class="flight-map__map" style="min-height:@mapHeight;" aria-label="Flight map" role="region"></div>
+    @{
+        var mapClass = "flight-map__map" + (isSticky ? " flight-map__map--sticky" : string.Empty);
+        var mapStyle = isSticky ? $"height:{mapHeight};" : $"height:{mapHeight}; max-height:{mapHeight};";
+    }
+    <div id="flightMap" class="@mapClass" style="@mapStyle" aria-label="Flight map" role="region"></div>
     <script type="application/json" id="flightMapData">@Html.Raw(flightsJson)</script>
 </div>
