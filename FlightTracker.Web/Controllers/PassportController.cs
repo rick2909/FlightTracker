@@ -122,23 +122,26 @@ public class PassportController : Controller
         int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        // Resolve user
+        // Resolve user (prefer route id, else current user)
         int? userId = 1;
-        string displayName;
-        string? avatarUrl = null;
+        int? currentUserId = null;
 
-        if (!userId.HasValue)
+        if (User?.Identity?.IsAuthenticated == true)
         {
-            var sub = User?.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!string.IsNullOrEmpty(sub) && int.TryParse(sub, out var parsed))
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (int.TryParse(sub, out var parsed))
             {
-                userId = parsed;
+                currentUserId = parsed;
             }
         }
 
-        if (!userId.HasValue)
+        if (userId is null)
         {
-            return RedirectToAction(nameof(Index));
+            if (currentUserId is null)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+            userId = currentUserId;
         }
 
         var displayedUser = await _userManager.FindByIdAsync(userId.Value.ToString());
@@ -147,9 +150,12 @@ public class PassportController : Controller
             return NotFound();
         }
 
-        displayName = string.IsNullOrWhiteSpace(displayedUser.UserName) ? "User" : displayedUser.UserName!;
-        // AvatarUrl not present; fallback to null or derive from claims/profile extension if available
-        avatarUrl = null;
+        var isOtherUser = currentUserId is null || userId.Value != currentUserId.Value;
+        var displayName = isOtherUser
+            ? (displayedUser.UserName ?? "Guest User")
+            : (User?.Identity?.Name ?? displayedUser.UserName ?? "Guest User");
+        string? avatarUrl = null;
+
 
         var passportData = await _passportService.GetPassportDataAsync(userId.Value, cancellationToken);
         var airlineStats = await _passportService.GetPassportDetailsAsync(userId.Value, cancellationToken);
@@ -171,7 +177,7 @@ public class PassportController : Controller
             FlightsByAircraftType = passportData.FlightsByAircraftType,
             AirlineStats = airlineStats.AirlineStats,
             AircraftTypeStats = airlineStats.AircraftTypeStats,
-            UserFlights = userFlights
+            UserFlights = pageItems
         };
 
         return View(vm);
