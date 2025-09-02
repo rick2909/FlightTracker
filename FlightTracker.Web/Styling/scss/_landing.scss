@@ -1,9 +1,11 @@
 // Landing page styles with Material Design and animations
-@import 'variables';
+// Landing page styles with Material Design and animations
+@use 'sass:color';
+@use 'variables' as *;
 
 .landing-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, $color-background 0%, lighten($color-primary, 45%) 100%);
+    background: linear-gradient(135deg, $color-background 0%, color.adjust($color-primary, $lightness: 45%) 100%);
 }
 
 // Hero Section
@@ -136,7 +138,7 @@
     }
 
     &--primary {
-        background: linear-gradient(135deg, $color-primary, darken($color-primary, 10%));
+        background: linear-gradient(135deg, $color-primary, color.adjust($color-primary, $lightness: -10%));
         color: white;
         box-shadow: 0 4px 15px rgba($color-primary, 0.4);
 
@@ -327,7 +329,7 @@
 // CTA Section
 .cta {
     padding: 5rem 0;
-    background: linear-gradient(135deg, $color-primary, darken($color-primary, 10%));
+    background: linear-gradient(135deg, $color-primary, color.adjust($color-primary, $lightness: -10%));
     color: white;
     text-align: center;
 
