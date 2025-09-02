@@ -43,68 +43,78 @@
         ?? User?.Claims?.FirstOrDefault(c => c.Type == "picture")?.Value;
 }
 <aside class="sidebar" aria-label="Primary navigation" data-sidebar>
-    <div class="sidebar__scroll">
-    <div class="sidebar__profile-card sidebar__section">
-    <div class="sidebar__avatar" aria-hidden="true">
-        @if (!string.IsNullOrWhiteSpace(profileImageUrl))
-        {
-            <img src="@profileImageUrl"
-                 alt="@displayName"
-                 class="sidebar__avatar-img"
-                 style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"
-                 onerror="this.style.display='none'; var f=this.nextElementSibling; if(f) f.style.display='inline-flex';" />
-        }
-        <span class="sidebar__avatar-fallback"
-              style="display:@(string.IsNullOrWhiteSpace(profileImageUrl) ? "inline-flex" : "none");width:100%;height:100%;align-items:center;justify-content:center;font-weight:600;">
-            @initials
-        </span>
-    </div>
-    <div class="sidebar__profile-text sidebar__profile-text-transition">
-            <div class="sidebar__name" title="@displayName">@displayName</div>
-            <div class="sidebar__role">Traveler</div>
+    <!-- Fixed header area -->
+    <div class="sidebar__header">
+        <div class="sidebar__profile-card">
+            <div class="sidebar__avatar" aria-hidden="true">
+                @if (!string.IsNullOrWhiteSpace(profileImageUrl))
+                {
+                    <img src="@profileImageUrl"
+                         alt="@displayName"
+                         class="sidebar__avatar-img"
+                         style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"
+                         onerror="this.style.display='none'; var f=this.nextElementSibling; if(f) f.style.display='inline-flex';" />
+                }
+                <span class="sidebar__avatar-fallback"
+                      style="display:@(string.IsNullOrWhiteSpace(profileImageUrl) ? "inline-flex" : "none");width:100%;height:100%;align-items:center;justify-content:center;font-weight:600;">
+                    @initials
+                </span>
+            </div>
+            <div class="sidebar__profile-text sidebar__profile-text-transition">
+                <div class="sidebar__name" title="@displayName">@displayName</div>
+                <div class="sidebar__role">Traveler</div>
+            </div>
         </div>
     </div>
-    <div class="flight-status sidebar__section">
-        <a class="flight-status__link status-@statusCss" asp-controller="Dashboard" asp-action="Status" title="Next flight">
-            <span class="material-icons flight-status__icon" aria-hidden="true">@statusIcon</span>
-            <span class="flight-status__text">Next: @statusLabel</span>
-        </a>
+    
+    <!-- Scrollable content area -->
+    <div class="sidebar__scroll">
+        <div class="flight-status sidebar__section">
+            <a class="flight-status__link status-@statusCss" asp-controller="Dashboard" asp-action="Status" title="Next flight">
+                <span class="material-icons flight-status__icon" aria-hidden="true">@statusIcon</span>
+                <span class="flight-status__text">Next: @statusLabel</span>
+            </a>
+        </div>
+        
+        <nav class="sidebar__nav sidebar__section" data-sidebar-nav>
+            <a class="sidebar__link @(IsActive("Home") ? "is-active" : null)" asp-controller="Home" asp-action="Index">
+                <span class="material-icons" aria-hidden="true">home</span>
+                <span class="sidebar__text">Home</span>
+            </a>
+            <a class="sidebar__link @(IsActive("Dashboard") ? "is-active" : null)" asp-controller="Dashboard" asp-action="Index">
+                <span class="material-symbols-outlined" aria-hidden="true">globe</span>
+                <span class="sidebar__text">Dashboard</span>
+            </a>
+            <a class="sidebar__link @(IsActive("UserFlights") ? "is-active" : null)" asp-controller="UserFlights" asp-action="Index" >
+                <span class="material-symbols-outlined" aria-hidden="true">flight</span>
+                <span class="sidebar__text">Flights</span>
+            </a>
+            <a class="sidebar__link @(IsActive("Airports") ? "is-active" : null)" asp-controller="Airports" asp-action="Index">
+                <span class="material-icons" aria-hidden="true">location_city</span>
+                <span class="sidebar__text">Airports</span>
+            </a>
+            <a class="sidebar__link @(IsActive("Passport") ? "is-active" : null)" asp-controller="Passport" asp-action="Index">
+                <span class="material-icons" aria-hidden="true">badge</span>
+                <span class="sidebar__text">Passport</span>
+            </a>
+            <a class="sidebar__link @(IsActive("Settings") ? "is-active" : null)" asp-controller="Settings" asp-action="Index">
+                <span class="material-icons" aria-hidden="true">settings</span>
+                <span class="sidebar__text">Settings</span>
+            </a>
+            <a class="sidebar__link @(IsActive("Help") ? "is-active" : null)" asp-controller="Help" asp-action="Index">
+                <span class="material-icons" aria-hidden="true">help_outline</span>
+                <span class="sidebar__text">Help</span>
+            </a>
+        </nav>
     </div>
-    <nav class="sidebar__nav sidebar__section" data-sidebar-nav>
-        <a class="sidebar__link @(IsActive("Home","Index") ? "is-active" : null)" asp-controller="Home" asp-action="Index">
-            <span class="material-icons" aria-hidden="true">home</span>
-            <span class="sidebar__text">Home</span>
-        </a>
-        <a class="sidebar__link @(IsActive("Dashboard","Index") ? "is-active" : null)" asp-controller="Dashboard" asp-action="Index">
-            <span class="material-symbols-outlined" aria-hidden="true">globe</span>
-            <span class="sidebar__text">Dashboard</span>
-        </a>
-        <a class="sidebar__link @(IsActive("Dashboard","MyFlights") ? "is-active" : null)" asp-controller="UserFlights" asp-action="Index" >
-            <span class="material-symbols-outlined" aria-hidden="true">flight</span>
-            <span class="sidebar__text">Flights</span>
-        </a>
-        <a class="sidebar__link @(IsActive("Airports") ? "is-active" : null)" asp-controller="Airports" asp-action="Index">
-            <span class="material-icons" aria-hidden="true">location_city</span>
-            <span class="sidebar__text">Airports</span>
-        </a>
-        <a class="sidebar__link @(IsActive("Passport","Index") ? "is-active" : null)" asp-controller="Passport" asp-action="Index">
-            <span class="material-icons" aria-hidden="true">badge</span>
-            <span class="sidebar__text">Passport</span>
-        </a>
-        <a class="sidebar__link @(IsActive("Settings") ? "is-active" : null)" asp-controller="Settings" asp-action="Index">
-            <span class="material-icons" aria-hidden="true">settings</span>
-            <span class="sidebar__text">Settings</span>
-        </a>
-        <a class="sidebar__link @(IsActive("Help") ? "is-active" : null)" asp-controller="Help" asp-action="Index">
-            <span class="material-icons" aria-hidden="true">help_outline</span>
-            <span class="sidebar__text">Help</span>
-        </a>
-    </nav>
+    
+    <!-- Fixed footer area -->
+    <div class="sidebar__footer">
+        <button class="sidebar__collapse-btn" type="button" aria-label="Toggle sidebar" aria-expanded="true" data-sidebar-toggle>
+            <span class="collapse-icon-wrapper" aria-hidden="true">
+                <span class="material-icons collapse-icon collapse-icon-open">arrow_right_alt</span>
+                <span class="material-icons collapse-icon collapse-icon-close">close</span>
+            </span>
+        </button>
     </div>
-    <button class="sidebar__collapse-btn" type="button" aria-label="Toggle sidebar" aria-expanded="true" data-sidebar-toggle>
-        <span class="collapse-icon-wrapper" aria-hidden="true">
-            <span class="material-icons collapse-icon collapse-icon-open">arrow_right_alt</span>
-            <span class="material-icons collapse-icon collapse-icon-close">close</span>
-        </span>
-    </button>
 </aside>

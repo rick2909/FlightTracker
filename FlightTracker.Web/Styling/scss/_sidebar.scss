@@ -1,24 +1,62 @@
 @use 'sass:color';
 @use 'variables' as *;
 
-/* Sidebar */
+/* Modern Material Design Sidebar */
 .sidebar {
   /* positioning */
   position: sticky;
   top: 0;
-  z-index: 10; /* keep above main scrolling content */
+  z-index: 10;
   /* box model */
   display: flex;
   flex-direction: column;
-  height: 100dvh; /* full viewport height; handles mobile UI better */
+  height: 100dvh;
   /* visual */
+  background: $color-surface;
+  border-right: 1px solid $color-divider;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: width 220ms ease;
 }
 
+/* Fixed header area - never scrolls */
+.sidebar__header {
+  flex-shrink: 0;
+  background: $color-surface;
+}
+
+/* Scrollable content area */
 .sidebar__scroll {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: thin;
+  scrollbar-color: rgba($color-primary, 0.3) transparent;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba($color-primary, 0.3);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba($color-primary, 0.5);
+    }
+  }
+}
+
+/* Fixed footer area - never scrolls */
+.sidebar__footer {
+  flex-shrink: 0;
+  background: $color-surface;
+  border-top: 1px solid $color-divider;
+  /* Match main layout footer spacing */
+  padding: 1rem 1.25rem;
 }
 
 .sidebar__logo { display: block; }
@@ -32,32 +70,38 @@
   color: $color-primary;
 }
 
-/* Collapse button */
+/* Modern collapse button */
 .sidebar__collapse-btn {
-  position: absolute;
-  bottom: .65rem;
-  left: .65rem;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
+  background: white;
   color: $color-text-secondary;
   border: 1px solid $color-divider;
   border-radius: 50%;
   cursor: pointer;
-  transition: background $transition-fast, border-color $transition-fast, color $transition-fast;
+  transition: all $transition-medium;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  
+  &:hover {
+    background: $color-primary;
+    color: white;
+    box-shadow: 0 4px 12px rgba($color-primary, 0.3);
+    transform: translateY(-1px);
+  }
 }
+
 .collapse-icon-wrapper {
   position: relative;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   display: inline-block;
 }
 
 .collapse-icon {
-  font-size: 26px;
+  font-size: 24px;
   line-height: 1;
   transition: opacity $transition-fast, transform $transition-fast;
   position: absolute;
@@ -79,78 +123,111 @@
 .sidebar--collapsed .sidebar__profile-text-transition { opacity: 0; width: 0; overflow: hidden; }
 .sidebar--collapsed .sidebar__profile-card { gap: 0; }
 
-/* Profile card */
+/* Modern profile card */
 .sidebar__profile-card {
   display: flex;
   align-items: center;
-  padding: 1rem 1rem .75rem;
-  gap: .75rem;
+  padding: 1.5rem 0;
+  gap: 1rem;
+  background: linear-gradient(135deg, rgba($color-primary, 0.05), rgba($color-secondary, 0.05));
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, $color-primary, $color-secondary);
+    opacity: 0.02;
+    pointer-events: none;
+  }
 }
 
 .sidebar__avatar {
-  width: 48px;
-  flex-shrink: 0; /* prevent squashing during transition */
-  height: 48px;
+  width: 56px;
+  flex-shrink: 0;
+  height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, $color-primary, $color-primary-variant);
-  color: #fff;
+  background: linear-gradient(135deg, $color-primary, $color-secondary);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 1.05rem;
-  letter-spacing: .5px;
+  font-size: 1.2rem;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba($color-primary, 0.3);
+  margin-left: 1rem;
 }
 
 .sidebar__profile-text {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  padding-right: 1rem;
 }
 
 .sidebar__name {
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.1rem;
+  color: $color-text-primary;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-bottom: 0.25rem;
 }
 
 .sidebar__role {
-  font-size: .7rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: .8px;
-  color: $color-text-secondary;
+  letter-spacing: 1px;
+  color: $color-primary;
+  font-weight: 500;
 }
 
-/* Flight status indicator */
+/* Modern flight status indicator */
 .flight-status {
-  margin: .25rem .9rem 1rem;
+  /* bring the status closer to the profile card */
+  margin: 0 0 0.5rem 0;
 }
 
 .flight-status__link {
   display: flex;
   align-items: center;
-  gap: .6rem;
-  padding: .6rem .9rem;
+  gap: 0.75rem;
+  padding: 1rem;
   text-decoration: none;
-  font-size: .8rem;
-  background: $color-background;
+  font-size: 0.9rem;
+  background: white;
   border: 1px solid $color-divider;
-  border-radius: 23px;
-  color: $color-text-secondary;
-  line-height: 1.2;
-  transition: background $transition-fast, border-color $transition-fast, color $transition-fast;
-}
-
-.flight-status__link:hover {
-  background: rgba($color-primary, 0.06);
-  // Using module color.adjust (Sass modules API)
-  border-color: color.adjust($color-divider, $lightness: 5%);
+  border-radius: 12px;
   color: $color-text-primary;
+  line-height: 1.3;
+  transition: all $transition-medium;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin: 0 1rem;
+
+  &:hover {
+    background: linear-gradient(135deg, rgba($color-primary, 0.08), rgba($color-secondary, 0.08));
+    border-color: color.adjust($color-primary, $lightness: 20%);
+    box-shadow: 0 4px 12px rgba($color-primary, 0.15);
+    transform: translateY(-1px);
+  }
 }
 
-.flight-status__icon { font-size: 24px; }
+.flight-status__icon { 
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.flight-status__text {
+  font-weight: 500;
+}
 
 .status-none .flight-status__icon { color: $color-text-secondary; }
 .status-scheduled .flight-status__icon { color: $color-primary; }
@@ -163,105 +240,293 @@
 .status-diverted .flight-status__icon { color: $color-secondary-variant; }
 
 .sidebar--collapsed .flight-status__text { display: none; }
-.sidebar--collapsed .flight-status { text-align: center; }
+.sidebar--collapsed .flight-status { 
+  text-align: center;
+  margin: 0 0 1rem 0;
+}
+
+/* Make the flight-status icon behave like nav icons in collapsed state */
+.sidebar--collapsed .flight-status__link {
+  justify-content: center;
+  align-items: center;
+  padding: 0.25rem;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 0.75rem;
+  border-radius: 50%;
+}
+
+.sidebar--collapsed .flight-status__icon {
+  display: inline-block;
+  margin: 0;
+}
 
 /* Collapsed state */
-.sidebar--collapsed { width: 90px; }
+.sidebar--collapsed { width: 80px; }
 
 /* Expanded base width */
-.sidebar:not(.sidebar--collapsed) { width: 260px; }
+.sidebar:not(.sidebar--collapsed) { width: 280px; }
 
 .sidebar--collapsed .sidebar__profile-text,
 .sidebar--collapsed .sidebar__text { display: none; }
 
 .sidebar--collapsed .sidebar__flight-card { visibility: hidden; }
 
-.sidebar--collapsed .sidebar__collapse-btn { background: transparent; }
+.sidebar--collapsed .sidebar__collapse-btn { 
+  background: rgba($color-primary, 0.1);
+  border-color: $color-primary;
+}
 
 .sidebar--collapsed .collapse-icon-open { opacity: 1; }
 .sidebar--collapsed .collapse-icon-close { opacity: 0; }
 .sidebar:not(.sidebar--collapsed) .collapse-icon-open { opacity: 0; }
 .sidebar:not(.sidebar--collapsed) .collapse-icon-close { opacity: 1; }
 
-.sidebar--collapsed .sidebar__nav { padding: 0 .4rem 1rem; }
+.sidebar--collapsed .sidebar__nav { padding: 0 0.5rem 1rem; }
 
 .sidebar--collapsed .sidebar__link {
   justify-content: center;
-  padding: .65rem 0;
+  padding: 0.75rem;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
 }
 
-/* Icons keep consistent size collapsed & expanded */
-// (Removed prior enlargement to 28px for consistent layout)
+.sidebar--collapsed .sidebar__profile-card {
+  justify-content: center;
+  padding: 1rem 0;
+  margin-bottom: 1rem;
+  /* Allow avatar shadows and edges to be visible when collapsed */
+  overflow: visible;
+}
 
-/* Center profile card content when collapsed to avoid avatar squash */
-/* Removed center alignment to avoid horizontal jump when expanding */
-/* .sidebar--collapsed .sidebar__profile-card { justify-content: center; } */
+.sidebar--collapsed .sidebar__avatar {
+  margin-left: 0;
+  /* Slightly smaller avatar when collapsed so it doesn't get clipped */
+  width: 40px;
+  height: 40px;
+  box-shadow: 0 3px 8px rgba($color-primary, 0.25);
+}
 
-.sidebar--collapsed .sidebar__link.is-active:before { left: 0; }
+.sidebar--collapsed .sidebar__link.is-active:before { 
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  top: auto;
+  bottom: -8px;
+}
 
+/* Modern navigation styles */
 .sidebar__nav {
   display: flex;
   flex-direction: column;
-  gap: .2rem;
-  padding: 0 .75rem 1.5rem;
+  gap: 0.25rem;
+  padding: 0 1rem 2rem;
 }
 
 .sidebar__link {
   position: relative;
   display: flex;
   align-items: center;
-  gap: .9rem;
-  padding: .65rem 1rem;
-  border-radius: 10px;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border-radius: 12px;
   color: $color-text-primary;
   text-decoration: none;
   font-size: 1rem;
   font-weight: 500;
-  transition: background $transition-fast, color $transition-fast;
+  transition: all $transition-medium;
+  
+  &:hover {
+    background: linear-gradient(135deg, rgba($color-primary, 0.08), rgba($color-secondary, 0.08));
+    color: $color-primary;
+    transform: translateX(4px);
+  }
+  
+  &.is-active {
+    background: linear-gradient(135deg, rgba($color-primary, 0.12), rgba($color-secondary, 0.12));
+    color: $color-primary;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba($color-primary, 0.15);
+  }
+  
+  &.is-active:before {
+    content: "";
+    position: absolute;
+    left: -1rem;
+    top: 20%;
+    bottom: 20%;
+    width: 4px;
+    border-radius: 2px;
+    background: linear-gradient(135deg, $color-primary, $color-secondary);
+  }
 }
 
 .sidebar__link .material-icons,
-.sidebar__link .material-symbols-outlined { font-size: 24px; }
-
-.sidebar__link:hover {
-  background: $color-highlight;
-  color: #000;
+.sidebar__link .material-symbols-outlined { 
+  font-size: 24px;
+  flex-shrink: 0;
 }
 
-.sidebar__link.is-active {
-  background: rgba($color-primary, 0.08);
-  color: $color-primary;
+.sidebar__text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.sidebar__link.is-active:before {
-  content: "";
-  position: absolute;
-  left: -.75rem;
-  top: 8%;
-  bottom: 8%;
-  width: 4px;
-  border-radius: 2px;
-  background: $color-primary;
+/* Section dividers */
+.sidebar__section {
+  margin-bottom: 1rem;
+  
+  /* Standard divider between middle sections only. */
+  &:not(:last-child) {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba($color-divider, 0.5);
+  }
+
+  /* Ensure the very first section (profile area) does not get a divider */
+  &:first-child {
+    padding-bottom: 0;
+    border-bottom: none;
+    margin-bottom: 0.5rem;
+  }
 }
 
 /* Responsive adjustments (expanded only) */
-@include up-md { .sidebar:not(.sidebar--collapsed) { width: 280px; } }
-@include up-lg { .sidebar:not(.sidebar--collapsed) { width: 300px; } }
-@include up-xl { .sidebar:not(.sidebar--collapsed) { width: 320px; } }
-@include up-xx { .sidebar:not(.sidebar--collapsed) { width: 340px; } }
+@include up-md { .sidebar:not(.sidebar--collapsed) { width: 300px; } }
+@include up-lg { .sidebar:not(.sidebar--collapsed) { width: 320px; } }
+@include up-xl { .sidebar:not(.sidebar--collapsed) { width: 340px; } }
+@include up-xx { .sidebar:not(.sidebar--collapsed) { width: 360px; } }
 
 @media (max-width: 900px) {
-  /* legacy mobile rule, can refactor later */
+  /* Mobile layout */
   .layout { flex-direction: column; }
   .sidebar {
-  position: static; /* disable sticky in mobile layout */
-  flex-direction: row;
-    height: auto;
-    overflow-x: auto;
-  }
-  .sidebar__brand { padding: .75rem 1rem; }
-  .sidebar__nav {
+    position: static;
     flex-direction: row;
-    padding: 0 .5rem .5rem;
+    height: auto;
+    width: 100% !important;
+    overflow-x: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    
+    .sidebar__header {
+      flex-shrink: 0;
+      padding: 0.75rem;
+      border-bottom: none;
+      border-right: 1px solid $color-divider;
+    }
+    
+    .sidebar__scroll {
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+    
+    .sidebar__footer {
+  flex-shrink: 0;
+  /* Keep mobile footer spacing closer to the main footer for visual parity */
+  padding: 1rem 1.25rem;
+      border-top: none;
+      border-left: 1px solid $color-divider;
+    }
+    
+    .sidebar__profile-card {
+      flex-direction: column;
+      text-align: center;
+      margin-bottom: 0;
+      padding: 0.75rem;
+      background: transparent;
+      
+      .sidebar__avatar {
+        margin-left: 0;
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+      }
+      
+      .sidebar__profile-text {
+        padding-right: 0;
+        
+        .sidebar__name {
+          font-size: 0.85rem;
+        }
+        
+        .sidebar__role {
+          font-size: 0.7rem;
+        }
+      }
+    }
+    
+    .flight-status {
+      margin: 0;
+      
+      .flight-status__link {
+        padding: 0.5rem;
+        border-radius: 8px;
+        flex-direction: column;
+        gap: 0.25rem;
+        text-align: center;
+        min-width: 80px;
+        
+        .flight-status__icon {
+          font-size: 20px;
+        }
+        
+        .flight-status__text {
+          font-size: 0.75rem;
+        }
+      }
+    }
+    
+    .sidebar__nav {
+      flex-direction: row;
+      padding: 0.5rem;
+      gap: 0.5rem;
+      overflow-x: auto;
+      
+      .sidebar__link {
+        flex-direction: column;
+        gap: 0.25rem;
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+        min-width: 80px;
+        white-space: nowrap;
+        
+        &:hover {
+          transform: translateY(-2px);
+        }
+        
+        .material-icons,
+        .material-symbols-outlined {
+          font-size: 20px;
+        }
+        
+        .sidebar__text {
+          font-size: 0.75rem;
+          white-space: nowrap;
+        }
+        
+        &.is-active:before {
+          left: 20%;
+          right: 20%;
+          top: auto;
+          bottom: -0.5rem;
+          width: auto;
+          height: 2px;
+        }
+      }
+    }
+    
+    .sidebar__collapse-btn {
+      width: 40px;
+      height: 40px;
+      
+      .collapse-icon {
+        font-size: 20px;
+      }
+    }
   }
 }
