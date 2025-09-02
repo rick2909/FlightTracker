@@ -94,12 +94,12 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Settings page (profile basics + preferences cookies + CSV/JSON export)
 - [x] Wire Airports UI to AirportOverviewService with optional Aviationstack live data
 - [ ] NEW: Passport details view (more in-depth stats inside Passport)
-	- [ ] Route: `/Passport/{id?}` gains a "Details" tab/section (or `/Passport/{id?}/Details` action)
-	- [ ] Two ApexCharts pie charts
-		- [ ] Airlines flown (click to filter list)
-		- [ ] Aircraft types flown (click to filter list)
-	- [ ] Filtered lists beneath charts (respect selected airline/type)
-	- [ ] Data source: IFlightStatsService with AirlineStatsDto & AircraftTypeStatsDto via PassportDetailsDto/PassportDataDto
+	- [x] Route: `/Passport/{id?}` gains a "Details" tab/section (or `/Passport/{id?}/Details` action)
+	- [x] Two ApexCharts pie charts
+		- [x] Airlines flown (click to filter list)
+		- [x] Aircraft types flown (click to filter list)
+	- [x] Filtered lists beneath charts (respect selected airline/type)
+	- [x] Data source: IFlightStatsService with AirlineStatsDto & AircraftTypeStatsDto via PassportDetailsDto/PassportDataDto
 	- [ ] Accessibility: chart labels, table summaries, keyboard navigation
 	- [ ] Performance: AsNoTracking queries; scoped to current user; defer pagination initially
 - [x] Passport / Stats dashboard (charts + summary cards)
@@ -109,7 +109,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 		- [x] Pie chart: Aircraft types flown (ApexCharts)
 	- [x] *Charts wiring (ApexCharts) and interactions*  
 			Note: Scripts included; finalize dataset + rendering hooks
-- [ ] State-based flight views (Pre-flight, At airport, Post-flight) UI workflow
+- [x] State-based flight views (Pre-flight, At airport, Post-flight) UI workflow
 - [ ] Auth UI (login/register) once API auth ready
 - [ ] Light/Dark theme toggle + Material design tokens
 - [ ] Offline caching (PWA capability) (Deferred)

@@ -10,4 +10,8 @@ namespace FlightTracker.Application.Services.Interfaces;
 public interface IPassportService
 {
     Task<PassportDataDto> GetPassportDataAsync(int userId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Computes grouped stats for a user's flown flights.
+    /// </summary>
+    Task<PassportDetailsDto> GetPassportDetailsAsync(int userId, CancellationToken cancellationToken = default);
 }

@@ -1,8 +1,18 @@
 @* Reusable flight map component with header + search.
-   Configure height by passing ViewData["FlightMapHeight"] (e.g. "70vh", "500px"). *@
+    Configure height via ViewData:
+    - ["FlightMapHeight"]: preferred height (e.g. "70vh", "500px").
+    - ["FlightMapSticky"]: "true" | "false". Sticky uses exact height.
+    - ["FlightMapMinHeight"] (optional): min in clamp for non-sticky (default "420px").
+    - ["FlightMapMaxVh"] (optional): max in clamp for non-sticky (default "85vh"). *@
 @{
     var mapHeight = (ViewData["FlightMapHeight"] as string)?.Trim();
     if (string.IsNullOrWhiteSpace(mapHeight)) { mapHeight = "50vh"; }
+    var stickyRaw = (ViewData["FlightMapSticky"] as string)?.Trim();
+    var isSticky = string.Equals(stickyRaw, "true", System.StringComparison.OrdinalIgnoreCase);
+    var minHeight = (ViewData["FlightMapMinHeight"] as string)?.Trim();
+    if (string.IsNullOrWhiteSpace(minHeight)) { minHeight = "420px"; }
+    var maxVh = (ViewData["FlightMapMaxVh"] as string)?.Trim();
+    if (string.IsNullOrWhiteSpace(maxVh)) { maxVh = "85vh"; }
 }
 @using System.Text.Json
 @{
@@ -23,6 +33,13 @@
         compFlights = list;
         flightsJson = JsonSerializer.Serialize(list, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     }
+    else if (Model is FlightTracker.Web.Models.ViewModels.FlightStatusPageViewModel fsp && fsp.MapFlights != null)
+    {
+        var list = fsp.MapFlights.ToList();
+        mapFlightCount = list.Count;
+        compFlights = list;
+        flightsJson = JsonSerializer.Serialize(list, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    }
 }
 
 <div class="flight-map" data-flight-map data-map-flight-count="@mapFlightCount">
@@ -35,6 +52,13 @@
                        param-MapFlights="compFlights" />
         </div>
     </div>
-    <div id="flightMap" class="flight-map__map" style="min-height:@mapHeight;" aria-label="Flight map" role="region"></div>
+    @{
+        var mapClass = "flight-map__map" + (isSticky ? " flight-map__map--sticky" : string.Empty);
+        // For non-sticky, use clamp(min, preferred, max) so it feels good across screens.
+        var mapStyle = isSticky
+            ? $"height:{mapHeight};"
+            : $"height:clamp({minHeight}, {mapHeight}, {maxVh}); max-height:clamp({minHeight}, {mapHeight}, {maxVh});";
+    }
+    <div id="flightMap" class="@mapClass" style="@mapStyle" aria-label="Flight map" role="region"></div>
     <script type="application/json" id="flightMapData">@Html.Raw(flightsJson)</script>
 </div>

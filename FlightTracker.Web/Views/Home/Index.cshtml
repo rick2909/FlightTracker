@@ -1,8 +1,214 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "FlightTracker - Track Your Aviation Journey";
+    ViewData["ShowSidebar"] = false; // Hide sidebar for landing page
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="landing-page">
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero__background">
+            <div class="hero__content">
+                <div class="hero__text">
+                    <h1 class="hero__title">
+                        Track Your <span class="hero__accent">Aviation Journey</span>
+                    </h1>
+                    <p class="hero__subtitle">
+                        The modern flight tracking platform for aviation enthusiasts. 
+                        Record your flights, explore statistics, and showcase your travel passport.
+                    </p>
+                    <div class="hero__actions">
+                        <a href="/register" class="btn btn--primary btn--large">
+                            <i class="material-icons">flight_takeoff</i>
+                            Start Tracking
+                        </a>
+                        <a href="/login" class="btn btn--secondary btn--large">
+                            <i class="material-icons">login</i>
+                            Sign In
+                        </a>
+                    </div>
+                </div>
+                <div class="hero__visual">
+                    <div class="hero__plane">
+                        <i class="material-icons">flight</i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Preview Section -->
+    <section class="stats-preview">
+        <div class="stats-preview__content">
+            <h2 class="stats-preview__title">Join Thousands of Aviation Enthusiasts</h2>
+            <div class="stats-preview__grid">
+                <div class="stat-card">
+                    <div class="stat-card__icon">
+                        <i class="material-icons">flight_takeoff</i>
+                    </div>
+                    <div class="stat-card__value">125,847</div>
+                    <div class="stat-card__label">Flights Tracked</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__icon">
+                        <i class="material-icons">public</i>
+                    </div>
+                    <div class="stat-card__value">2,450</div>
+                    <div class="stat-card__label">Airports Visited</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__icon">
+                        <i class="material-icons">people</i>
+                    </div>
+                    <div class="stat-card__value">8,320</div>
+                    <div class="stat-card__label">Active Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__icon">
+                        <i class="material-icons">eco</i>
+                    </div>
+                    <div class="stat-card__value">45.2M</div>
+                    <div class="stat-card__label">Miles Tracked</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="features__content">
+            <h2 class="features__title">Everything You Need to Track Your Flights</h2>
+            <div class="features__grid">
+                <div class="feature-card">
+                    <div class="feature-card__icon">
+                        <i class="material-icons">map</i>
+                    </div>
+                    <h3 class="feature-card__title">Interactive Flight Maps</h3>
+                    <p class="feature-card__description">
+                        Visualize your routes on beautiful interactive maps with real-time flight data and great circle routes.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card__icon">
+                        <i class="material-icons">analytics</i>
+                    </div>
+                    <h3 class="feature-card__title">Detailed Statistics</h3>
+                    <p class="feature-card__description">
+                        Track miles flown, airports visited, favorite airlines, and detailed analytics of your aviation journey.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card__icon">
+                        <i class="material-icons">badge</i>
+                    </div>
+                    <h3 class="feature-card__title">Digital Passport</h3>
+                    <p class="feature-card__description">
+                        Create a beautiful digital aviation passport showcasing your travels, achievements, and milestones.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card__icon">
+                        <i class="material-icons">schedule</i>
+                    </div>
+                    <h3 class="feature-card__title">Flight Status Tracking</h3>
+                    <p class="feature-card__description">
+                        Real-time status updates for your upcoming flights with pre-flight, at-airport, and post-flight workflows.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card__icon">
+                        <i class="material-icons">eco</i>
+                    </div>
+                    <h3 class="feature-card__title">Environmental Impact</h3>
+                    <p class="feature-card__description">
+                        Monitor your aviation carbon footprint with detailed emission calculations and environmental insights.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-card__icon">
+                        <i class="material-icons">devices</i>
+                    </div>
+                    <h3 class="feature-card__title">Multi-Platform</h3>
+                    <p class="feature-card__description">
+                        Access your flight data anywhere with our responsive web interface, designed for desktop and mobile.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="cta__content">
+            <h2 class="cta__title">Ready to Start Your Journey?</h2>
+            <p class="cta__subtitle">Join thousands of aviation enthusiasts tracking their flights</p>
+            <div class="cta__actions">
+                <a href="/register" class="btn btn--primary btn--large">
+                    <i class="material-icons">flight_takeoff</i>
+                    Create Free Account
+                </a>
+            </div>
+        </div>
+    </section>
 </div>
+
+@section Scripts {
+    <script>
+        // Add scroll animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all animatable elements
+            document.querySelectorAll('.stat-card, .feature-card').forEach(function(el) {
+                observer.observe(el);
+            });
+
+            // Animate stats numbers
+            function animateNumber(element, target) {
+                const duration = 2000;
+                const start = 0;
+                const increment = target / (duration / 16);
+                let current = start;
+
+                const timer = setInterval(function() {
+                    current += increment;
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(timer);
+                    }
+                    element.textContent = Math.floor(current).toLocaleString();
+                }, 16);
+            }
+
+            // Trigger number animations when stats section comes into view
+            const statsObserver = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        const statValues = entry.target.querySelectorAll('.stat-card__value');
+                        statValues.forEach(function(el) {
+                            const value = el.textContent.replace(/[^0-9.]/g, '');
+                            const target = parseFloat(value) * (value.includes('M') ? 1000000 : value.includes('K') ? 1000 : 1);
+                            animateNumber(el, target);
+                        });
+                        statsObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            const statsSection = document.querySelector('.stats-preview');
+            if (statsSection) {
+                statsObserver.observe(statsSection);
+            }
+        });
+    </script>
+}

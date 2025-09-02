@@ -10,10 +10,9 @@
 .flight-map {
   display: flex;
   flex-direction: column;
-  gap: .5rem;
+  gap: .35rem;
   height: 100%;
-  min-height: 60vh; // fallback height
-  padding: .5rem 0 1rem;
+  padding: .25rem 0 .5rem; // tighter by default
 
   &__header {
     display: flex;
@@ -21,7 +20,17 @@
     justify-content: space-between;
     gap: 1rem;
   }
+
+  &--sticky {
+    // When the map sticks, minimize surrounding spacing so the sheet sits close
+    gap: .4rem;
+    padding-bottom: .25rem;
+  min-height: 60vh; // ensure a healthy viewport fill when sticky
+  }
 }
+
+/* When the state sheet follows the map, collapse any extra space between them */
+.flight-map + .ft-state { margin-top: 0; }
 
 .flight-map__title { margin: 0; font-size: 1.6rem; line-height:1.2; font-weight: 600; }
 
@@ -113,11 +122,17 @@
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: 50vh;
+  min-height: 0; // allow the page to control height via inline style
   border: 1px solid $color-divider;
   border-radius: .5rem;
   overflow: hidden;
   background: #e5e5e5;
 
   &.leaflet-container { font: inherit; }
+
+  &--sticky {
+    position: sticky;
+    top: calc(#{$navbar-height} + .5rem); // below header area
+    z-index: 1; // keep above page background, below overlays
+  }
 }

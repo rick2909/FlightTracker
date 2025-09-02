@@ -33,6 +33,20 @@
         upcomingPath:{color:colorUpcoming,weight:2.25,opacity:0.65,dashArray:'6,6'}
     };
 
+    // Ensure the map resizes to its container height; handle flex/layout changes.
+    function scheduleInvalidate(){
+        try{ map.invalidateSize(false); }catch(_){ }
+        if('requestAnimationFrame' in window){ requestAnimationFrame(()=>{ try{ map.invalidateSize(false);}catch(_){ } }); }
+        [16,100,300,800,1500].forEach(ms=>setTimeout(()=>{ try{ map.invalidateSize(false);}catch(_){ } }, ms));
+    }
+    if('ResizeObserver' in window){
+        try{ new ResizeObserver(()=>scheduleInvalidate()).observe(mapEl); }catch(_){ }
+    }
+    window.addEventListener('resize', scheduleInvalidate);
+    window.addEventListener('load', scheduleInvalidate);
+    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') scheduleInvalidate(); });
+    window.addEventListener('flightMap:invalidate', scheduleInvalidate);
+
     function render(){
         layers.past.clearLayers();layers.upcoming.clearLayers();flightIndex.clear();
         const flights=readFlights();
@@ -106,6 +120,7 @@
             }
         });
     let bounds=null;polys.forEach(pl=>bounds=bounds?bounds.extend(pl.getBounds()):pl.getBounds());markers.forEach(m=>{const ll=m.getLatLng();bounds=bounds?bounds.extend(ll):L.latLngBounds(ll,ll);});if(bounds)map.fitBounds(bounds.pad(0.15));
+    scheduleInvalidate();
     }
 
     window.flightMapClearFilter=function(){};
@@ -120,5 +135,6 @@
     window.flightMapZoomToFiltered=function(){ if(!lastFilterKeys.length)return; let b=null; lastFilterKeys.forEach(k=>{ const e=flightIndex.get(k); if(!e)return; if(e.type==='past'){ b=b?b.extend(e.layer.getBounds()):e.layer.getBounds(); } else { const ll=e.layer.getLatLng(); b=b?b.extend(ll):L.latLngBounds(ll,ll); } }); if(b) map.fitBounds(b.pad(0.2)); };
 
     render();
+    scheduleInvalidate();
     window.flightMap={reload:render,zoomToSelection:window.flightMapZoomToSelection,zoomToFiltered:window.flightMapZoomToFiltered};
 })();

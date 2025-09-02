@@ -7,7 +7,20 @@
     <div class="remove__header"></div>
 }
 
-<partial name="_FlightMap" view-data='new ViewDataDictionary(ViewData) { ["FlightMapHeight"] = "75vh" }' />
+<partial name="_FlightMap" view-data='new ViewDataDictionary(ViewData) { ["FlightMapHeight"] = "75vh", ["FlightMapSticky"] = "true" }' />
+
+@{
+    var state = ViewBag.FlightState as FlightTracker.Web.Models.ViewModels.FlightStateViewModel;
+}
+@if (state != null)
+{
+    <div style="margin-top:1rem">
+        <component type="typeof(FlightTracker.Web.Components.Flights.FlightStateSheet)"
+                   render-mode="ServerPrerendered"
+                   param-Model="state"
+                   param-Compact="true" />
+    </div>
+}
 
 @section Scripts {
     <script src="~/js/flight-map.js" asp-append-version="true"></script>

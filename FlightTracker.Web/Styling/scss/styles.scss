@@ -2,6 +2,7 @@
 @use 'sidebar';
 @use 'cards';
 @use 'flight-map';
+@use 'flight-state';
 @use 'flight-stats';
 @use 'user-flights-list';
 @use 'dialog';
@@ -10,6 +11,7 @@
 @use 'radzen-overrides';
 @use 'passport';
 @use 'settings';
+@use 'landing';
 
 .layout {
   display: flex;

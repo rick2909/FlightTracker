@@ -19,7 +19,7 @@
     <div class="ft-toolbar">
         <h2 class="layout__title" style="margin:0">My Passport</h2>
         <div class="ft-toolbar__actions">
-            <select aria-label="Filter by Year" class="rz-textbox" style="padding:.35rem .5rem;border:1px solid var(--rz-input-border, #E0E0E0);border-radius:6px;min-width:130px;">
+            <select aria-label="Filter by Year" class="rz-textbox" style="padding:.5rem .75rem;border:1px solid var(--rz-input-border, #E0E0E0);border-radius:12px;min-width:140px;">
                 <option value="">Filter by Year</option>
                 @foreach (var kv in Model.FlightsPerYear.OrderBy(k => k.Key))
                 {
@@ -30,52 +30,67 @@
     </div>
 }
 
-<!-- Passport Card -->
-<div class="rz-card" style="margin-bottom:1rem">
-    <div class="rz-card-body" style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-        <div style="width:56px;height:56px;border-radius:50%;background:#EEE;display:flex;align-items:center;justify-content:center;overflow:hidden">
-            @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
-            {
-                <img src="@Model.AvatarUrl" alt="@Model.UserName" style="width:100%;height:100%;object-fit:cover;display:block"
-                     onerror="this.style.display='none'; var f=this.nextElementSibling; if(f) f.style.display='inline-flex';" />
-            }
-            <span style="display:@(string.IsNullOrWhiteSpace(Model.AvatarUrl) ? "inline-flex" : "none");align-items:center;justify-content:center;width:100%;height:100%;font-weight:600;color:#555;">
-                @initials
-            </span>
-        </div>
-        <div style="min-width:200px">
-            <div style="font-weight:600;font-size:1.1rem">@Model.UserName</div>
-            <div style="display:flex;gap:1rem;color:#555;font-size:.9rem">
-                <div><span class="material-icons" style="font-size:1rem;vertical-align:middle">flight</span> @Model.TotalFlights Flights</div>
-                <div><span class="material-icons" style="font-size:1rem;vertical-align:middle">apartment</span> @Model.AirlinesVisited?.Count Airlines</div>
-                <div><span class="material-icons" style="font-size:1rem;vertical-align:middle">location_city</span> @Model.AirportsVisited?.Count Airports</div>
+<!-- Enhanced Passport Card -->
+<div class="passport-section">
+    <div class="rz-card">
+        <div class="rz-card-body" style="display:flex;align-items:center;gap:2rem;flex-wrap:wrap;padding:2rem;">
+            <div class="passport-card__avatar">
+                @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
+                {
+                    <img src="@Model.AvatarUrl" alt="@Model.UserName"
+                         onerror="this.style.display='none'; var f=this.nextElementSibling; if(f) f.style.display='inline-flex';" />
+                }
+                <span style="display:@(string.IsNullOrWhiteSpace(Model.AvatarUrl) ? "inline-flex" : "none");align-items:center;justify-content:center;width:100%;height:100%;font-weight:600;">
+                    @initials
+                </span>
+            </div>
+            <div style="flex:1;min-width:250px;">
+                <div style="font-weight:600;font-size:1.4rem;margin-bottom:1rem;color:var(--rz-text-color);">@Model.UserName</div>
+                <div class="passport-card__stats">
+                    <div class="stat-item">
+                        <span class="material-icons">flight</span>
+                        <span class="stat-value">@Model.TotalFlights</span>
+                        <span>Flights</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="material-icons">apartment</span>
+                        <span class="stat-value">@Model.AirlinesVisited?.Count</span>
+                        <span>Airlines</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="material-icons">location_city</span>
+                        <span class="stat-value">@Model.AirportsVisited?.Count</span>
+                        <span>Airports</span>
+                    </div>
+                </div>
+            </div>
+            <div class="passport-flags" style="margin-left:auto;">
+                @if (Model.CountriesVisitedIso2 != null)
+                {
+                    foreach (var cc in Model.CountriesVisitedIso2)
+                    {
+                        var code = (cc ?? string.Empty).ToLowerInvariant();
+                        <span class="fi fi-@code" title="@cc" aria-label="@cc"></span>
+                    }
+                }
             </div>
         </div>
-        <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;margin-left:auto">
-            @if (Model.CountriesVisitedIso2 != null)
-            {
-                foreach (var cc in Model.CountriesVisitedIso2)
-                {
-                    var code = (cc ?? string.Empty).ToLowerInvariant();
-                    <span class="fi fi-@code" title="@cc" aria-label="@cc"></span>
-                }
-            }
-        </div>
+        <div class="rz-card-footer">Profile overview • @Model.CountriesVisitedIso2?.Count countries visited</div>
     </div>
-    <div class="rz-card-footer" style="font-size:.8rem;color:#666">Profile overview</div>
-    </div>
+</div>
 
-<!-- Flight Routes section -->
-<div class="rz-card" style="margin-bottom:1rem">
-    <div class="rz-card-header" style="display:flex;align-items:center;gap:.5rem">
-        <span class="material-icons" aria-hidden="true">public</span>
-        <h3 style="margin:0">Flight Routes</h3>
+<!-- Enhanced Flight Routes section -->
+<div class="passport-section">
+    <div class="rz-card">
+        <div class="rz-card-header">
+            <h3><span class="material-icons" aria-hidden="true">public</span>Flight Routes</h3>
+        </div>
+        <div class="rz-card-body">
+            <div id="flightMap" class="flight-map__map" style="min-height:60vh"></div>
+        </div>
+        <div class="rz-card-footer">Routes drawn from recorded flights</div>
     </div>
-    <div class="rz-card-body">
-        <div id="flightMap" class="flight-map__map" style="min-height:60vh"></div>
-    </div>
-    <div class="rz-card-footer" style="font-size:.8rem;color:#666">Routes drawn from recorded flights</div>
-    </div>
+</div>
 
 <!-- Cards + Charts responsive grid -->
 <div class="ft-passport-grid" style="margin:1rem 0">
@@ -85,10 +100,11 @@
     <div class="ft-stats-grid__item">
         <div class="rz-card">
             <div class="rz-card-body">
-                <div style="display:flex;align-items:center;gap:.6rem">
+                <div style="display:flex;align-items:center;gap:1rem">
                     <span class="material-icons">timeline</span>
                     <div>
-                        <div style="font-weight:600">Total Miles</div><div>@Model.TotalMiles mi</div>
+                        <div class="stat-label">Total Miles</div>
+                        <div class="stat-value">@Model.TotalMiles mi</div>
                     </div>
                 </div>
             </div>
@@ -97,20 +113,24 @@
     <div class="ft-stats-grid__item">
         <div class="rz-card">
             <div class="rz-card-body">
-                <div style="display:flex;align-items:center;gap:.6rem">
+                <div style="display:flex;align-items:center;gap:1rem">
                     <span class="material-icons">trending_up</span>
                     <div>
-                        <div style="font-weight:600">Longest Flight</div><div>@Model.LongestFlightMiles mi</div>
-            </div></div>
-        </div></div>
+                        <div class="stat-label">Longest Flight</div>
+                        <div class="stat-value">@Model.LongestFlightMiles mi</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="ft-stats-grid__item">
         <div class="rz-card">
             <div class="rz-card-body">
-                <div style="display:flex;align-items:center;gap:.6rem">
+                <div style="display:flex;align-items:center;gap:1rem">
                     <span class="material-icons">trending_down</span>
                     <div>
-                        <div style="font-weight:600">Shortest Flight</div><div>@Model.ShortestFlightMiles mi</div>
+                        <div class="stat-label">Shortest Flight</div>
+                        <div class="stat-value">@Model.ShortestFlightMiles mi</div>
                     </div>
                 </div>
             </div>
@@ -119,10 +139,11 @@
     <div class="ft-stats-grid__item">
         <div class="rz-card">
             <div class="rz-card-body">
-                <div style="display:flex;align-items:center;gap:.6rem">
+                <div style="display:flex;align-items:center;gap:1rem">
                     <span class="material-icons">airlines</span>
                     <div>
-                        <div style="font-weight:600">Favorite Airline</div><div>@Model.FavoriteAirline</div>
+                        <div class="stat-label">Favorite Airline</div>
+                        <div class="stat-value">@Model.FavoriteAirline</div>
                     </div>
                 </div>
             </div>
@@ -131,10 +152,11 @@
     <div class="ft-stats-grid__item">
         <div class="rz-card">
             <div class="rz-card-body">
-                <div style="display:flex;align-items:center;gap:.6rem">
+                <div style="display:flex;align-items:center;gap:1rem">
                     <span class="material-icons">public</span>
                     <div>
-                        <div style="font-weight:600">Countries Visited</div><div>@(Model.CountriesVisitedIso2?.Count ?? 0)</div>
+                        <div class="stat-label">Countries Visited</div>
+                        <div class="stat-value">@(Model.CountriesVisitedIso2?.Count ?? 0)</div>
                     </div>
                 </div>
             </div>
@@ -143,10 +165,11 @@
     <div class="ft-stats-grid__item">
         <div class="rz-card">
             <div class="rz-card-body">
-                <div style="display:flex;align-items:center;gap:.6rem">
+                <div style="display:flex;align-items:center;gap:1rem">
                     <span class="material-icons">flight_land</span>
                     <div>
-                        <div style="font-weight:600">Airports Visited</div><div>@(Model.AirportsVisited?.Count ?? 0)</div>
+                        <div class="stat-label">Airports Visited</div>
+                        <div class="stat-value">@(Model.AirportsVisited?.Count ?? 0)</div>
                     </div>
                 </div>
             </div>
@@ -155,10 +178,11 @@
     <div class="ft-stats-grid__item">
         <div class="rz-card">
             <div class="rz-card-body">
-                <div style="display:flex;align-items:center;gap:.6rem">
+                <div style="display:flex;align-items:center;gap:1rem">
                     <span class="material-symbols-outlined">multiple_airports</span>
                     <div>
-                        <div style="font-weight:600">Favorite Airport</div><div>@(string.IsNullOrWhiteSpace(Model.FavoriteAirport) ? "None" : Model.FavoriteAirport)</div>
+                        <div class="stat-label">Favorite Airport</div>
+                        <div class="stat-value">@(string.IsNullOrWhiteSpace(Model.FavoriteAirport) ? "None" : Model.FavoriteAirport)</div>
                     </div>
                 </div>
             </div>
@@ -167,10 +191,11 @@
     <div class="ft-stats-grid__item">
         <div class="rz-card">
             <div class="rz-card-body">
-                <div style="display:flex;align-items:center;gap:.6rem">
+                <div style="display:flex;align-items:center;gap:1rem">
                     <span class="material-icons">flight</span>
                     <div>
-                        <div style="font-weight:600">Most flown aircraft type</div><div>@(string.IsNullOrWhiteSpace(Model.MostFlownAircraftType) ? "None" : Model.MostFlownAircraftType)</div>
+                        <div class="stat-label">Most flown aircraft type</div>
+                        <div class="stat-value">@(string.IsNullOrWhiteSpace(Model.MostFlownAircraftType) ? "None" : Model.MostFlownAircraftType)</div>
                     </div>
                 </div>
             </div>
@@ -179,10 +204,11 @@
     <div class="ft-stats-grid__item">
         <div class="rz-card">
             <div class="rz-card-body">
-                <div style="display:flex;align-items:center;gap:.6rem">
+                <div style="display:flex;align-items:center;gap:1rem">
                     <span class="material-icons">flight_class</span>
                     <div>
-                        <div style="font-weight:600">Favorite class</div><div>@(string.IsNullOrWhiteSpace(Model.FavoriteClass) ? "None" : Model.FavoriteClass)</div>
+                        <div class="stat-label">Favorite class</div>
+                        <div class="stat-value">@(string.IsNullOrWhiteSpace(Model.FavoriteClass) ? "None" : Model.FavoriteClass)</div>
                     </div>
                 </div>
             </div>
@@ -193,9 +219,8 @@
 
     <aside class="ft-passport-grid__charts">
         <div class="rz-card">
-            <div class="rz-card-header" style="display:flex;align-items:center;gap:.5rem">
-                <span class="material-icons" aria-hidden="true">apartment</span>
-                <h3 style="margin:0">Airlines Flown</h3>
+            <div class="rz-card-header">
+                <h3><span class="material-icons" aria-hidden="true">apartment</span>Airlines Flown</h3>
             </div>
             <div class="rz-card-body">
                 <div id="passport-airlines-pie" style="min-height:260px"></div>
@@ -203,9 +228,8 @@
         </div>
 
         <div class="rz-card">
-            <div class="rz-card-header" style="display:flex;align-items:center;gap:.5rem">
-                <span class="material-icons" aria-hidden="true">flight</span>
-                <h3 style="margin:0">Aircraft Types</h3>
+            <div class="rz-card-header">
+                <h3><span class="material-icons" aria-hidden="true">flight</span>Aircraft Types</h3>
             </div>
             <div class="rz-card-body">
                 <div id="passport-aircraft-pie" style="min-height:260px"></div>
@@ -214,17 +238,18 @@
     </aside>
 </div>
 
-<!-- Flights per Year chart -->
-<div class="rz-card" style="margin:1rem 0 2rem">
-    <div class="rz-card-header" style="display:flex;align-items:center;gap:.5rem">
-        <span class="material-icons" aria-hidden="true">bar_chart</span>
-        <h3 style="margin:0">Flights Per Year</h3>
+<!-- Enhanced Flights per Year chart -->
+<div class="passport-section">
+    <div class="rz-card">
+        <div class="rz-card-header">
+            <h3><span class="material-icons" aria-hidden="true">bar_chart</span>Flights Per Year</h3>
+        </div>
+        <div class="rz-card-body">
+            <div id="passport-chart" style="min-height:300px"></div>
+        </div>
+        <div class="rz-card-footer">Yearly flight counts</div>
     </div>
-    <div class="rz-card-body">
-        <div id="passport-chart" style="min-height:300px"></div>
-    </div>
-    <div class="rz-card-footer" style="font-size:.8rem;color:#666">Yearly flight counts</div>
-    </div>
+</div>
 
 @section Scripts {
     <!-- Data payload for shared flight map component -->

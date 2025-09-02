@@ -1,0 +1,102 @@
+@model YourApp.Models.PassportDetailsViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Passport Details";
+    var jsonOpts = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+}
+
+@section HeaderContent {
+    <div class="ft-toolbar">
+        <h2 class="layout__title" style="margin:0">Passport Details</h2>
+    </div>
+}
+
+<div class="passport-section">
+    <div class="rz-card">
+        <div class="rz-card-header">
+            <h3>Detailed Analysis for @Model.UserName</h3>
+        </div>
+        <div class="rz-card-body">
+            <p style="color:var(--rz-text-color);font-size:1rem;">Comprehensive breakdown of your aviation journey</p>
+        </div>
+    </div>
+</div>
+
+<div class="ft-passport-details-grid">
+    <div class="details-section">
+        <div class="rz-card">
+            <div class="rz-card-header">
+                <h3><span class="material-icons" aria-hidden="true">apartment</span>Airlines Flown</h3>
+            </div>
+            <div class="rz-card-body">
+                <div id="passport-details-airlines-pie" style="min-height:260px"></div>
+                <ul>
+                    @foreach (var stat in Model.AirlineStats)
+                    {
+                        <li><strong>@stat.AirlineName</strong> (@stat.Count flights)</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="details-section">
+        <div class="rz-card">
+            <div class="rz-card-header">
+                <h3><span class="material-icons" aria-hidden="true">flight</span>Aircraft Types Flown</h3>
+            </div>
+            <div class="rz-card-body">
+                <div id="passport-details-aircraft-pie" style="min-height:260px"></div>
+                <ul>
+                    @foreach (var kvp in Model.AircraftTypeStats)
+                    {
+                        <li>
+                            <strong>@kvp.Key</strong> (@kvp.Value flights)
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="passport-section">
+    <div class="rz-card">
+        <div class="rz-card-header">
+            <h3><span class="material-icons" aria-hidden="true">history</span>Flight History (@Model.UserFlights?.Count() flights)</h3>
+        </div>
+        <div class="rz-card-body">
+            @if (Model.UserFlights?.Any() == true)
+            {
+                <component type="typeof(FlightTracker.Web.Components.UserFlightsList)"
+                            render-mode="ServerPrerendered"
+                            param-Flights="Model.UserFlights" />
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <span class="material-icons" style="font-size:4rem;color:var(--rz-text-disabled-color);margin-bottom:1rem;">flight</span>
+                    <h4>No flights recorded</h4>
+                    <p style="color:var(--rz-text-secondary-color);">Start tracking your aviation journey by adding your first flight!</p>
+                    <component type="typeof(FlightTracker.Web.Components.Flights.AddFlightLauncher)"
+                                render-mode="Server" />
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="~/js/passport.js" asp-append-version="true"></script>
+    <script>
+        (function(){
+            var airlines = @Html.Raw(JsonSerializer.Serialize(Model.FlightsByAirline ?? new(), jsonOpts));
+            var aircraftTypes = @Html.Raw(JsonSerializer.Serialize(Model.FlightsByAircraftType ?? new(), jsonOpts));
+            if (window.Passport) {
+                try { window.Passport.initPie && window.Passport.initPie('passport-details-airlines-pie', airlines, 'Airlines'); } catch {}
+                try { window.Passport.initPie && window.Passport.initPie('passport-details-aircraft-pie', aircraftTypes, 'Aircraft Types'); } catch {}
+            }
+        })();
+    </script>
+}
