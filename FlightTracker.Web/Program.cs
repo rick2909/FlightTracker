@@ -147,10 +147,10 @@ app.UseAuthorization();
 
 app.MapStaticAssets();
 
-// Set Dashboard as the default route instead of Home
+// Route authenticated users to Dashboard, unauthenticated to Home
 app.MapControllerRoute(
         name: "default",
-        pattern: "{controller=Dashboard}/{action=Index}/{id?}")
+        pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 app.MapBlazorHub();

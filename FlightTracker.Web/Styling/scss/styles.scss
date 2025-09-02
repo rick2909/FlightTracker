@@ -11,6 +11,7 @@
 @use 'radzen-overrides';
 @use 'passport';
 @use 'settings';
+@use 'landing';
 
 .layout {
   display: flex;
