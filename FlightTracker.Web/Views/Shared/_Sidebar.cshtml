@@ -77,10 +77,6 @@
         </div>
         
         <nav class="sidebar__nav sidebar__section" data-sidebar-nav>
-            <a class="sidebar__link @(IsActive("Home") ? "is-active" : null)" asp-controller="Home" asp-action="Index">
-                <span class="material-icons" aria-hidden="true">home</span>
-                <span class="sidebar__text">Home</span>
-            </a>
             <a class="sidebar__link @(IsActive("Dashboard") ? "is-active" : null)" asp-controller="Dashboard" asp-action="Index">
                 <span class="material-symbols-outlined" aria-hidden="true">globe</span>
                 <span class="sidebar__text">Dashboard</span>
