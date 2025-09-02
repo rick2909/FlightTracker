@@ -109,7 +109,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 		- [x] Pie chart: Aircraft types flown (ApexCharts)
 	- [x] *Charts wiring (ApexCharts) and interactions*  
 			Note: Scripts included; finalize dataset + rendering hooks
-- [ ] State-based flight views (Pre-flight, At airport, Post-flight) UI workflow
+- [x] State-based flight views (Pre-flight, At airport, Post-flight) UI workflow
 - [ ] Auth UI (login/register) once API auth ready
 - [ ] Light/Dark theme toggle + Material design tokens
 - [ ] Offline caching (PWA capability) (Deferred)
