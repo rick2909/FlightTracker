@@ -80,10 +80,12 @@ builder.Services.AddHttpClient<IAirportLiveService, FlightTracker.Infrastructure
 );
 
 // ADSBdb route lookup and metadata provisioner
-builder.Services.AddHttpClient<IFlightRouteLookupClient, AdsBdbClient>(c =>
+builder.Services.AddHttpClient<AdsBdbClient>(c =>
 {
     c.Timeout = TimeSpan.FromSeconds(6);
 });
+builder.Services.AddScoped<IFlightRouteLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
+builder.Services.AddScoped<IAircraftLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
 builder.Services.AddScoped<IFlightMetadataProvisionService, FlightMetadataProvisionService>();
 
 // External provider(s)

@@ -5,16 +5,40 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Services.Interfaces;
+using FlightTracker.Application.Dtos;
 
 namespace FlightTracker.Infrastructure.External;
 
-public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient
+public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient, IAircraftLookupClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
+
+    public async Task<AircraftEnrichmentDto?> GetAircraftAsync(string registrationOrModeS, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(registrationOrModeS)) return null;
+        var url = $"https://api.adsbdb.com/v0/aircraft/{Uri.EscapeDataString(registrationOrModeS)}";
+        using var res = await http.GetAsync(url, cancellationToken);
+        if (!res.IsSuccessStatusCode) return null;
+        await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
+        var root = await JsonSerializer.DeserializeAsync<AircraftRoot>(stream, JsonOptions, cancellationToken);
+        var ac = root?.Response?.Aircraft;
+        if (ac is null) return null;
+
+        return new AircraftEnrichmentDto(
+            Registration: ac.Registration,
+            Type: ac.Type,
+            IcaoType: ac.IcaoType,
+            Manufacturer: ac.Manufacturer,
+            ModeS: ac.ModeS,
+            RegisteredOwner: ac.RegisteredOwner,
+            RegisteredOwnerCountryIso: ac.RegisteredOwnerCountryIsoName,
+            RegisteredOwnerCountry: ac.RegisteredOwnerCountryName
+        );
+    }
 
     public async Task<FlightRouteLookupResult?> GetFlightRouteAsync(string callsign, CancellationToken cancellationToken = default)
     {
@@ -57,6 +81,39 @@ public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient
             Origin: origin,
             Destination: dest
         );
+    }
+
+    public sealed record AircraftLookupResult(
+        string Registration,
+        string Type,
+        string IcaoType,
+        string Manufacturer,
+        string ModeS,
+        string RegisteredOwner,
+        string RegisteredOwnerCountryIso,
+        string RegisteredOwnerCountry
+    );
+
+    private sealed class AircraftRoot
+    {
+        [JsonPropertyName("response")] public AircraftResponseJson? Response { get; set; }
+    }
+    private sealed class AircraftResponseJson
+    {
+        [JsonPropertyName("aircraft")] public AircraftJson? Aircraft { get; set; }
+    }
+    private sealed class AircraftJson
+    {
+        [JsonPropertyName("type")] public string? Type { get; set; }
+        [JsonPropertyName("icao_type")] public string? IcaoType { get; set; }
+        [JsonPropertyName("manufacturer")] public string? Manufacturer { get; set; }
+        [JsonPropertyName("mode_s")] public string? ModeS { get; set; }
+        [JsonPropertyName("registration")] public string? Registration { get; set; }
+        [JsonPropertyName("registered_owner_country_iso_name")] public string? RegisteredOwnerCountryIsoName { get; set; }
+        [JsonPropertyName("registered_owner_country_name")] public string? RegisteredOwnerCountryName { get; set; }
+        [JsonPropertyName("registered_owner")] public string? RegisteredOwner { get; set; }
+        [JsonPropertyName("url_photo")] public string? UrlPhoto { get; set; }
+        [JsonPropertyName("url_photo_thumbnail")] public string? UrlPhotoThumbnail { get; set; }
     }
 
     private sealed class Root

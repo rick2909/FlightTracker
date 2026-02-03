@@ -20,6 +20,7 @@ public class UserFlightService : IUserFlightService
     private readonly IFlightMetadataProvisionService _metadataProvisionService;
     private readonly IAirlineRepository _airlineRepository;
     private readonly IAircraftRepository _aircraftRepository;
+    private readonly IAircraftLookupClient _aircraftLookupClient;
 
     public UserFlightService(
         IUserFlightRepository userFlightRepository,
@@ -28,7 +29,8 @@ public class UserFlightService : IUserFlightService
         IFlightService flightService,
         IFlightMetadataProvisionService metadataProvisionService,
         IAirlineRepository airlineRepository,
-        IAircraftRepository aircraftRepository)
+        IAircraftRepository aircraftRepository,
+        IAircraftLookupClient aircraftLookupClient)
     {
         _userFlightRepository = userFlightRepository;
         _flightRepository = flightRepository;
@@ -37,6 +39,7 @@ public class UserFlightService : IUserFlightService
         _metadataProvisionService = metadataProvisionService;
         _airlineRepository = airlineRepository;
         _aircraftRepository = aircraftRepository;
+        _aircraftLookupClient = aircraftLookupClient;
     }
 
     public async Task<IEnumerable<UserFlightDto>> GetUserFlightsAsync(int userId, CancellationToken cancellationToken = default)
@@ -453,15 +456,60 @@ public class UserFlightService : IUserFlightService
             return existing;
         }
 
-        // Create new aircraft with minimal data
+        // Try to fetch from AdsBdb to enrich data
+        AircraftEnrichmentDto? adsbData = null;
+        try
+        {
+            adsbData = await _aircraftLookupClient.GetAircraftAsync(normalized, cancellationToken);
+        }
+        catch
+        {
+            // Non-fatal; continue with minimal data
+        }
+
+        // Create new aircraft with data from AdsBdb or defaults
         var newAircraft = new Aircraft
         {
             Registration = normalized,
-            Manufacturer = AircraftManufacturer.Other,
-            Model = "Unknown",
+            Manufacturer = ParseManufacturer(adsbData?.Manufacturer),
+            Model = adsbData?.Type ?? "Unknown",
+            IcaoTypeCode = adsbData?.IcaoType,
+            ModeS = adsbData?.ModeS,
+            Notes = adsbData is not null ? $"Owner: {adsbData.RegisteredOwner}, Country: {adsbData.RegisteredOwnerCountry}" : null,
             AirlineId = airlineId
         };
 
         return await _aircraftRepository.AddAsync(newAircraft, cancellationToken);
+    }
+
+    /// <summary>
+    /// Parses manufacturer name from string to enum. Returns Other if not recognized.
+    /// </summary>
+    private static AircraftManufacturer ParseManufacturer(string? manufacturerName)
+    {
+        if (string.IsNullOrWhiteSpace(manufacturerName))
+            return AircraftManufacturer.Other;
+
+        var upper = manufacturerName.ToUpperInvariant();
+
+        return upper switch
+        {
+            _ when upper.Contains("BOEING") => AircraftManufacturer.Boeing,
+            _ when upper.Contains("AIRBUS") => AircraftManufacturer.Airbus,
+            _ when upper.Contains("EMBRAER") => AircraftManufacturer.Embraer,
+            _ when upper.Contains("BOMBARDIER") => AircraftManufacturer.Bombardier,
+            _ when upper.Contains("ATR") => AircraftManufacturer.ATR,
+            _ when upper.Contains("CESSNA") => AircraftManufacturer.Cessna,
+            _ when upper.Contains("GULFSTREAM") => AircraftManufacturer.Gulfstream,
+            _ when upper.Contains("DASSAULT") => AircraftManufacturer.Dassault,
+            _ when upper.Contains("LOCKHEED") => AircraftManufacturer.Lockheed,
+            _ when upper.Contains("MCDONNELL") => AircraftManufacturer.McDonnellDouglas,
+            _ when upper.Contains("SAAB") => AircraftManufacturer.Saab,
+            _ when upper.Contains("TUPOLEV") => AircraftManufacturer.Tupolev,
+            _ when upper.Contains("SUKHOI") => AircraftManufacturer.Sukhoi,
+            _ when upper.Contains("COMAC") => AircraftManufacturer.COMAC,
+            _ when upper.Contains("MITSUBISHI") => AircraftManufacturer.Mitsubishi,
+            _ => AircraftManufacturer.Other
+        };
     }
 }
