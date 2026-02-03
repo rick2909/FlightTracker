@@ -127,7 +127,7 @@
 .sidebar__profile-card {
   display: flex;
   align-items: center;
-  padding: 1.5rem 0;
+  padding: 1rem 0;
   gap: 1rem;
   background: linear-gradient(135deg, rgba($color-primary, 0.05), rgba($color-secondary, 0.05));
   border-radius: 12px;
@@ -294,7 +294,7 @@
 
 .sidebar--collapsed .sidebar__profile-card {
   justify-content: center;
-  padding: 1rem 0;
+  padding: .75rem 0;
   margin-bottom: 1rem;
   /* Allow avatar shadows and edges to be visible when collapsed */
   overflow: visible;
@@ -383,13 +383,11 @@
   
   /* Standard divider between middle sections only. */
   &:not(:last-child) {
-    padding-bottom: 1rem;
     border-bottom: 1px solid rgba($color-divider, 0.5);
   }
 
   /* Ensure the very first section (profile area) does not get a divider */
   &:first-child {
-    padding-bottom: 0;
     border-bottom: none;
     margin-bottom: 0.5rem;
   }
