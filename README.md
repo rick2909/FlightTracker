@@ -37,9 +37,9 @@ See `.github/copilot-instructions.md` for full rules.
 ## Technology (Current / Planned)
 | Concern | Tech |
 |--------|------|
-| Language | C# 12 / .NET 9 (preview packages currently) |
+| Language | C# 13 / .NET 10 |
 | Auth | ASP.NET Core Identity (int keys) |
-| ORM | EF Core (preview) |
+| ORM | EF Core 10 |
 | UI (current) | ASP.NET Core MVC + Blazor Server, Radzen, ApexCharts |
 | Realtime (planned) | SignalR |
 | Mapping | AutoMapper |
@@ -111,7 +111,7 @@ await SeedData.SeedAsync(ctx);
 ```
 
 ## Getting Started (Current Backend Foundation)
-Prerequisites: .NET 9 SDK (preview), (optional) SQLite tools.
+Prerequisites: .NET 10 SDK, (optional) SQLite tools.
 
 Build solution:
 ```powershell
