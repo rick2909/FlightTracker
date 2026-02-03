@@ -62,6 +62,7 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
 			entity.Property(a => a.Model).HasMaxLength(64).IsRequired();
 			entity.Property(a => a.IcaoTypeCode).HasMaxLength(4);
 			entity.Property(a => a.Notes).HasMaxLength(500);
+			entity.Property(a => a.ModeS).HasMaxLength(6);
 
 			entity.HasIndex(a => a.Registration).IsUnique();
 
