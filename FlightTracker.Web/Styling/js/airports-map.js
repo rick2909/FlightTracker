@@ -5,7 +5,7 @@
   const el = document.getElementById('airportsMap');
   if(!el){ return; }
 
-  const map = L.map('airportsMap', { center:[20,0], zoom:2, worldCopyJump:true });
+  const map = L.map('airportsMap', { center:[20,0], zoom:4, worldCopyJump:true });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
