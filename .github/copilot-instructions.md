@@ -51,6 +51,11 @@ Dependency Rule:
 - Minimize nested conditionals; prefer guard clauses and small helper methods to keep code flat and readable.
 
 ## SCSS Guidelines
+- **Location**: All SCSS source files in `FlightTracker.Web/Styling/scss`
+- **Build**: Compile via `npm run build:css` (Sass → CSS, no source maps)
+- **Watch mode**: Use `npm run watch:css` during development
+- **Output**: Compiled CSS goes to `FlightTracker.Web/wwwroot/css/`
+- **NO direct CSS files** – all styling must be written in SCSS
 - BEM naming: .block, .block__element, .block--modifier
 - Max nesting depth: 3
 - Centralize variables in _variables.scss (colors, spacing, fonts)
@@ -61,6 +66,10 @@ Dependency Rule:
 - Keep component SCSS co-located with component
 
 ## JavaScript / TypeScript
+- **Location**: JS files only in `FlightTracker.Web/Styling/JS`
+- **Build**: Compile via `npm run build:js`
+- **Watch mode**: Use `npm run watch:js` during development
+- **Output**: Built JS goes to `FlightTracker.Web/wwwroot/js/`
 - Prefer TypeScript. ES modules only.
 - Naming: camelCase (vars/functions), PascalCase (classes), UPPER_CASE (consts)
 - Small, single-responsibility functions.
@@ -70,6 +79,14 @@ Dependency Rule:
 - JSDoc for public functions.
 - Minimize direct DOM manipulation; prefer Blazor interop for UI.
 - Enforce via ESLint + TS plugin.
+
+## Build & Development Commands
+- `npm run build:css` – Compile SCSS to CSS
+- `npm run watch:css` – Watch SCSS for changes
+- `npm run build:js` – Build JavaScript files
+- `npm run watch:js` – Watch JavaScript for changes
+- `npm run build` – Build both CSS and JS
+- `npm run watch` – Watch both CSS and JS for changes
 
 ## Copilot & Agent Rules
 - Respect architecture boundaries; business logic stays out of API/UI.

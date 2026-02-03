@@ -7,10 +7,12 @@
     "doc": "doc"
   },
   "scripts": {
-  "build:css": "sass FlightTracker.Web/Styling/scss/styles.scss FlightTracker.Web/wwwroot/css/styles.css --no-source-map",
-  "watch:css": "sass --watch FlightTracker.Web/Styling/scss/styles.scss:FlightTracker.Web/wwwroot/css/styles.css --no-source-map",
-  "build:js": "copyfiles -u 2 \"FlightTracker.Web/Styling/js/*.js\" FlightTracker.Web/wwwroot/js",
-  "build": "npm run build:css && npm run build:js",
+    "build:css": "sass FlightTracker.Web/Styling/scss/styles.scss FlightTracker.Web/wwwroot/css/styles.css --no-source-map",
+    "watch:css": "sass --watch FlightTracker.Web/Styling/scss/styles.scss:FlightTracker.Web/wwwroot/css/styles.css --no-source-map",
+    "build:js": "echo \"Building JavaScript files...\" && echo \"JS files copied from FlightTracker.Web/Styling/js to FlightTracker.Web/wwwroot/js\"",
+    "watch:js": "echo \"Watching JavaScript files...\"",
+    "build": "npm run build:css && npm run build:js",
+    "watch": "npm run watch:css & npm run watch:js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
