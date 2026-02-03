@@ -131,7 +131,7 @@
   gap: 1rem;
   background: linear-gradient(135deg, rgba($color-primary, 0.05), rgba($color-secondary, 0.05));
   border-radius: 12px;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
   position: relative;
   overflow: hidden;
   
@@ -295,7 +295,7 @@
 .sidebar--collapsed .sidebar__profile-card {
   justify-content: center;
   padding: .75rem 0;
-  margin-bottom: 1rem;
+  margin-bottom: .5rem;
   /* Allow avatar shadows and edges to be visible when collapsed */
   overflow: visible;
 }
