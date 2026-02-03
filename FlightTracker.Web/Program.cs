@@ -13,6 +13,7 @@ using FlightTracker.Infrastructure.External;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using System.Net;
+using AutoMapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,10 +90,7 @@ builder.Services.AddScoped<IFlightMetadataProvisionService, FlightMetadataProvis
 builder.Services.AddScoped<IFlightDataProvider, FlightTracker.Infrastructure.External.OpenSkyClient>();
 
 // AutoMapper
-builder.Services.AddAutoMapper(cfg =>
-{
-    cfg.AddProfile<ApplicationMappingProfile>();
-});
+builder.Services.AddAutoMapper(typeof(ApplicationMappingProfile));
 
 // Identity (basic, for seeding users)
 builder.Services

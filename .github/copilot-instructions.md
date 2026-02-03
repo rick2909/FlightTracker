@@ -81,12 +81,14 @@ Dependency Rule:
 - Enforce via ESLint + TS plugin.
 
 ## Build & Development Commands
-- `npm run build:css` – Compile SCSS to CSS
-- `npm run watch:css` – Watch SCSS for changes
-- `npm run build:js` – Build JavaScript files
-- `npm run watch:js` – Watch JavaScript for changes
-- `npm run build` – Build both CSS and JS
+- `npm run build:css` – Compile SCSS to CSS (manual; use during development)
+- `npm run watch:css` – Watch SCSS for changes (development only)
+- `npm run build:js` – Copy/build JavaScript files (manual; use during development)
+- `npm run watch:js` – Watch JavaScript for changes (development only)
+- `npm run build` – Build both CSS and JS manually
 - `npm run watch` – Watch both CSS and JS for changes
+
+**Important**: The FlightTracker.Web.csproj includes MSBuild targets that automatically compile SCSS and copy JS during `dotnet build`. These npm commands are for local development with watch mode. Do NOT duplicate builds—use `dotnet build` for CI/CD or full builds, and npm watch commands for local file watching.
 
 ## Copilot & Agent Rules
 - Respect architecture boundaries; business logic stays out of API/UI.
