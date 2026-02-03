@@ -1,62 +1,61 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-    <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
-    </PropertyGroup>
+  <PropertyGroup>
+      <TargetFramework>net10.0</TargetFramework>
+      <Nullable>enable</Nullable>
+      <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\FlightTracker.Domain\FlightTracker.Domain.csproj" />
-      <ProjectReference Include="..\FlightTracker.Application\FlightTracker.Application.csproj" />
-      <ProjectReference Include="..\FlightTracker.Infrastructure\FlightTracker.Infrastructure.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FlightTracker.Domain\FlightTracker.Domain.csproj" />
+    <ProjectReference Include="..\FlightTracker.Application\FlightTracker.Application.csproj" />
+    <ProjectReference Include="..\FlightTracker.Infrastructure\FlightTracker.Infrastructure.csproj" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <RazorComponent Include="App.razor" />
-      <RazorComponent Include="Components/**/*.razor" />
-    </ItemGroup>
+  <ItemGroup>
+    <RazorComponent Include="App.razor" />
+    <RazorComponent Include="Components/**/*.razor" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="AutoMapper" Version="12.0.1" />
-      <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
-      <PackageReference Include="Radzen.Blazor" Version="8.7.5" />
-  <PackageReference Include="TimeZoneConverter" Version="7.2.0" />
-  <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="10.0.2" />
-  <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+    <PackageReference Include="Radzen.Blazor" Version="8.7.5" />
+    <PackageReference Include="TimeZoneConverter" Version="7.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="10.0.2" />
+    <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
+  </ItemGroup>
 
-    <!-- SCSS / JS build configuration -->
-    <PropertyGroup>
-  <SassExecutable>npx sass</SassExecutable>
-      <SassSourceDir>Styling/scss</SassSourceDir>
-      <SassEntry>styles.scss</SassEntry>
-      <CssOutputDir>wwwroot/css</CssOutputDir>
-      <JsSourceDir>Styling/js</JsSourceDir>
-      <JsOutputDir>wwwroot/js</JsOutputDir>
-    </PropertyGroup>
+  <!-- SCSS / JS build configuration -->
+  <PropertyGroup>
+    <SassExecutable>npx sass</SassExecutable>
+    <SassSourceDir>Styling/scss</SassSourceDir>
+    <SassEntry>styles.scss</SassEntry>
+    <CssOutputDir>wwwroot/css</CssOutputDir>
+    <JsSourceDir>Styling/js</JsSourceDir>
+    <JsOutputDir>wwwroot/js</JsOutputDir>
+  </PropertyGroup>
 
-    <!-- Ensure output directories exist -->
-    <Target Name="EnsureAssetDirs" BeforeTargets="Compile">
-      <MakeDir Directories="$(CssOutputDir);$(JsOutputDir)" />
-    </Target>
+  <!-- Ensure output directories exist -->
+  <Target Name="EnsureAssetDirs" BeforeTargets="Compile">
+    <MakeDir Directories="$(CssOutputDir);$(JsOutputDir)" />
+  </Target>
 
-    <!-- Compile SCSS to CSS (expects 'sass' CLI available: npm install -g sass) -->
-    <Target Name="CompileScss" DependsOnTargets="EnsureAssetDirs" BeforeTargets="Build">
-      <Message Text="Compiling SCSS $(SassSourceDir)/$(SassEntry) -&gt; $(CssOutputDir)/styles.css" Importance="high" />
-      <Exec Command="$(SassExecutable) --no-source-map $(SassSourceDir)/$(SassEntry):$(CssOutputDir)/styles.css" IgnoreExitCode="false" Condition="'$(SassExecutable)' != ''" />
-    </Target>
+  <!-- Compile SCSS to CSS (expects 'sass' CLI available: npm install -g sass) -->
+  <Target Name="CompileScss" DependsOnTargets="EnsureAssetDirs" BeforeTargets="Build">
+    <Message Text="Compiling SCSS $(SassSourceDir)/$(SassEntry) -&gt; $(CssOutputDir)/styles.css" Importance="high" />
+    <Exec Command="$(SassExecutable) --no-source-map $(SassSourceDir)/$(SassEntry):$(CssOutputDir)/styles.css" IgnoreExitCode="false" Condition="'$(SassExecutable)' != ''" />
+  </Target>
 
-    <!-- JS processing: safe copy (previous naive minify broke URLs with //). Optional future: integrate esbuild. -->
-    <ItemGroup>
-      <JsSource Include="$(JsSourceDir)/*.js" />
-    </ItemGroup>
-    <Target Name="ProcessJs" DependsOnTargets="EnsureAssetDirs" BeforeTargets="Build">
-      <Message Text="Copying JS from $(JsSourceDir) -&gt; $(JsOutputDir)" Importance="high" />
-      <Exec Condition="'$(OS)' == 'Windows_NT'" Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;Get-ChildItem -Path '$(JsSourceDir)' -Filter *.js | ForEach-Object { Copy-Item $_.FullName -Destination (Join-Path '$(JsOutputDir)' $_.Name) }&quot;" />
-      <Copy Condition="'$(OS)' != 'Windows_NT'" SourceFiles="@(JsSource)" DestinationFolder="$(JsOutputDir)" SkipUnchangedFiles="true" />
-    </Target>
+  <!-- JS processing: safe copy (previous naive minify broke URLs with //). Optional future: integrate esbuild. -->
+  <ItemGroup>
+    <JsSource Include="$(JsSourceDir)/*.js" />
+  </ItemGroup>
+  <Target Name="ProcessJs" DependsOnTargets="EnsureAssetDirs" BeforeTargets="Build">
+    <Message Text="Copying JS from $(JsSourceDir) -&gt; $(JsOutputDir)" Importance="high" />
+    <Exec Condition="'$(OS)' == 'Windows_NT'" Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;Get-ChildItem -Path '$(JsSourceDir)' -Filter *.js | ForEach-Object { Copy-Item $_.FullName -Destination (Join-Path '$(JsOutputDir)' $_.Name) }&quot;" />
+    <Copy Condition="'$(OS)' != 'Windows_NT'" SourceFiles="@(JsSource)" DestinationFolder="$(JsOutputDir)" SkipUnchangedFiles="true" />
+  </Target>
 
   <!-- Compiled assets in wwwroot are included implicitly by SDK -->
-
 </Project>
