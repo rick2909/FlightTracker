@@ -61,7 +61,20 @@
                                 </div>
                             }
                         </div>
-                        <div></div>
+                    </div>
+                    <div class="ft-form__row">
+                        <div class="ft-form__field">
+                            <label>Aircraft Registration</label>
+                            <RadzenTextBox @bind-Value="AircraftRegistration" 
+                                           Placeholder="e.g., N12345" 
+                                           Style="width:100%" />
+                        </div>
+                        <div class="ft-form__field">
+                            <label>Operating Airline (IATA/ICAO)</label>
+                            <RadzenTextBox @bind-Value="OperatingAirlineCode" 
+                                           Placeholder="Auto-filled from flight number" 
+                                           Style="width:100%" />
+                        </div>
                     </div>
                     <div class="ft-form__row">
                         <div class="ft-form__field">
@@ -130,6 +143,10 @@
     private DateTime DepartureTimeUtc { get; set; }
     private DateTime ArrivalTimeUtc { get; set; }
 
+    // Aircraft fields
+    private string? AircraftRegistration { get; set; }
+    private string? OperatingAirlineCode { get; set; }
+
     // flight local time
     private string? DepartureTimeZoneId { get; set; }
     private string? ArrivalTimeZoneId { get; set; }
@@ -190,6 +207,8 @@
             ArrivalTimeUtc = DateTime.SpecifyKind(dto.ArrivalTimeUtc, DateTimeKind.Utc);
             DepartureTimeZoneId = dto.DepartureTimeZoneId;
             ArrivalTimeZoneId = dto.ArrivalTimeZoneId;
+            AircraftRegistration = dto.Aircraft?.Registration;
+            OperatingAirlineCode = dto.OperatingAirlineIataCode ?? dto.OperatingAirlineIcaoCode;
         }
     }
 
@@ -363,7 +382,9 @@
             DepartureAirportCode = DepartureAirportCode ?? string.Empty,
             ArrivalAirportCode = ArrivalAirportCode ?? string.Empty,
             DepartureTimeUtc = DepartureTimeUtc,
-            ArrivalTimeUtc = ArrivalTimeUtc
+            ArrivalTimeUtc = ArrivalTimeUtc,
+            AircraftRegistration = AircraftRegistration,
+            OperatingAirlineCode = OperatingAirlineCode
         };
 
         try

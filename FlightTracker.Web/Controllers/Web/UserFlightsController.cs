@@ -99,7 +99,9 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
                     DepartureAirportCode = form.DepartureAirportCode ?? string.Empty,
                     ArrivalAirportCode = form.ArrivalAirportCode ?? string.Empty,
                     DepartureTimeUtc = form.DepartureTimeUtc,
-                    ArrivalTimeUtc = form.ArrivalTimeUtc
+                    ArrivalTimeUtc = form.ArrivalTimeUtc,
+                    AircraftRegistration = form.AircraftRegistration,
+                    OperatingAirlineCode = form.OperatingAirlineCode
                 },
                 cancellationToken);
             if (updated == null)
@@ -251,7 +253,9 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
             DepartureAirportCode = dto.DepartureIataCode ?? dto.DepartureIcaoCode ?? dto.DepartureAirportCode,
             ArrivalAirportCode = dto.ArrivalIataCode ?? dto.ArrivalIcaoCode ?? dto.ArrivalAirportCode,
             DepartureTimeUtc = dto.DepartureTimeUtc,
-            ArrivalTimeUtc = dto.ArrivalTimeUtc
+            ArrivalTimeUtc = dto.ArrivalTimeUtc,
+            AircraftRegistration = dto.Aircraft?.Registration,
+            OperatingAirlineCode = dto.OperatingAirlineIataCode ?? dto.OperatingAirlineIcaoCode
         };
     }
 }

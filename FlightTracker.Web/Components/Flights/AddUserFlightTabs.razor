@@ -129,7 +129,24 @@
                         </div>
                     </div>
                 </div>
-        </RadzenTabsItem>
+                <div class="ft-form__section">
+                    <h6 class="mb-2">Aircraft & Airline (Optional)</h6>
+                    <div class="ft-form__row">
+                        <div class="ft-form__field">
+                            <label>Aircraft Registration</label>
+                            <RadzenTextBox @bind-Value="validation.AircraftRegistration" 
+                                           Placeholder="e.g., N12345" 
+                                           Style="width:100%" />
+                        </div>
+                        <div class="ft-form__field">
+                            <label>Operating Airline (IATA/ICAO)</label>
+                            <RadzenTextBox @bind-Value="validation.OperatingAirlineCode" 
+                                           Placeholder="Auto-filled from flight number" 
+                                           Style="width:100%" />
+                        </div>
+                    </div>
+                </div>
+            </RadzenTabsItem>
         </Tabs>
     </RadzenTabs>
 
@@ -199,6 +216,10 @@
 
         [Required]
         public DateTime? ArrivalTimeUtc { get; set; }
+
+        // Optional aircraft fields
+        public string? AircraftRegistration { get; set; }
+        public string? OperatingAirlineCode { get; set; }
     }
     private ValidationModel validation = new();
 
@@ -226,6 +247,8 @@
             validation.ArrivalAirportCode = Value.ArrivalAirportCode;
             validation.DepartureTimeUtc = Value.DepartureTimeUtc;
             validation.ArrivalTimeUtc = Value.ArrivalTimeUtc;
+            validation.AircraftRegistration = Value.AircraftRegistration;
+            validation.OperatingAirlineCode = Value.OperatingAirlineCode;
 
             _tabIndex = PreferManualTab ? 2 : 0;
         }
@@ -358,7 +381,9 @@
                 DepartureAirportCode = validation.DepartureAirportCode,
                 ArrivalAirportCode = validation.ArrivalAirportCode,
                 DepartureTimeUtc = validation.DepartureTimeUtc,
-                ArrivalTimeUtc = validation.ArrivalTimeUtc
+                ArrivalTimeUtc = validation.ArrivalTimeUtc,
+                AircraftRegistration = validation.AircraftRegistration,
+                OperatingAirlineCode = validation.OperatingAirlineCode
             };
             await OnSave.InvokeAsync(dto);
         }

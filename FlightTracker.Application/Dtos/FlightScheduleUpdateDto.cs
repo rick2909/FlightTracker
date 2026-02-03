@@ -13,4 +13,14 @@ public record FlightScheduleUpdateDto
     public string ArrivalAirportCode { get; init; } = string.Empty;
     public DateTime DepartureTimeUtc { get; init; }
     public DateTime ArrivalTimeUtc { get; init; }
+
+    /// <summary>
+    /// Aircraft registration (tail number). Optional.
+    /// </summary>
+    public string? AircraftRegistration { get; init; }
+
+    /// <summary>
+    /// Optional operating airline IATA or ICAO code.
+    /// </summary>
+    public string? OperatingAirlineCode { get; init; }
 }
