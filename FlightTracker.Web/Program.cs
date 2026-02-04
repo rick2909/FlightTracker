@@ -91,6 +91,21 @@ builder.Services.AddScoped<IFlightMetadataProvisionService, FlightMetadataProvis
 // External provider(s)
 builder.Services.AddScoped<IFlightDataProvider, OpenSkyClient>();
 
+// Aircraft photo service for airport-data.com API
+builder.Services.AddHttpClient<IAircraftPhotoService, AircraftPhotoService>(c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(5);
+})
+.AddPolicyHandler(
+    Policy<HttpResponseMessage>
+        .Handle<HttpRequestException>()
+        .OrResult(r => (int)r.StatusCode is >= 500 or 429)
+        .WaitAndRetryAsync(
+            Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(100), 2),
+            onRetry: (outcome, delay, attempt, ctx) => { }
+        )
+);
+
 // AutoMapper
 builder.Services.AddAutoMapper(cfg =>
 {

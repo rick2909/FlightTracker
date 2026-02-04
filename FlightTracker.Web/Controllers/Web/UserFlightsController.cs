@@ -8,7 +8,12 @@ using FlightTracker.Domain.Enums;
 
 namespace FlightTracker.Web.Controllers.Web;
 
-public class UserFlightsController(IUserFlightService userFlightService, IFlightService flightService, IFlightLookupService flightLookupService, IMapper mapper) : Controller
+public class UserFlightsController(
+    IUserFlightService userFlightService,
+    IFlightService flightService,
+    IFlightLookupService flightLookupService,
+    IAircraftPhotoService aircraftPhotoService,
+    IMapper mapper) : Controller
 {
     private const int DemoUserId = 1; // TODO: Replace with actual auth user id when wired
 
@@ -155,6 +160,26 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
                 arrivalAirportCode = arrCode
             }
         });
+    }
+
+    /// <summary>
+    /// API endpoint to fetch aircraft photos via the backend service (avoids CORS issues).
+    /// </summary>
+    [HttpGet("/api/aircraft-photos")]
+    public async Task<IActionResult> GetAircraftPhoto(string? modeSCode, string? registration, int maxResults = 1, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(modeSCode) && string.IsNullOrWhiteSpace(registration))
+        {
+            return BadRequest(new { error = "Either modeSCode or registration must be provided" });
+        }
+
+        var result = await aircraftPhotoService.GetAircraftPhotosAsync(modeSCode, registration, maxResults, cancellationToken);
+        if (result == null)
+        {
+            return NotFound(new { error = "No photos found" });
+        }
+
+        return Ok(result);
     }
 
     private static int GetEffectiveUserId(int? requestedUserId)
