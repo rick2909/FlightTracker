@@ -1,9 +1,6 @@
-using System.Threading;
-using System.Threading.Tasks;
-// using already present above
+using AutoMapper;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Web.Models;
-using FlightTracker.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 
 using FlightTracker.Application.Services.Interfaces;
@@ -11,7 +8,7 @@ using FlightTracker.Domain.Enums;
 
 namespace FlightTracker.Web.Controllers.Web;
 
-public class UserFlightsController(IUserFlightService userFlightService, IFlightService flightService, IFlightLookupService flightLookupService) : Controller
+public class UserFlightsController(IUserFlightService userFlightService, IFlightService flightService, IFlightLookupService flightLookupService, IMapper mapper) : Controller
 {
     private const int DemoUserId = 1; // TODO: Replace with actual auth user id when wired
 
@@ -61,7 +58,7 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
         {
             return NotFound();
         }
-    var vm = MapToEditViewModel(dto);
+        var vm = mapper.Map<EditUserFlightViewModel>(dto);
         return View(vm);
     }
 
@@ -78,7 +75,7 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
                 return NotFound();
             }
             // map back into vm
-            var vm = MapToEditViewModel(current);
+            var vm = mapper.Map<EditUserFlightViewModel>(current);
             return View(vm);
         }
         try
@@ -237,25 +234,5 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
-    }
-
-    private static EditUserFlightViewModel MapToEditViewModel(UserFlightDto dto)
-    {
-        return new EditUserFlightViewModel
-        {
-            UserFlightId = dto.Id,
-            FlightId = dto.FlightId,
-            FlightClass = dto.FlightClass,
-            SeatNumber = dto.SeatNumber,
-            DidFly = dto.DidFly,
-            Notes = dto.Notes,
-            FlightNumber = dto.FlightNumber,
-            DepartureAirportCode = dto.DepartureIataCode ?? dto.DepartureIcaoCode ?? dto.DepartureAirportCode,
-            ArrivalAirportCode = dto.ArrivalIataCode ?? dto.ArrivalIcaoCode ?? dto.ArrivalAirportCode,
-            DepartureTimeUtc = dto.DepartureTimeUtc,
-            ArrivalTimeUtc = dto.ArrivalTimeUtc,
-            AircraftRegistration = dto.Aircraft?.Registration,
-            OperatingAirlineCode = dto.OperatingAirlineIataCode ?? dto.OperatingAirlineIcaoCode
-        };
     }
 }

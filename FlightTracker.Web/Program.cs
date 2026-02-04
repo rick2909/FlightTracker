@@ -92,8 +92,12 @@ builder.Services.AddScoped<IFlightMetadataProvisionService, FlightMetadataProvis
 builder.Services.AddScoped<IFlightDataProvider, OpenSkyClient>();
 
 // AutoMapper
-builder.Services.AddAutoMapper(cfg => cfg.AddProfile<ApplicationMappingProfile>());
-builder.Services.AddAutoMapper(cfg => cfg.AddProfile<FlightProfile>());
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<ApplicationMappingProfile>();
+    cfg.AddProfile<FlightProfile>();
+    cfg.AddProfile<FlightTracker.Web.Mapping.WebMappingProfile>();
+});
 
 // Identity (basic, for seeding users)
 builder.Services
