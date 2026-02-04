@@ -43,10 +43,23 @@
         };
     }
 
-    private static BadgeStyle GetStatusBadgeStyle(bool didFly)
-        => didFly ? BadgeStyle.Success : BadgeStyle.Danger;
+    private static BadgeStyle GetStatusBadgeStyle(DateTime departureTimeUtc, bool didFly)
+    {
+        if (departureTimeUtc > DateTime.UtcNow)
+        {
+            return BadgeStyle.Info;
+        }
+        return didFly ? BadgeStyle.Success : BadgeStyle.Danger;
+    }
 
-    private static string didFlyText(bool didFly) => didFly ? "Completed" : "No Show";
+    private static string didFlyText(DateTime departureTimeUtc, bool didFly)
+    {
+        if (departureTimeUtc > DateTime.UtcNow)
+        {
+            return "Upcoming";
+        }
+        return didFly ? "Completed" : "No Show";
+    }
 
     // Best-effort seat position inference from trailing seat letter.
     private static string GetSeatPositionLabel(string? seatNumber)
@@ -158,7 +171,7 @@
             </div>
         </div>
         <div class="right">
-            <RadzenBadge Pill="true" BadgeStyle="@GetStatusBadgeStyle(Flight.DidFly)" Text="@(didFlyText(Flight.DidFly))" />
+            <RadzenBadge Shade="Shade.Light" Pill="true" BadgeStyle="@GetStatusBadgeStyle(Flight.DepartureTimeUtc, Flight.DidFly)" Text="@(didFlyText(Flight.DepartureTimeUtc, Flight.DidFly))" />
             <button type="button" class="expand-btn" @onclick="ToggleExpanded" aria-expanded="@expanded" title="Toggle details">
                 <RadzenIcon Icon="expand_more" class="expand-icon" />
             </button>
