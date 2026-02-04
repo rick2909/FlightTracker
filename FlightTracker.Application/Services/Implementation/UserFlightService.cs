@@ -1,3 +1,4 @@
+using AutoMapper;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Dtos.Validation;
 using FlightTracker.Application.Services.Interfaces;
@@ -21,6 +22,7 @@ public class UserFlightService : IUserFlightService
     private readonly IAirlineRepository _airlineRepository;
     private readonly IAircraftRepository _aircraftRepository;
     private readonly IAircraftLookupClient _aircraftLookupClient;
+    private readonly IMapper _mapper;
 
     public UserFlightService(
         IUserFlightRepository userFlightRepository,
@@ -30,7 +32,8 @@ public class UserFlightService : IUserFlightService
         IFlightMetadataProvisionService metadataProvisionService,
         IAirlineRepository airlineRepository,
         IAircraftRepository aircraftRepository,
-        IAircraftLookupClient aircraftLookupClient)
+        IAircraftLookupClient aircraftLookupClient,
+        IMapper mapper)
     {
         _userFlightRepository = userFlightRepository;
         _flightRepository = flightRepository;
@@ -40,6 +43,7 @@ public class UserFlightService : IUserFlightService
         _airlineRepository = airlineRepository;
         _aircraftRepository = aircraftRepository;
         _aircraftLookupClient = aircraftLookupClient;
+        _mapper = mapper;
     }
 
     public async Task<IEnumerable<UserFlightDto>> GetUserFlightsAsync(int userId, CancellationToken cancellationToken = default)
@@ -225,20 +229,6 @@ public class UserFlightService : IUserFlightService
 
     private async Task<UserFlightDto> MapToDtoAsync(UserFlight userFlight, CancellationToken cancellationToken = default)
     {
-        // get aircraft details from flight.
-        var aircraft = userFlight.Flight?.Aircraft != null
-            ? new AircraftDto
-            {
-                Id = userFlight.Flight.Aircraft.Id,
-                Registration = userFlight.Flight.Aircraft.Registration,
-                Manufacturer = userFlight.Flight.Aircraft.Manufacturer,
-                Model = userFlight.Flight.Aircraft.Model,
-                YearManufactured = userFlight.Flight.Aircraft.YearManufactured,
-                IcaoTypeCode = userFlight.Flight.Aircraft.IcaoTypeCode,
-                Notes = userFlight.Flight.Aircraft.Notes
-            }
-            : null;
-
         // Resolve time zones via airport codes if available
         var depCode = userFlight.Flight?.DepartureAirport?.IataCode ?? userFlight.Flight?.DepartureAirport?.IcaoCode;
         var arrCode = userFlight.Flight?.ArrivalAirport?.IataCode ?? userFlight.Flight?.ArrivalAirport?.IcaoCode;
@@ -249,38 +239,10 @@ public class UserFlightService : IUserFlightService
             ? await _airportService.GetTimeZoneIdByAirportCodeAsync(arrCode, cancellationToken)
             : null;
 
-        return new UserFlightDto
-        {
-            Id = userFlight.Id,
-            UserId = userFlight.UserId,
-            FlightId = userFlight.FlightId,
-            FlightClass = userFlight.FlightClass,
-            SeatNumber = userFlight.SeatNumber,
-            BookedOnUtc = userFlight.BookedOnUtc,
-            Notes = userFlight.Notes,
-            DidFly = userFlight.DidFly,
-            FlightNumber = userFlight.Flight?.FlightNumber ?? string.Empty,
-            FlightStatus = userFlight.Flight?.Status ?? FlightStatus.Scheduled,
-            DepartureTimeUtc = userFlight.Flight?.DepartureTimeUtc ?? DateTime.MinValue,
-            ArrivalTimeUtc = userFlight.Flight?.ArrivalTimeUtc ?? DateTime.MinValue,
-            OperatingAirlineId = userFlight.Flight?.OperatingAirlineId,
-            OperatingAirlineIcaoCode = userFlight.Flight?.OperatingAirline?.IcaoCode,
-            OperatingAirlineIataCode = userFlight.Flight?.OperatingAirline?.IataCode,
-            OperatingAirlineName = userFlight.Flight?.OperatingAirline?.Name,
-            DepartureAirportCode = userFlight.Flight?.DepartureAirport?.IataCode ?? userFlight.Flight?.DepartureAirport?.IcaoCode ?? string.Empty,
-            DepartureIataCode = userFlight.Flight?.DepartureAirport?.IataCode,
-            DepartureIcaoCode = userFlight.Flight?.DepartureAirport?.IcaoCode,
-            DepartureAirportName = userFlight.Flight?.DepartureAirport?.Name ?? string.Empty,
-            DepartureCity = userFlight.Flight?.DepartureAirport?.City ?? string.Empty,
-            ArrivalAirportCode = userFlight.Flight?.ArrivalAirport?.IataCode ?? userFlight.Flight?.ArrivalAirport?.IcaoCode ?? string.Empty,
-            ArrivalIataCode = userFlight.Flight?.ArrivalAirport?.IataCode,
-            ArrivalIcaoCode = userFlight.Flight?.ArrivalAirport?.IcaoCode,
-            ArrivalAirportName = userFlight.Flight?.ArrivalAirport?.Name ?? string.Empty,
-            ArrivalCity = userFlight.Flight?.ArrivalAirport?.City ?? string.Empty,
-            DepartureTimeZoneId = depTz,
-            ArrivalTimeZoneId = arrTz,
-            Aircraft = aircraft
-        };
+        var dto = _mapper.Map<UserFlightDto>(userFlight);
+        dto.DepartureTimeZoneId = depTz;
+        dto.ArrivalTimeZoneId = arrTz;
+        return dto;
     }
 
     private async Task<Flight> CreateFlightFromDtoAsync(CreateUserFlightDto dto, CancellationToken cancellationToken)

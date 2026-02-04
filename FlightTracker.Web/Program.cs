@@ -89,10 +89,11 @@ builder.Services.AddScoped<IAircraftLookupClient>(sp => sp.GetRequiredService<Ad
 builder.Services.AddScoped<IFlightMetadataProvisionService, FlightMetadataProvisionService>();
 
 // External provider(s)
-builder.Services.AddScoped<IFlightDataProvider, FlightTracker.Infrastructure.External.OpenSkyClient>();
+builder.Services.AddScoped<IFlightDataProvider, OpenSkyClient>();
 
 // AutoMapper
-builder.Services.AddAutoMapper(typeof(ApplicationMappingProfile));
+builder.Services.AddAutoMapper(cfg => cfg.AddProfile<ApplicationMappingProfile>());
+builder.Services.AddAutoMapper(cfg => cfg.AddProfile<FlightProfile>());
 
 // Identity (basic, for seeding users)
 builder.Services
