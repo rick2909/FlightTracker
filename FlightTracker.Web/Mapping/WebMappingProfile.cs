@@ -21,5 +21,13 @@ public class WebMappingProfile : Profile
                 opt => opt.MapFrom(src => src.Aircraft != null ? src.Aircraft.Registration : null))
             .ForMember(dest => dest.OperatingAirlineCode,
                 opt => opt.MapFrom(src => src.OperatingAirlineIataCode ?? src.OperatingAirlineIcaoCode));
+
+        CreateMap<EditUserFlightViewModel, UpdateUserFlightDto>();
+
+        CreateMap<EditUserFlightViewModel, FlightScheduleUpdateDto>()
+            .ForMember(dest => dest.DepartureAirportCode,
+                opt => opt.MapFrom(src => src.DepartureAirportCode ?? string.Empty))
+            .ForMember(dest => dest.ArrivalAirportCode,
+                opt => opt.MapFrom(src => src.ArrivalAirportCode ?? string.Empty));
     }
 }

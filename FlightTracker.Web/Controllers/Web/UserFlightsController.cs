@@ -80,26 +80,13 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
         }
         try
         {
+            var userFlightDto = mapper.Map<UpdateUserFlightDto>(form);
+            var scheduleDto = mapper.Map<FlightScheduleUpdateDto>(form);
+
             var updated = await userFlightService.UpdateUserFlightAndScheduleAsync(
                 id,
-                new UpdateUserFlightDto
-                {
-                    FlightClass = form.FlightClass,
-                    SeatNumber = form.SeatNumber,
-                    Notes = form.Notes,
-                    DidFly = form.DidFly
-                },
-                new FlightScheduleUpdateDto
-                {
-                    FlightId = form.FlightId,
-                    FlightNumber = form.FlightNumber,
-                    DepartureAirportCode = form.DepartureAirportCode ?? string.Empty,
-                    ArrivalAirportCode = form.ArrivalAirportCode ?? string.Empty,
-                    DepartureTimeUtc = form.DepartureTimeUtc,
-                    ArrivalTimeUtc = form.ArrivalTimeUtc,
-                    AircraftRegistration = form.AircraftRegistration,
-                    OperatingAirlineCode = form.OperatingAirlineCode
-                },
+                userFlightDto,
+                scheduleDto,
                 cancellationToken);
             if (updated == null)
             {
@@ -138,23 +125,18 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
         var date = DateOnly.FromDateTime(dto.DepartureTimeUtc);
         var candidate = await flightLookupService.ResolveFlightAsync(dto.FlightNumber, date, cancellationToken);
 
-    if (candidate is null)
-        {
+        if (candidate is null)
             return NotFound(new { status = "not_found", message = "No flight found via lookup." });
-        }
 
         var currentFlight = await flightService.GetFlightByIdAsync(dto.FlightId, cancellationToken);
-    if (currentFlight is null)
-        {
+
+        if (currentFlight is null)
             return NotFound(new { status = "not_found", message = "Current flight not found." });
-        }
 
-    var noChanges = currentFlight.HasSameScheduleAndRoute(candidate);
+        var noChanges = currentFlight.HasSameScheduleAndRoute(candidate);
 
-    if (noChanges)
-        {
+        if (noChanges)
             return Ok(new { status = "no_changes", message = "No changes found." });
-        }
 
         // Return minimal delta payload for now (no DB update yet)
         var depCode = candidate.DepartureAirport?.IataCode ?? candidate.DepartureAirport?.IcaoCode;
