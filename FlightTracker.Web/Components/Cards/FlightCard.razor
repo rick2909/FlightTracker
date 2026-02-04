@@ -24,6 +24,13 @@
     }
     private async Task HandleDelete() => await OnDelete.InvokeAsync(Flight);
 
+    private void HandleDetails()
+    {
+        // Navigate to MVC details page and force full reload so MVC handles the route
+        var detailsUrl = Links.GetPathByAction("Details", "UserFlights", new { id = Flight.Id }) ?? $"/UserFlights/Details/{Flight.Id}";
+        Nav.NavigateTo(detailsUrl, forceLoad: true);
+    }
+
     private static BadgeStyle GetClassBadgeStyle(FlightClass flightClass)
     {
         return flightClass switch
@@ -166,6 +173,7 @@
 
     <div class="rz-mt-2 footer-row">
         <div class="spacer"></div>
+        <RadzenButton Text="Details" Icon="info" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Medium" Click="@HandleDetails" />
         <RadzenButton Text="Edit" Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Medium" Click="@HandleEdit" />
         <RadzenButton Text="Delete" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Medium" class="rz-ml-1" Click="@HandleDelete" />
     </div>
