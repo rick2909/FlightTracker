@@ -81,26 +81,9 @@
                             <div style="font-size: 0.8rem; color: var(--rz-text-secondary);">@FormatUTCTime(Model.DepartureTimeUtc)</div>
                         </div>
 
-                        <!-- Center: Arrow and Photo -->
+                        <!-- Center: Arrow -->
                         <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
-                            <span class="material-icons" style="font-size: 2rem; color: var(--rz-text-secondary); margin-top: 2.5rem;">arrow_downward</span>
-                            <!-- Aircraft Photo Card -->
-                            <div style="width: 180px; background: var(--rz-surface); border-radius: 8px; padding: 0.8rem; text-align: center; border: 1px solid rgba(0,0,0,0.05);">
-                                <div id="photoLoader">
-                                    <div class="spinner-border spinner-border-sm" role="status">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                    <div class="mt-2" style="font-size: 0.7rem; color: var(--rz-text-secondary);">Photo...</div>
-                                </div>
-                                <div id="photoContent" style="display: none;">
-                                    <img id="aircraftImage" src="" alt="Aircraft" style="max-width: 100%; height: auto; max-height: 140px; border-radius: 6px; margin-bottom: 0.5rem;" />
-                                    <div id="photoCredit" style="font-size: 0.6rem; color: var(--rz-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
-                                </div>
-                                <div id="photoError" style="display: none;">
-                                    <span class="material-icons" style="font-size: 1.5rem; color: var(--rz-text-secondary);">image_not_supported</span>
-                                    <div style="font-size: 0.65rem; color: var(--rz-text-secondary); margin-top: 0.25rem;">No photo</div>
-                                </div>
-                            </div>
+                            <span class="material-icons" style="font-size: 2rem; color: var(--rz-text-secondary); margin-top: 2.5rem;">arrow_forward</span>
                         </div>
 
                         <!-- Arrival -->
@@ -167,45 +150,65 @@
                     <h5 style="margin: 0;">Aircraft Details</h5>
                 </div>
                 <div class="rz-card-body">
-                    @if (Model.Aircraft is not null)
-                    {
-                        <div class="mb-3">
-                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Type</div>
-                            <div style="font-size: 1rem; font-weight: 600;">@Model.Aircraft.Manufacturer @Model.Aircraft.Model</div>
-                        </div>
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: start;">
+                        <div>
+                            @if (Model.Aircraft is not null)
+                            {
+                                <div class="mb-3">
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Type</div>
+                                    <div style="font-size: 1rem; font-weight: 600;">@Model.Aircraft.Manufacturer @Model.Aircraft.Model</div>
+                                </div>
 
-                        @if (!string.IsNullOrWhiteSpace(Model.Aircraft.Registration))
-                        {
-                            <div class="mb-3">
-                                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Registration</div>
-                                <div style="font-family: monospace; font-weight: 600;">@Model.Aircraft.Registration</div>
-                            </div>
-                        }
-
-                        @if (!string.IsNullOrWhiteSpace(Model.Aircraft.IcaoTypeCode))
-                        {
-                            <div class="mb-3">
-                                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">ICAO Type</div>
-                                <div style="font-family: monospace;">@Model.Aircraft.IcaoTypeCode</div>
-                            </div>
-                        }
-
-                        @if (Model.Aircraft.AirlineName is not null)
-                        {
-                            <div class="mb-3">
-                                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Operating Airline</div>
-                                <div>@Model.Aircraft.AirlineName</div>
-                                @if (!string.IsNullOrWhiteSpace(Model.Aircraft.AirlineIcaoCode))
+                                @if (!string.IsNullOrWhiteSpace(Model.Aircraft.Registration))
                                 {
-                                    <div style="font-size: 0.9rem; color: var(--rz-text-secondary);">@Model.Aircraft.AirlineIcaoCode</div>
+                                    <div class="mb-3">
+                                        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Registration</div>
+                                        <div style="font-family: monospace; font-weight: 600;">@Model.Aircraft.Registration</div>
+                                    </div>
                                 }
+
+                                @if (!string.IsNullOrWhiteSpace(Model.Aircraft.IcaoTypeCode))
+                                {
+                                    <div class="mb-3">
+                                        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">ICAO Type</div>
+                                        <div style="font-family: monospace;">@Model.Aircraft.IcaoTypeCode</div>
+                                    </div>
+                                }
+
+                                @if (Model.Aircraft.AirlineName is not null)
+                                {
+                                    <div class="mb-3">
+                                        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Operating Airline</div>
+                                        <div>@Model.Aircraft.AirlineName</div>
+                                        @if (!string.IsNullOrWhiteSpace(Model.Aircraft.AirlineIcaoCode))
+                                        {
+                                            <div style="font-size: 0.9rem; color: var(--rz-text-secondary);">@Model.Aircraft.AirlineIcaoCode</div>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <span style="color: var(--rz-text-secondary);">No aircraft information available.</span>
+                            }
+                        </div>
+                        <div style="width: 440px; background: var(--rz-surface); border-radius: 8px; padding: 0.8rem; text-align: center; border: 1px solid rgba(0,0,0,0.05);">
+                            <div id="photoLoader">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <div class="mt-2" style="font-size: 0.75rem; color: var(--rz-text-secondary);">Photo...</div>
                             </div>
-                        }
-                    }
-                    else
-                    {
-                        <span style="color: var(--rz-text-secondary);">No aircraft information available.</span>
-                    }
+                            <div id="photoContent" style="display: none;">
+                                <img id="aircraftImage" src="" alt="Aircraft" style="max-width: 100%; height: auto; max-height: 160px; border-radius: 6px; margin-bottom: 0.5rem;" />
+                                <div id="photoCredit" style="font-size: 0.65rem; color: var(--rz-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+                            </div>
+                            <div id="photoError" style="display: none;">
+                                <span class="material-icons" style="font-size: 1.5rem; color: var(--rz-text-secondary);">image_not_supported</span>
+                                <div style="font-size: 0.7rem; color: var(--rz-text-secondary); margin-top: 0.25rem;">No photo</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
