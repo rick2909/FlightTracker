@@ -200,8 +200,13 @@
                                 <div class="mt-2" style="font-size: 0.75rem; color: var(--rz-text-secondary);">Photo...</div>
                             </div>
                             <div id="photoContent" style="display: none;">
-                                <img id="aircraftImage" src="" alt="Aircraft" style="max-width: 100%; height: auto; max-height: 160px; border-radius: 6px; margin-bottom: 0.5rem;" />
+                                <a id="photoLink" href="#" target="_blank" rel="noopener noreferrer" style="display: inline-block;">
+                                    <img id="aircraftImage" src="" alt="Aircraft" style="max-width: 100%; height: auto; max-height: 160px; border-radius: 6px; margin-bottom: 0.5rem;" />
+                                </a>
                                 <div id="photoCredit" style="font-size: 0.65rem; color: var(--rz-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+                                <div id="photoSource" style="font-size: 0.6rem; color: var(--rz-text-secondary);">
+                                    <a id="photoSourceLink" href="#" target="_blank" rel="noopener noreferrer">Source: airport-data.com</a>
+                                </div>
                             </div>
                             <div id="photoError" style="display: none;">
                                 <span class="material-icons" style="font-size: 1.5rem; color: var(--rz-text-secondary);">image_not_supported</span>
@@ -276,7 +281,11 @@
 
             document.getElementById('aircraftImage').src = photo.image;
             document.getElementById('aircraftImage').alt = 'Aircraft photo';
-            document.getElementById('photoCredit').textContent = `Photo by ${photo.photographer}`;
+            const link = photo.link || '#';
+            document.getElementById('photoLink').href = link;
+            document.getElementById('photoSourceLink').href = link;
+            const photographer = photo.photographer || 'Unknown';
+            document.getElementById('photoCredit').textContent = `Photo by ${photographer}`;
         }
 
         function showPhotoError() {
