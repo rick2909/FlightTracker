@@ -88,9 +88,9 @@
                     </div>
                     <div class="ft-form__row">
                         <div class="ft-form__field">
-                            <label>Departure (UTC)</label>
+                            <label>Departure (local)</label>
                             <RadzenDatePicker @bind-Value="DepartureTimeForm" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Disabled="@(!CanEditFlight)" Style="width:100%" />
-                            <div class="small text-muted">Local: @FormatLocal(DepartureTimeUtc, DepartureTimeZoneId)</div>
+                            <div class="small text-muted">UTC: @DepartureTimeUtc.ToString("MMM dd, yyyy HH:mm")</div>
                             @if (HasPendingDepartureTime)
                             {
                                 <div class="rz-text-info small rz-mt-1">
@@ -100,9 +100,9 @@
                             }
                         </div>
                         <div class="ft-form__field">
-                            <label>Arrival (UTC)</label>
+                            <label>Arrival (local)</label>
                             <RadzenDatePicker @bind-Value="ArrivalTimeForm" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Disabled="@(!CanEditFlight)" Style="width:100%" />
-                            <div class="small text-muted">Local: @FormatLocal(ArrivalTimeUtc, ArrivalTimeZoneId)</div>
+                            <div class="small text-muted">UTC: @ArrivalTimeUtc.ToString("MMM dd, yyyy HH:mm")</div>
                             @if (HasPendingArrivalTime)
                             {
                                 <div class="rz-text-info small rz-mt-1">
@@ -142,6 +142,8 @@
     private string? ArrivalAirportCode { get; set; }
     private DateTime DepartureTimeUtc { get; set; }
     private DateTime ArrivalTimeUtc { get; set; }
+    private DateTime DepartureTimeLocal { get; set; }
+    private DateTime ArrivalTimeLocal { get; set; }
 
     // Aircraft fields
     private string? AircraftRegistration { get; set; }
@@ -170,17 +172,17 @@
     private bool HasPendingDepartureTime => pendingChanges.DepartureTimeUtc.HasValue && pendingChanges.DepartureTimeUtc.Value != DepartureTimeUtc;
     private bool HasPendingArrivalTime => pendingChanges.ArrivalTimeUtc.HasValue && pendingChanges.ArrivalTimeUtc.Value != ArrivalTimeUtc;
 
-    // Wrappers for InputDate which yields DateTime with Unspecified kind; we store as UTC
+    // Wrappers for InputDate which yields DateTime with Unspecified kind; we store as local
     private DateTime DepartureTimeForm
     {
-        get => DepartureTimeUtc == default ? DateTime.UtcNow : DepartureTimeUtc;
-        set => DepartureTimeUtc = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+        get => DepartureTimeLocal == default ? ConvertUtcToLocal(DepartureTimeUtc, DepartureTimeZoneId) : DepartureTimeLocal;
+        set => DepartureTimeLocal = DateTime.SpecifyKind(value, DateTimeKind.Unspecified);
     }
 
     private DateTime ArrivalTimeForm
     {
-        get => ArrivalTimeUtc == default ? DateTime.UtcNow : ArrivalTimeUtc;
-        set => ArrivalTimeUtc = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+        get => ArrivalTimeLocal == default ? ConvertUtcToLocal(ArrivalTimeUtc, ArrivalTimeZoneId) : ArrivalTimeLocal;
+        set => ArrivalTimeLocal = DateTime.SpecifyKind(value, DateTimeKind.Unspecified);
     }
 
     protected override async Task OnInitializedAsync()
@@ -207,6 +209,8 @@
             ArrivalTimeUtc = DateTime.SpecifyKind(dto.ArrivalTimeUtc, DateTimeKind.Utc);
             DepartureTimeZoneId = dto.DepartureTimeZoneId;
             ArrivalTimeZoneId = dto.ArrivalTimeZoneId;
+            DepartureTimeLocal = ConvertUtcToLocal(DepartureTimeUtc, DepartureTimeZoneId);
+            ArrivalTimeLocal = ConvertUtcToLocal(ArrivalTimeUtc, ArrivalTimeZoneId);
             AircraftRegistration = dto.Aircraft?.Registration;
             OperatingAirlineCode = dto.OperatingAirlineIataCode ?? dto.OperatingAirlineIcaoCode;
         }
@@ -257,6 +261,60 @@
         catch
         {
             return "-";
+        }
+    }
+
+    private DateTime ConvertUtcToLocal(DateTime utc, string? timeZoneId)
+    {
+        if (string.IsNullOrWhiteSpace(timeZoneId))
+        {
+            return DateTime.SpecifyKind(utc, DateTimeKind.Unspecified);
+        }
+
+        try
+        {
+            TimeZoneInfo tz;
+            try
+            {
+                tz = TZConvert.GetTimeZoneInfo(timeZoneId);
+            }
+            catch
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            }
+
+            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), tz);
+        }
+        catch
+        {
+            return DateTime.SpecifyKind(utc, DateTimeKind.Unspecified);
+        }
+    }
+
+    private DateTime ConvertLocalToUtc(DateTime local, string? timeZoneId)
+    {
+        if (string.IsNullOrWhiteSpace(timeZoneId))
+        {
+            return DateTime.SpecifyKind(local, DateTimeKind.Utc);
+        }
+
+        try
+        {
+            TimeZoneInfo tz;
+            try
+            {
+                tz = TZConvert.GetTimeZoneInfo(timeZoneId);
+            }
+            catch
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            }
+
+            return TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), tz);
+        }
+        catch
+        {
+            return DateTime.SpecifyKind(local, DateTimeKind.Utc);
         }
     }
 
@@ -352,6 +410,7 @@
         if (!HasPendingDepartureTime) return;
         CanEditFlight = true;
         DepartureTimeUtc = pendingChanges.DepartureTimeUtc!.Value;
+        DepartureTimeLocal = ConvertUtcToLocal(DepartureTimeUtc, DepartureTimeZoneId);
         pendingChanges.DepartureTimeUtc = null;
     }
 
@@ -360,6 +419,7 @@
         if (!HasPendingArrivalTime) return;
         CanEditFlight = true;
         ArrivalTimeUtc = pendingChanges.ArrivalTimeUtc!.Value;
+        ArrivalTimeLocal = ConvertUtcToLocal(ArrivalTimeUtc, ArrivalTimeZoneId);
         pendingChanges.ArrivalTimeUtc = null;
     }
 
@@ -374,6 +434,9 @@
             Notes = Notes,
             DidFly = DidFly
         };
+
+        DepartureTimeUtc = ConvertLocalToUtc(DepartureTimeForm, DepartureTimeZoneId);
+        ArrivalTimeUtc = ConvertLocalToUtc(ArrivalTimeForm, ArrivalTimeZoneId);
 
         var schedule = new FlightScheduleUpdateDto
         {
