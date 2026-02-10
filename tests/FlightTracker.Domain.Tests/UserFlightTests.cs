@@ -14,6 +14,6 @@ public class UserFlightTests
         Assert.True(userFlight.DidFly);
         Assert.Equal(string.Empty, userFlight.SeatNumber);
         Assert.Null(userFlight.Notes);
-        Assert.Equal(0, (int)userFlight.FlightClass);
+        Assert.Equal(FlightClass.Economy, userFlight.FlightClass);
     }
 }
