@@ -1,4 +1,5 @@
 using AutoMapper;
+using System.Net.Http;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Dtos.Validation;
 using FlightTracker.Application.Services.Interfaces;
@@ -6,6 +7,7 @@ using FlightTracker.Domain.Entities;
 using FlightTracker.Domain.Enums;
 using FlightTracker.Application.Repositories.Interfaces;
 using FluentValidation;
+using System.Diagnostics;
 
 namespace FlightTracker.Application.Services.Implementation;
 
@@ -264,9 +266,15 @@ public class UserFlightService : IUserFlightService
         {
             await _metadataProvisionService.EnsureAirlineAndAirportsForCallsignAsync(dto.FlightNumber!, cancellationToken);
         }
-        catch
+        catch (HttpRequestException)
         {
             // Non-fatal; continue with local lookup
+            Debug.WriteLine("External API call failed during flight creation. Proceeding with local data only.");
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Non-fatal timeout; continue with local lookup
+            Debug.WriteLine("External API call timed out during flight creation. Proceeding with local data only.");
         }
 
         var depId = await ResolveAirportIdOrThrowAsync(dto.DepartureAirportCode!, cancellationToken);
@@ -296,16 +304,12 @@ public class UserFlightService : IUserFlightService
 
         if (!string.IsNullOrWhiteSpace(airlineCode))
         {
-            try
+            var al = await _airlineRepository.GetByIataAsync(airlineCode, cancellationToken)
+                     ?? await _airlineRepository.GetByIcaoAsync(airlineCode, cancellationToken);
+            if (al is not null)
             {
-                var al = await _airlineRepository.GetByIataAsync(airlineCode, cancellationToken)
-                         ?? await _airlineRepository.GetByIcaoAsync(airlineCode, cancellationToken);
-                if (al is not null)
-                {
-                    flight.OperatingAirlineId = al.Id;
-                }
+                flight.OperatingAirlineId = al.Id;
             }
-            catch { /* optional */ }
         }
 
         // Handle aircraft registration
@@ -351,13 +355,9 @@ public class UserFlightService : IUserFlightService
 
         if (!string.IsNullOrWhiteSpace(airlineCode))
         {
-            try
-            {
-                var al = await _airlineRepository.GetByIataAsync(airlineCode, cancellationToken)
-                         ?? await _airlineRepository.GetByIcaoAsync(airlineCode, cancellationToken);
-                flight.OperatingAirlineId = al?.Id;
-            }
-            catch { /* optional */ }
+            var al = await _airlineRepository.GetByIataAsync(airlineCode, cancellationToken)
+                     ?? await _airlineRepository.GetByIcaoAsync(airlineCode, cancellationToken);
+            flight.OperatingAirlineId = al?.Id;
         }
 
         // Handle aircraft registration
@@ -429,9 +429,13 @@ public class UserFlightService : IUserFlightService
         {
             adsbData = await _aircraftLookupClient.GetAircraftAsync(normalized, cancellationToken);
         }
-        catch
+        catch (HttpRequestException)
         {
             // Non-fatal; continue with minimal data
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Non-fatal timeout; continue with minimal data
         }
 
         // Create new aircraft with data from AdsBdb or defaults
