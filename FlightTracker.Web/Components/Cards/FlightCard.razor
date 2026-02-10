@@ -52,7 +52,7 @@
         return didFly ? BadgeStyle.Success : BadgeStyle.Danger;
     }
 
-    private static string didFlyText(DateTime departureTimeUtc, bool didFly)
+    private static string DidFlyText(DateTime departureTimeUtc, bool didFly)
     {
         if (departureTimeUtc > DateTime.UtcNow)
         {
@@ -171,7 +171,7 @@
             </div>
         </div>
         <div class="right">
-            <RadzenBadge Shade="Shade.Light" Pill="true" BadgeStyle="@GetStatusBadgeStyle(Flight.DepartureTimeUtc, Flight.DidFly)" Text="@(didFlyText(Flight.DepartureTimeUtc, Flight.DidFly))" />
+            <RadzenBadge Shade="Shade.Light" Pill="true" BadgeStyle="@GetStatusBadgeStyle(Flight.DepartureTimeUtc, Flight.DidFly)" Text="@(DidFlyText(Flight.DepartureTimeUtc, Flight.DidFly))" />
             <button type="button" class="expand-btn" @onclick="ToggleExpanded" aria-expanded="@expanded" title="Toggle details">
                 <RadzenIcon Icon="expand_more" class="expand-icon" />
             </button>
