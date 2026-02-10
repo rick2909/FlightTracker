@@ -83,17 +83,6 @@ public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient, IA
         );
     }
 
-    public sealed record AircraftLookupResult(
-        string Registration,
-        string Type,
-        string IcaoType,
-        string Manufacturer,
-        string ModeS,
-        string RegisteredOwner,
-        string RegisteredOwnerCountryIso,
-        string RegisteredOwnerCountry
-    );
-
     private sealed class AircraftRoot
     {
         [JsonPropertyName("response")] public AircraftResponseJson? Response { get; set; }
