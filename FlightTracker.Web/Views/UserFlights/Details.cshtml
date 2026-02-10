@@ -192,7 +192,10 @@
                                 <span style="color: var(--rz-text-secondary);">No aircraft information available.</span>
                             }
                         </div>
-                        <div style="width: 220px; background: var(--rz-surface); border-radius: 8px; padding: 0.8rem; text-align: center; border: 1px solid rgba(0,0,0,0.05);">
+                            <div id="aircraftPhotoMeta"
+                                data-mode-s="@(Model.Aircraft?.ModeS?.ToUpperInvariant() ?? string.Empty)"
+                                data-registration="@(Model.Aircraft?.Registration?.ToUpperInvariant() ?? string.Empty)"
+                                style="width: 220px; background: var(--rz-surface); border-radius: 8px; padding: 0.8rem; text-align: center; border: 1px solid rgba(0,0,0,0.05);">
                             <div id="photoLoader">
                                 <div class="spinner-border spinner-border-sm" role="status">
                                     <span class="visually-hidden">Loading...</span>
@@ -239,8 +242,9 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', async function () {
-            const modeSCode = '@(Model.Aircraft?.ModeS?.ToUpperInvariant() ?? string.Empty)'.trim();
-            const registration = '@(Model.Aircraft?.Registration?.ToUpperInvariant() ?? string.Empty)'.trim();
+            const meta = document.getElementById('aircraftPhotoMeta');
+            const modeSCode = (meta?.dataset.modeS ?? '').trim();
+            const registration = (meta?.dataset.registration ?? '').trim();
 
             if (!modeSCode && !registration) {
                 showPhotoError();
