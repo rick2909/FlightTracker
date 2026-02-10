@@ -168,9 +168,17 @@ public class UserFlightsController(
     [HttpGet("/api/aircraft-photos")]
     public async Task<IActionResult> GetAircraftPhoto(string? modeSCode, string? registration, int maxResults = 1, CancellationToken cancellationToken = default)
     {
+        const int MinResults = 1;
+        const int MaxResults = 5;
+
         if (string.IsNullOrWhiteSpace(modeSCode) && string.IsNullOrWhiteSpace(registration))
         {
             return BadRequest(new { error = "Either modeSCode or registration must be provided" });
+        }
+
+        if (maxResults < MinResults || maxResults > MaxResults)
+        {
+            return BadRequest(new { error = $"maxResults must be between {MinResults} and {MaxResults}." });
         }
 
         var result = await aircraftPhotoService.GetAircraftPhotosAsync(modeSCode, registration, maxResults, cancellationToken);
