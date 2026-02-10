@@ -24,6 +24,13 @@
     }
     private async Task HandleDelete() => await OnDelete.InvokeAsync(Flight);
 
+    private void HandleDetails()
+    {
+        // Navigate to MVC details page and force full reload so MVC handles the route
+        var detailsUrl = Links.GetPathByAction("Details", "UserFlights", new { id = Flight.Id }) ?? $"/UserFlights/Details/{Flight.Id}";
+        Nav.NavigateTo(detailsUrl, forceLoad: true);
+    }
+
     private static BadgeStyle GetClassBadgeStyle(FlightClass flightClass)
     {
         return flightClass switch
@@ -36,10 +43,23 @@
         };
     }
 
-    private static BadgeStyle GetStatusBadgeStyle(bool didFly)
-        => didFly ? BadgeStyle.Success : BadgeStyle.Danger;
+    private static BadgeStyle GetStatusBadgeStyle(DateTime departureTimeUtc, bool didFly)
+    {
+        if (departureTimeUtc > DateTime.UtcNow)
+        {
+            return BadgeStyle.Info;
+        }
+        return didFly ? BadgeStyle.Success : BadgeStyle.Danger;
+    }
 
-    private static string didFlyText(bool didFly) => didFly ? "Completed" : "No Show";
+    private static string DidFlyText(DateTime departureTimeUtc, bool didFly)
+    {
+        if (departureTimeUtc > DateTime.UtcNow)
+        {
+            return "Upcoming";
+        }
+        return didFly ? "Completed" : "No Show";
+    }
 
     // Best-effort seat position inference from trailing seat letter.
     private static string GetSeatPositionLabel(string? seatNumber)
@@ -151,7 +171,7 @@
             </div>
         </div>
         <div class="right">
-            <RadzenBadge Pill="true" BadgeStyle="@GetStatusBadgeStyle(Flight.DidFly)" Text="@(didFlyText(Flight.DidFly))" />
+            <RadzenBadge Shade="Shade.Light" Pill="true" BadgeStyle="@GetStatusBadgeStyle(Flight.DepartureTimeUtc, Flight.DidFly)" Text="@(DidFlyText(Flight.DepartureTimeUtc, Flight.DidFly))" />
             <button type="button" class="expand-btn" @onclick="ToggleExpanded" aria-expanded="@expanded" title="Toggle details">
                 <RadzenIcon Icon="expand_more" class="expand-icon" />
             </button>
@@ -166,6 +186,7 @@
 
     <div class="rz-mt-2 footer-row">
         <div class="spacer"></div>
+        <RadzenButton Text="Details" Icon="info" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Medium" Click="@HandleDetails" />
         <RadzenButton Text="Edit" Icon="edit" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Medium" Click="@HandleEdit" />
         <RadzenButton Text="Delete" Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Medium" class="rz-ml-1" Click="@HandleDelete" />
     </div>

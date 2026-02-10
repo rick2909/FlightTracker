@@ -4,6 +4,7 @@
 @using FlightTracker.Domain.Enums
 @using Radzen
 @using Radzen.Blazor
+@using TimeZoneConverter
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Web
 @using System.ComponentModel.DataAnnotations
@@ -44,8 +45,8 @@
                                     <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
                                 </div>
                                 <div class="ft-result__actions">
-                                    <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectFlightFull(f)" />
-                                    <RadzenButton Size="ButtonSize.Small" Icon="event_busy" Text="No date" Click="() => SelectFlightNoDate(f)" ButtonStyle="ButtonStyle.Light" />
+                                    <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectFlightFullAsync(f)" />
+                                    <RadzenButton Size="ButtonSize.Small" Icon="event_busy" Text="No date" Click="() => SelectFlightNoDateAsync(f)" ButtonStyle="ButtonStyle.Light" />
                                 </div>
                             </div>
                         </Template>
@@ -86,8 +87,8 @@
                                     <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
                                 </div>
                                 <div class="ft-result__actions">
-                                    <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectFlightFull(f)" />
-                                    <RadzenButton Size="ButtonSize.Small" Icon="event_busy" Text="No date" Click="() => SelectFlightNoDate(f)" ButtonStyle="ButtonStyle.Light" />
+                                    <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectFlightFullAsync(f)" />
+                                    <RadzenButton Size="ButtonSize.Small" Icon="event_busy" Text="No date" Click="() => SelectFlightNoDateAsync(f)" ButtonStyle="ButtonStyle.Light" />
                                 </div>
                             </div>
                         </Template>
@@ -111,9 +112,9 @@
                             <ValidationMessage For="() => validation.DepartureAirportCode" />
                         </div>
                         <div class="ft-form__field">
-                            <label>Departure (UTC)</label>
-                            <RadzenDatePicker @bind-Value="validation.DepartureTimeUtc" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
-                            <ValidationMessage For="() => validation.DepartureTimeUtc" />
+                            <label>Departure (local)</label>
+                            <RadzenDatePicker @bind-Value="validation.DepartureTimeLocal" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                            <ValidationMessage For="() => validation.DepartureTimeLocal" />
                         </div>
                     </div>
                     <div>
@@ -123,13 +124,30 @@
                             <ValidationMessage For="() => validation.ArrivalAirportCode" />
                         </div>
                         <div class="ft-form__field">
-                            <label>Arrival (UTC)</label>
-                            <RadzenDatePicker @bind-Value="validation.ArrivalTimeUtc" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
-                            <ValidationMessage For="() => validation.ArrivalTimeUtc" />
+                            <label>Arrival (local)</label>
+                            <RadzenDatePicker @bind-Value="validation.ArrivalTimeLocal" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                            <ValidationMessage For="() => validation.ArrivalTimeLocal" />
                         </div>
                     </div>
                 </div>
-        </RadzenTabsItem>
+                <div class="ft-form__section">
+                    <h6 class="mb-2">Aircraft & Airline (Optional)</h6>
+                    <div class="ft-form__row">
+                        <div class="ft-form__field">
+                            <label>Aircraft Registration</label>
+                            <RadzenTextBox @bind-Value="validation.AircraftRegistration" 
+                                           Placeholder="e.g., N12345" 
+                                           Style="width:100%" />
+                        </div>
+                        <div class="ft-form__field">
+                            <label>Operating Airline (IATA/ICAO)</label>
+                            <RadzenTextBox @bind-Value="validation.OperatingAirlineCode" 
+                                           Placeholder="Auto-filled from flight number" 
+                                           Style="width:100%" />
+                        </div>
+                    </div>
+                </div>
+            </RadzenTabsItem>
         </Tabs>
     </RadzenTabs>
 
@@ -178,6 +196,9 @@
     [Inject]
     public IFlightLookupService Lookup { get; set; } = default!;
 
+    [Inject]
+    public IAirportService AirportService { get; set; } = default!;
+
     private EditForm? editForm;
 
     private class ValidationModel
@@ -195,10 +216,14 @@
         public string? ArrivalAirportCode { get; set; }
 
         [Required]
-        public DateTime? DepartureTimeUtc { get; set; }
+        public DateTime? DepartureTimeLocal { get; set; }
 
         [Required]
-        public DateTime? ArrivalTimeUtc { get; set; }
+        public DateTime? ArrivalTimeLocal { get; set; }
+
+        // Optional aircraft fields
+        public string? AircraftRegistration { get; set; }
+        public string? OperatingAirlineCode { get; set; }
     }
     private ValidationModel validation = new();
 
@@ -209,7 +234,7 @@
     private FlightClass flightClass = FlightClass.Economy;
     private string? notes;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         if (Value is not null)
         {
@@ -224,8 +249,10 @@
             validation.FlightNumber = Value.FlightNumber;
             validation.DepartureAirportCode = Value.DepartureAirportCode;
             validation.ArrivalAirportCode = Value.ArrivalAirportCode;
-            validation.DepartureTimeUtc = Value.DepartureTimeUtc;
-            validation.ArrivalTimeUtc = Value.ArrivalTimeUtc;
+            validation.DepartureTimeLocal = await ConvertUtcToLocalAsync(Value.DepartureTimeUtc, Value.DepartureAirportCode);
+            validation.ArrivalTimeLocal = await ConvertUtcToLocalAsync(Value.ArrivalTimeUtc, Value.ArrivalAirportCode);
+            validation.AircraftRegistration = Value.AircraftRegistration;
+            validation.OperatingAirlineCode = Value.OperatingAirlineCode;
 
             _tabIndex = PreferManualTab ? 2 : 0;
         }
@@ -242,7 +269,7 @@
     }
 
     private int _tabIndex = 0;
-    private bool HasTimes => validation.DepartureTimeUtc.HasValue && validation.ArrivalTimeUtc.HasValue;
+    private bool HasTimes => validation.DepartureTimeLocal.HasValue && validation.ArrivalTimeLocal.HasValue;
     private bool HasRouteAndNumber =>
         !string.IsNullOrWhiteSpace(validation.FlightNumber)
         && !string.IsNullOrWhiteSpace(validation.DepartureAirportCode)
@@ -311,34 +338,34 @@
         routeResults = results.ToList();
     }
 
-    private void SelectFlightFull(Flight f)
+    private async Task SelectFlightFullAsync(Flight f)
     {
         // Populate draft for saving
         flightId = f.Id;
         flightNumber = f.FlightNumber;
         flightDate = DateOnly.FromDateTime(f.DepartureTimeUtc.Date);
         // Prefill manual tab
-    validation.FlightNumber = f.FlightNumber;
-    validation.DepartureAirportCode = f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode;
-    validation.ArrivalAirportCode = f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode;
-    validation.DepartureTimeUtc = f.DepartureTimeUtc;
-    validation.ArrivalTimeUtc = f.ArrivalTimeUtc;
-    _tabIndex = 2; // switch to Manual tab
+        validation.FlightNumber = f.FlightNumber;
+        validation.DepartureAirportCode = f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode;
+        validation.ArrivalAirportCode = f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode;
+        validation.DepartureTimeLocal = await ConvertUtcToLocalAsync(f.DepartureTimeUtc, validation.DepartureAirportCode);
+        validation.ArrivalTimeLocal = await ConvertUtcToLocalAsync(f.ArrivalTimeUtc, validation.ArrivalAirportCode);
+        _tabIndex = 2; // switch to Manual tab
         StateHasChanged();
     }
 
-    private void SelectFlightNoDate(Flight f)
+    private async Task SelectFlightNoDateAsync(Flight f)
     {
         // Select flight and route, clear dates
         flightId = f.Id;
         flightNumber = f.FlightNumber;
         flightDate = null;
-    validation.FlightNumber = f.FlightNumber;
-    validation.DepartureAirportCode = f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode;
-    validation.ArrivalAirportCode = f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode;
-    validation.DepartureTimeUtc = null;
-    validation.ArrivalTimeUtc = null;
-    _tabIndex = 2; // switch to Manual tab
+        validation.FlightNumber = f.FlightNumber;
+        validation.DepartureAirportCode = f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode;
+        validation.ArrivalAirportCode = f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode;
+        validation.DepartureTimeLocal = null;
+        validation.ArrivalTimeLocal = null;
+        _tabIndex = 2; // switch to Manual tab
         StateHasChanged();
     }
 
@@ -347,18 +374,22 @@
         if (!CanSave) return;
         if (OnSave.HasDelegate)
         {
+            var depUtc = await ConvertLocalToUtcAsync(validation.DepartureTimeLocal, validation.DepartureAirportCode);
+            var arrUtc = await ConvertLocalToUtcAsync(validation.ArrivalTimeLocal, validation.ArrivalAirportCode);
             var dto = new CreateUserFlightDto
             {
                 FlightId = flightId,
                 FlightNumber = validation.FlightNumber,
-                FlightDate = validation.DepartureTimeUtc.HasValue ? DateOnly.FromDateTime(validation.DepartureTimeUtc.Value.Date) : null,
+                FlightDate = depUtc.HasValue ? DateOnly.FromDateTime(depUtc.Value.Date) : null,
                 FlightClass = flightClass,
                 SeatNumber = validation.SeatNumber!,
                 Notes = notes,
                 DepartureAirportCode = validation.DepartureAirportCode,
                 ArrivalAirportCode = validation.ArrivalAirportCode,
-                DepartureTimeUtc = validation.DepartureTimeUtc,
-                ArrivalTimeUtc = validation.ArrivalTimeUtc
+                DepartureTimeUtc = depUtc,
+                ArrivalTimeUtc = arrUtc,
+                AircraftRegistration = validation.AircraftRegistration,
+                OperatingAirlineCode = validation.OperatingAirlineCode
             };
             await OnSave.InvokeAsync(dto);
         }
@@ -395,6 +426,64 @@
         {
             await OnCancel.InvokeAsync();
         }
+    }
+
+    private async Task<DateTime?> ConvertUtcToLocalAsync(DateTime? utc, string? airportCode)
+    {
+        if (!utc.HasValue) return null;
+        var tzId = await GetTimeZoneIdAsync(airportCode);
+        if (string.IsNullOrWhiteSpace(tzId)) return DateTime.SpecifyKind(utc.Value, DateTimeKind.Unspecified);
+
+        try
+        {
+            TimeZoneInfo tz;
+            try
+            {
+                tz = TZConvert.GetTimeZoneInfo(tzId);
+            }
+            catch
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById(tzId);
+            }
+
+            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc.Value, DateTimeKind.Utc), tz);
+        }
+        catch
+        {
+            return DateTime.SpecifyKind(utc.Value, DateTimeKind.Unspecified);
+        }
+    }
+
+    private async Task<DateTime?> ConvertLocalToUtcAsync(DateTime? local, string? airportCode)
+    {
+        if (!local.HasValue) return null;
+        var tzId = await GetTimeZoneIdAsync(airportCode);
+        if (string.IsNullOrWhiteSpace(tzId)) return DateTime.SpecifyKind(local.Value, DateTimeKind.Utc);
+
+        try
+        {
+            TimeZoneInfo tz;
+            try
+            {
+                tz = TZConvert.GetTimeZoneInfo(tzId);
+            }
+            catch
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById(tzId);
+            }
+
+            return TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local.Value, DateTimeKind.Unspecified), tz);
+        }
+        catch
+        {
+            return DateTime.SpecifyKind(local.Value, DateTimeKind.Utc);
+        }
+    }
+
+    private async Task<string?> GetTimeZoneIdAsync(string? airportCode)
+    {
+        if (string.IsNullOrWhiteSpace(airportCode)) return null;
+        return await AirportService.GetTimeZoneIdByAirportCodeAsync(airportCode.Trim());
     }
 
     private readonly FlightClass[] _classes = Enum.GetValues<FlightClass>();

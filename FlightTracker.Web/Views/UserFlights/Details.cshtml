@@ -1,93 +1,301 @@
 @using FlightTracker.Application.Dtos
+@using TimeZoneConverter
 @model UserFlightDto
 @{
     ViewData["Title"] = $"Flight {Model.FlightNumber}";
 }
 
-<div class="container py-4">
-    <div class="row g-4">
-        <div class="col-12 col-lg-8">
-            <div class="card shadow-sm">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Flight @Model.FlightNumber</h5>
-                    <span class="badge bg-secondary">@Model.FlightStatus</span>
-                </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col">
-                            <h6 class="text-muted">Departure</h6>
-                            <div class="fs-5 fw-semibold">@Model.DepartureAirportCode</div>
-                            <div>@Model.DepartureAirportName, @Model.DepartureCity</div>
-                            <div class="text-muted">@Model.DepartureTimeUtc.ToString("u")</div>
+@functions {
+    private string FormatTimeWithUTC(DateTime utc, string? timeZoneId)
+    {
+        if (string.IsNullOrWhiteSpace(timeZoneId))
+        {
+            return utc.ToString("MMM dd, yyyy HH:mm UTC");
+        }
+
+        try
+        {
+            TimeZoneInfo tz;
+            try
+            {
+                tz = TZConvert.GetTimeZoneInfo(timeZoneId);
+            }
+            catch
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            }
+
+            var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), tz);
+            var offset = tz.GetUtcOffset(local);
+            var sign = offset < TimeSpan.Zero ? "-" : "+";
+            var hh = Math.Abs(offset.Hours).ToString("00");
+            var mm = Math.Abs(offset.Minutes).ToString("00");
+
+            return $"{local:MMM dd, yyyy HH:mm} (UTC{sign}{hh}:{mm})";
+        }
+        catch
+        {
+            return utc.ToString("MMM dd, yyyy HH:mm UTC");
+        }
+    }
+
+    private string FormatUTCTime(DateTime utc)
+    {
+        return utc.ToString("MMM dd, yyyy HH:mm UTC");
+    }
+}
+
+<div style="max-width: 900px; margin: 0 auto; padding: 1rem 1rem 4rem 1rem;">
+    <!-- Flight Header Card -->
+    <div class="rz-card mb-4">
+        <div class="rz-card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h3 style="margin: 0 0 0.5rem 0;">@Model.FlightNumber</h3>
+                <p style="margin: 0; color: var(--rz-text-secondary);">@(Model.OperatingAirlineName ?? "Unknown Airline")</p>
+            </div>
+            <span class="badge bg-secondary fs-6">@Model.FlightStatus</span>
+        </div>
+    </div>
+
+    <div style="display: grid; gap: 1.5rem;">
+        <!-- Main Content -->
+        <div>
+            <!-- Route Card with Aircraft Photo -->
+            <div class="rz-card mb-3">
+                <div class="rz-card-body">
+                    <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 2rem; align-items: start;">
+                        <!-- Departure -->
+                        <div>
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Departure</div>
+                            <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">
+                                @(Model.DepartureIataCode ?? Model.DepartureIcaoCode ?? Model.DepartureAirportCode)
+                            </div>
+                            <div style="font-size: 0.9rem; color: var(--rz-text-secondary); margin-bottom: 1rem;">
+                                @Model.DepartureAirportName
+                                @if (!string.IsNullOrWhiteSpace(Model.DepartureCity))
+                                {
+                                    <span>, @Model.DepartureCity</span>
+                                }
+                            </div>
+                            <div style="font-size: 0.95rem; font-weight: 600;">@FormatTimeWithUTC(Model.DepartureTimeUtc, Model.DepartureTimeZoneId)</div>
+                            <div style="font-size: 0.8rem; color: var(--rz-text-secondary);">@FormatUTCTime(Model.DepartureTimeUtc)</div>
                         </div>
-                        <div class="col text-center align-self-center">
-                            <i class="bi bi-arrow-right fs-3" aria-hidden="true"></i>
+
+                        <!-- Center: Arrow -->
+                        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                            <span class="material-icons" style="font-size: 2rem; color: var(--rz-text-secondary); margin-top: 2.5rem;">arrow_forward</span>
                         </div>
-                        <div class="col">
-                            <h6 class="text-muted">Arrival</h6>
-                            <div class="fs-5 fw-semibold">@Model.ArrivalAirportCode</div>
-                            <div>@Model.ArrivalAirportName, @Model.ArrivalCity</div>
-                            <div class="text-muted">@Model.ArrivalTimeUtc.ToString("u")</div>
+
+                        <!-- Arrival -->
+                        <div>
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Arrival (local)</div>
+                            <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">
+                                @(Model.ArrivalIataCode ?? Model.ArrivalIcaoCode ?? Model.ArrivalAirportCode)
+                            </div>
+                            <div style="font-size: 0.9rem; color: var(--rz-text-secondary); margin-bottom: 1rem;">
+                                @Model.ArrivalAirportName
+                                @if (!string.IsNullOrWhiteSpace(Model.ArrivalCity))
+                                {
+                                    <span>, @Model.ArrivalCity</span>
+                                }
+                            </div>
+                            <div style="font-size: 0.95rem; font-weight: 600;">@FormatTimeWithUTC(Model.ArrivalTimeUtc, Model.ArrivalTimeZoneId)</div>
+                            <div style="font-size: 0.8rem; color: var(--rz-text-secondary);">@FormatUTCTime(Model.ArrivalTimeUtc)</div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <hr />
-
-                    <div class="row g-3">
-                        <div class="col-6 col-md-3">
-                            <div class="small text-muted">Class</div>
-                            <div>@Model.FlightClass</div>
+            <!-- Booking Details Card -->
+            <div class="rz-card">
+                <div class="rz-card-header">
+                    <h5 style="margin: 0;">Booking Details</h5>
+                </div>
+                <div class="rz-card-body">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem;">
+                        <div>
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Cabin Class</div>
+                            <div style="font-size: 1.1rem; font-weight: 600;">@Model.FlightClass</div>
                         </div>
-                        <div class="col-6 col-md-3">
-                            <div class="small text-muted">Seat</div>
-                            <div>@Model.SeatNumber</div>
+                        <div>
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Seat</div>
+                            <div style="font-size: 1.1rem; font-weight: 600;">@(Model.SeatNumber ?? "-")</div>
                         </div>
-                        <div class="col-6 col-md-3">
-                            <div class="small text-muted">Booked</div>
-                            <div>@Model.BookedOnUtc.ToString("u")</div>
+                        <div>
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Booked</div>
+                            <div style="font-size: 1.1rem; font-weight: 600;">@Model.BookedOnUtc.ToString("MMM dd, yyyy")</div>
                         </div>
-                        <div class="col-6 col-md-3">
-                            <div class="small text-muted">Flew?</div>
-                            <div>@(Model.DidFly ? "Yes" : "No")</div>
+                        <div>
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Status</div>
+                            <div style="font-size: 1.1rem; font-weight: 600;">@(Model.DidFly ? "✓ Completed" : "X Cancelled")</div>
                         </div>
                     </div>
 
                     @if (!string.IsNullOrWhiteSpace(Model.Notes))
                     {
-                        <div class="mt-3">
-                            <div class="small text-muted">Notes</div>
-                            <div>@Model.Notes</div>
+                        <hr style="margin: 1.5rem 0;" />
+                        <div>
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Notes</div>
+                            <div style="color: var(--rz-text-secondary); word-break: break-word;">@Model.Notes</div>
                         </div>
                     }
                 </div>
             </div>
         </div>
-        <div class="col-12 col-lg-4">
-            <div class="card shadow-sm mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0">Aircraft</h6>
+
+        <!-- Aircraft Details Card -->
+        <div>
+            <div class="rz-card">
+                <div class="rz-card-header">
+                    <h5 style="margin: 0;">Aircraft Details</h5>
                 </div>
-                <div class="card-body">
-                    @if (Model.Aircraft is not null)
-                    {
-                        <div class="mb-1"><strong>@Model.Aircraft.Manufacturer</strong> @Model.Aircraft.Model</div>
-                        <div class="mb-1">Reg: <code>@Model.Aircraft.Registration</code></div>
-                        @if (!string.IsNullOrWhiteSpace(Model.Aircraft.IcaoTypeCode))
-                        {
-                            <div class="mb-1">ICAO: @Model.Aircraft.IcaoTypeCode</div>
-                        }
-                        @if (Model.Aircraft.AirlineName is not null)
-                        {
-                            <div class="mb-1">Airline: @Model.Aircraft.AirlineName (@Model.Aircraft.AirlineIcaoCode ?? Model.Aircraft.AirlineIataCode)</div>
-                        }
-                    }
-                    else
-                    {
-                        <span class="text-muted">No aircraft info.</span>
-                    }
+                <div class="rz-card-body">
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: start;">
+                        <div>
+                            @if (Model.Aircraft is not null)
+                            {
+                                <div class="mb-3">
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Type</div>
+                                    <div style="font-size: 1rem; font-weight: 600;">@Model.Aircraft.Manufacturer @Model.Aircraft.Model</div>
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(Model.Aircraft.Registration))
+                                {
+                                    <div class="mb-3">
+                                        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Registration</div>
+                                        <div style="font-family: monospace; font-weight: 600;">@Model.Aircraft.Registration</div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(Model.Aircraft.IcaoTypeCode))
+                                {
+                                    <div class="mb-3">
+                                        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">ICAO Type</div>
+                                        <div style="font-family: monospace;">@Model.Aircraft.IcaoTypeCode</div>
+                                    </div>
+                                }
+
+                                @if (Model.Aircraft.AirlineName is not null)
+                                {
+                                    <div class="mb-3">
+                                        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Operating Airline</div>
+                                        <div>@Model.Aircraft.AirlineName</div>
+                                        @if (!string.IsNullOrWhiteSpace(Model.Aircraft.AirlineIcaoCode))
+                                        {
+                                            <div style="font-size: 0.9rem; color: var(--rz-text-secondary);">@Model.Aircraft.AirlineIcaoCode</div>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <span style="color: var(--rz-text-secondary);">No aircraft information available.</span>
+                            }
+                        </div>
+                            <div id="aircraftPhotoMeta"
+                                data-mode-s="@(Model.Aircraft?.ModeS?.ToUpperInvariant() ?? string.Empty)"
+                                data-registration="@(Model.Aircraft?.Registration?.ToUpperInvariant() ?? string.Empty)"
+                                style="width: 220px; background: var(--rz-surface); border-radius: 8px; padding: 0.8rem; text-align: center; border: 1px solid rgba(0,0,0,0.05);">
+                            <div id="photoLoader">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <div class="mt-2" style="font-size: 0.75rem; color: var(--rz-text-secondary);">Photo...</div>
+                            </div>
+                            <div id="photoContent" style="display: none;">
+                                <a id="photoLink" href="#" target="_blank" rel="noopener noreferrer" style="display: inline-block;">
+                                    <img id="aircraftImage" src="" alt="Aircraft" style="max-width: 100%; height: auto; max-height: 160px; border-radius: 6px; margin-bottom: 0.5rem;" />
+                                </a>
+                                <div id="photoCredit" style="font-size: 0.65rem; color: var(--rz-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+                                <div id="photoSource" style="font-size: 0.6rem; color: var(--rz-text-secondary);">
+                                    <a id="photoSourceLink" href="#" target="_blank" rel="noopener noreferrer">Source: airport-data.com</a>
+                                </div>
+                            </div>
+                            <div id="photoError" style="display: none;">
+                                <span class="material-icons" style="font-size: 1.5rem; color: var(--rz-text-secondary);">image_not_supported</span>
+                                <div style="font-size: 0.7rem; color: var(--rz-text-secondary); margin-top: 0.25rem;">No photo</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <a class="btn btn-primary w-100" href="@Url.Action("Edit", "UserFlights", new { id = Model.Id })">Edit</a>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row g-2 mt-3">
+        <div class="col-12 col-sm-auto">
+            <a class="btn btn-primary" href="@Url.Action("Edit", "UserFlights", new { id = Model.Id })" style="width: 100%;">
+                <span class="material-icons" style="vertical-align: middle; margin-right: 0.5rem;">edit</span>
+                Edit Flight
+            </a>
+        </div>
+        <div class="col-12 col-sm-auto">
+            <a class="btn btn-outline-secondary" href="@Url.Action("Index", "UserFlights")" style="width: 100%;">
+                <span class="material-icons" style="vertical-align: middle; margin-right: 0.5rem;">arrow_back</span>
+                Back to Flights
+            </a>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            const meta = document.getElementById('aircraftPhotoMeta');
+            const modeSCode = (meta?.dataset.modeS ?? '').trim();
+            const registration = (meta?.dataset.registration ?? '').trim();
+
+            if (!modeSCode && !registration) {
+                showPhotoError();
+                return;
+            }
+
+            try {
+                const queryParams = new URLSearchParams();
+                if (modeSCode) queryParams.append('modeSCode', modeSCode);
+                if (registration) queryParams.append('registration', registration);
+                queryParams.append('maxResults', '1');
+
+                const response = await fetch(`/api/aircraft-photos?${queryParams.toString()}`);
+                
+                if (!response.ok) {
+                    showPhotoError();
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.isSuccess && data.data && data.data.length > 0) {
+                    const photo = data.data[0];
+                    showPhotoContent(photo);
+                } else {
+                    showPhotoError();
+                }
+            } catch (error) {
+                console.error('Failed to fetch aircraft photo:', error);
+                showPhotoError();
+            }
+        });
+
+        function showPhotoContent(photo) {
+            document.getElementById('photoLoader').style.display = 'none';
+            document.getElementById('photoError').style.display = 'none';
+            document.getElementById('photoContent').style.display = 'block';
+
+            document.getElementById('aircraftImage').src = photo.image;
+            document.getElementById('aircraftImage').alt = 'Aircraft photo';
+            const link = photo.link || '#';
+            document.getElementById('photoLink').href = link;
+            document.getElementById('photoSourceLink').href = link;
+            const photographer = photo.photographer || 'Unknown';
+            document.getElementById('photoCredit').textContent = `Photo by ${photographer}`;
+        }
+
+        function showPhotoError() {
+            document.getElementById('photoLoader').style.display = 'none';
+            document.getElementById('photoContent').style.display = 'none';
+            document.getElementById('photoError').style.display = 'block';
+        }
+    </script>
+}

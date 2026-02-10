@@ -21,4 +21,8 @@ public class EditUserFlightViewModel
     public string? ArrivalAirportCode { get; set; }
     public DateTime DepartureTimeUtc { get; set; }
     public DateTime ArrivalTimeUtc { get; set; }
+
+    // Aircraft fields
+    public string? AircraftRegistration { get; set; }
+    public string? OperatingAirlineCode { get; set; }
 }

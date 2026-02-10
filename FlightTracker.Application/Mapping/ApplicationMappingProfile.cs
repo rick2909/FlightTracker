@@ -1,6 +1,8 @@
+using System;
 using AutoMapper;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Domain.Entities;
+using FlightTracker.Domain.Enums;
 
 namespace FlightTracker.Application.Mapping;
 
@@ -11,8 +13,6 @@ public class ApplicationMappingProfile : Profile
 {
     public ApplicationMappingProfile()
     {
-        CreateMap<Flight, FlightDto>();
-        CreateMap<Flight, FlightDetailDto>();
         CreateMap<Airport, AirportDto>();
         CreateMap<Aircraft, AircraftDto>();
     }

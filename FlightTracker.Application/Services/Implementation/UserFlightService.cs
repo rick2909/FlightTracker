@@ -1,3 +1,5 @@
+using AutoMapper;
+using System.Net.Http;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Dtos.Validation;
 using FlightTracker.Application.Services.Interfaces;
@@ -5,6 +7,7 @@ using FlightTracker.Domain.Entities;
 using FlightTracker.Domain.Enums;
 using FlightTracker.Application.Repositories.Interfaces;
 using FluentValidation;
+using System.Diagnostics;
 
 namespace FlightTracker.Application.Services.Implementation;
 
@@ -19,21 +22,30 @@ public class UserFlightService : IUserFlightService
     private readonly IFlightService _flightService;
     private readonly IFlightMetadataProvisionService _metadataProvisionService;
     private readonly IAirlineRepository _airlineRepository;
+    private readonly IAircraftRepository _aircraftRepository;
+    private readonly IAircraftLookupClient _aircraftLookupClient;
+    private readonly IMapper _mapper;
 
     public UserFlightService(
-    IUserFlightRepository userFlightRepository,
-    IFlightRepository flightRepository,
-    IAirportService airportService,
-    IFlightService flightService,
-    IFlightMetadataProvisionService metadataProvisionService,
-    IAirlineRepository airlineRepository)
+        IUserFlightRepository userFlightRepository,
+        IFlightRepository flightRepository,
+        IAirportService airportService,
+        IFlightService flightService,
+        IFlightMetadataProvisionService metadataProvisionService,
+        IAirlineRepository airlineRepository,
+        IAircraftRepository aircraftRepository,
+        IAircraftLookupClient aircraftLookupClient,
+        IMapper mapper)
     {
         _userFlightRepository = userFlightRepository;
         _flightRepository = flightRepository;
         _airportService = airportService;
         _flightService = flightService;
-    _metadataProvisionService = metadataProvisionService;
-    _airlineRepository = airlineRepository;
+        _metadataProvisionService = metadataProvisionService;
+        _airlineRepository = airlineRepository;
+        _aircraftRepository = aircraftRepository;
+        _aircraftLookupClient = aircraftLookupClient;
+        _mapper = mapper;
     }
 
     public async Task<IEnumerable<UserFlightDto>> GetUserFlightsAsync(int userId, CancellationToken cancellationToken = default)
@@ -219,20 +231,6 @@ public class UserFlightService : IUserFlightService
 
     private async Task<UserFlightDto> MapToDtoAsync(UserFlight userFlight, CancellationToken cancellationToken = default)
     {
-        // get aircraft details from flight.
-        var aircraft = userFlight.Flight?.Aircraft != null
-            ? new AircraftDto
-            {
-                Id = userFlight.Flight.Aircraft.Id,
-                Registration = userFlight.Flight.Aircraft.Registration,
-                Manufacturer = userFlight.Flight.Aircraft.Manufacturer,
-                Model = userFlight.Flight.Aircraft.Model,
-                YearManufactured = userFlight.Flight.Aircraft.YearManufactured,
-                IcaoTypeCode = userFlight.Flight.Aircraft.IcaoTypeCode,
-                Notes = userFlight.Flight.Aircraft.Notes
-            }
-            : null;
-
         // Resolve time zones via airport codes if available
         var depCode = userFlight.Flight?.DepartureAirport?.IataCode ?? userFlight.Flight?.DepartureAirport?.IcaoCode;
         var arrCode = userFlight.Flight?.ArrivalAirport?.IataCode ?? userFlight.Flight?.ArrivalAirport?.IcaoCode;
@@ -243,38 +241,11 @@ public class UserFlightService : IUserFlightService
             ? await _airportService.GetTimeZoneIdByAirportCodeAsync(arrCode, cancellationToken)
             : null;
 
-        return new UserFlightDto
+        return _mapper.Map<UserFlightDto>(userFlight, opt =>
         {
-            Id = userFlight.Id,
-            UserId = userFlight.UserId,
-            FlightId = userFlight.FlightId,
-            FlightClass = userFlight.FlightClass,
-            SeatNumber = userFlight.SeatNumber,
-            BookedOnUtc = userFlight.BookedOnUtc,
-            Notes = userFlight.Notes,
-            DidFly = userFlight.DidFly,
-            FlightNumber = userFlight.Flight?.FlightNumber ?? string.Empty,
-            FlightStatus = userFlight.Flight?.Status ?? FlightStatus.Scheduled,
-            DepartureTimeUtc = userFlight.Flight?.DepartureTimeUtc ?? DateTime.MinValue,
-            ArrivalTimeUtc = userFlight.Flight?.ArrivalTimeUtc ?? DateTime.MinValue,
-            OperatingAirlineId = userFlight.Flight?.OperatingAirlineId,
-            OperatingAirlineIcaoCode = userFlight.Flight?.OperatingAirline?.IcaoCode,
-            OperatingAirlineIataCode = userFlight.Flight?.OperatingAirline?.IataCode,
-            OperatingAirlineName = userFlight.Flight?.OperatingAirline?.Name,
-            DepartureAirportCode = userFlight.Flight?.DepartureAirport?.IataCode ?? userFlight.Flight?.DepartureAirport?.IcaoCode ?? string.Empty,
-            DepartureIataCode = userFlight.Flight?.DepartureAirport?.IataCode,
-            DepartureIcaoCode = userFlight.Flight?.DepartureAirport?.IcaoCode,
-            DepartureAirportName = userFlight.Flight?.DepartureAirport?.Name ?? string.Empty,
-            DepartureCity = userFlight.Flight?.DepartureAirport?.City ?? string.Empty,
-            ArrivalAirportCode = userFlight.Flight?.ArrivalAirport?.IataCode ?? userFlight.Flight?.ArrivalAirport?.IcaoCode ?? string.Empty,
-            ArrivalIataCode = userFlight.Flight?.ArrivalAirport?.IataCode,
-            ArrivalIcaoCode = userFlight.Flight?.ArrivalAirport?.IcaoCode,
-            ArrivalAirportName = userFlight.Flight?.ArrivalAirport?.Name ?? string.Empty,
-            ArrivalCity = userFlight.Flight?.ArrivalAirport?.City ?? string.Empty,
-            DepartureTimeZoneId = depTz,
-            ArrivalTimeZoneId = arrTz,
-            Aircraft = aircraft
-        };
+            opt.Items["DepartureTimeZoneId"] = depTz;
+            opt.Items["ArrivalTimeZoneId"] = arrTz;
+        });
     }
 
     private async Task<Flight> CreateFlightFromDtoAsync(CreateUserFlightDto dto, CancellationToken cancellationToken)
@@ -295,9 +266,15 @@ public class UserFlightService : IUserFlightService
         {
             await _metadataProvisionService.EnsureAirlineAndAirportsForCallsignAsync(dto.FlightNumber!, cancellationToken);
         }
-        catch
+        catch (HttpRequestException)
         {
             // Non-fatal; continue with local lookup
+            Debug.WriteLine("External API call failed during flight creation. Proceeding with local data only.");
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Non-fatal timeout; continue with local lookup
+            Debug.WriteLine("External API call timed out during flight creation. Proceeding with local data only.");
         }
 
         var depId = await ResolveAirportIdOrThrowAsync(dto.DepartureAirportCode!, cancellationToken);
@@ -313,18 +290,41 @@ public class UserFlightService : IUserFlightService
             ArrivalTimeUtc = dto.ArrivalTimeUtc!.Value
         };
 
-        // Try to assign operating airline from prefix (IATA/ICAO) after provisioning
-        try
+        // Resolve operating airline from code or flight number prefix
+        var airlineCode = dto.OperatingAirlineCode;
+        if (string.IsNullOrWhiteSpace(airlineCode))
         {
+            // Try to extract from flight number
             var prefix = new string(dto.FlightNumber!.TakeWhile(char.IsLetter).ToArray()).ToUpperInvariant();
             if (!string.IsNullOrWhiteSpace(prefix))
             {
-                var al = await _airlineRepository.GetByIataAsync(prefix, cancellationToken)
-                         ?? await _airlineRepository.GetByIcaoAsync(prefix, cancellationToken);
-                if (al is not null) flight.OperatingAirlineId = al.Id;
+                airlineCode = prefix;
             }
         }
-        catch { /* optional */ }
+
+        if (!string.IsNullOrWhiteSpace(airlineCode))
+        {
+            var al = await _airlineRepository.GetByIataAsync(airlineCode, cancellationToken)
+                     ?? await _airlineRepository.GetByIcaoAsync(airlineCode, cancellationToken);
+            if (al is not null)
+            {
+                flight.OperatingAirlineId = al.Id;
+            }
+        }
+
+        // Handle aircraft registration
+        if (!string.IsNullOrWhiteSpace(dto.AircraftRegistration))
+        {
+            var aircraft = await ResolveOrCreateAircraftAsync(
+                dto.AircraftRegistration,
+                flight.OperatingAirlineId,
+                cancellationToken);
+            
+            if (aircraft is not null)
+            {
+                flight.AircraftId = aircraft.Id;
+            }
+        }
 
         return await _flightService.AddFlightAsync(flight, cancellationToken);
     }
@@ -341,6 +341,41 @@ public class UserFlightService : IUserFlightService
         flight.ArrivalAirportId = arrId;
         flight.DepartureTimeUtc = schedule.DepartureTimeUtc;
         flight.ArrivalTimeUtc = schedule.ArrivalTimeUtc;
+
+        // Resolve operating airline from code or flight number prefix
+        var airlineCode = schedule.OperatingAirlineCode;
+        if (string.IsNullOrWhiteSpace(airlineCode))
+        {
+            var prefix = new string(schedule.FlightNumber.TakeWhile(char.IsLetter).ToArray()).ToUpperInvariant();
+            if (!string.IsNullOrWhiteSpace(prefix))
+            {
+                airlineCode = prefix;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(airlineCode))
+        {
+            var al = await _airlineRepository.GetByIataAsync(airlineCode, cancellationToken)
+                     ?? await _airlineRepository.GetByIcaoAsync(airlineCode, cancellationToken);
+            flight.OperatingAirlineId = al?.Id;
+        }
+
+        // Handle aircraft registration
+        if (!string.IsNullOrWhiteSpace(schedule.AircraftRegistration))
+        {
+            var aircraft = await ResolveOrCreateAircraftAsync(
+                schedule.AircraftRegistration,
+                flight.OperatingAirlineId,
+                cancellationToken);
+            
+            flight.AircraftId = aircraft?.Id;
+        }
+        else
+        {
+            // Clear aircraft if registration is empty
+            flight.AircraftId = null;
+        }
+
         await _flightService.UpdateFlightAsync(flight, cancellationToken);
     }
 
@@ -360,5 +395,124 @@ public class UserFlightService : IUserFlightService
             throw new ArgumentException("Invalid airport code(s) provided.");
         }
         return airport.Id;
+    }
+
+    /// <summary>
+    /// Resolves an aircraft by registration. If not found, creates a minimal aircraft record.
+    /// </summary>
+    private async Task<Aircraft?> ResolveOrCreateAircraftAsync(
+        string registration,
+        int? airlineId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(registration))
+        {
+            return null;
+        }
+
+        var normalized = NormalizeRegistration(registration);
+        if (normalized is null)
+        {
+            return null;
+        }
+        
+        // Check if aircraft already exists
+        var existing = await _aircraftRepository.GetByRegistrationAsync(normalized, cancellationToken);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        // Try to fetch from AdsBdb to enrich data
+        AircraftEnrichmentDto? adsbData = null;
+        try
+        {
+            adsbData = await _aircraftLookupClient.GetAircraftAsync(normalized, cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            // Non-fatal; continue with minimal data
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Non-fatal timeout; continue with minimal data
+        }
+
+        // Create new aircraft with data from AdsBdb or defaults
+        var model = TruncateOrDefault(adsbData?.Type, 64, "Unknown");
+        var icaoType = TruncateOrNull(adsbData?.IcaoType, 4)?.ToUpperInvariant();
+        var modeS = TruncateOrNull(adsbData?.ModeS, 6)?.ToUpperInvariant();
+        var notes = adsbData is not null
+            ? TruncateOrNull($"Owner: {adsbData.RegisteredOwner}, Country: {adsbData.RegisteredOwnerCountry}", 500)
+            : null;
+
+        var newAircraft = new Aircraft
+        {
+            Registration = normalized,
+            Manufacturer = ParseManufacturer(adsbData?.Manufacturer),
+            Model = model,
+            IcaoTypeCode = icaoType,
+            ModeS = modeS,
+            Notes = notes,
+            AirlineId = airlineId
+        };
+
+        return await _aircraftRepository.AddAsync(newAircraft, cancellationToken);
+    }
+
+    /// <summary>
+    /// Parses manufacturer name from string to enum. Returns Other if not recognized.
+    /// </summary>
+    private static AircraftManufacturer ParseManufacturer(string? manufacturerName)
+    {
+        if (string.IsNullOrWhiteSpace(manufacturerName))
+            return AircraftManufacturer.Other;
+
+        var upper = manufacturerName.ToUpperInvariant();
+
+        return upper switch
+        {
+            _ when upper.Contains("BOEING") => AircraftManufacturer.Boeing,
+            _ when upper.Contains("AIRBUS") => AircraftManufacturer.Airbus,
+            _ when upper.Contains("EMBRAER") => AircraftManufacturer.Embraer,
+            _ when upper.Contains("BOMBARDIER") => AircraftManufacturer.Bombardier,
+            _ when upper.Contains("ATR") => AircraftManufacturer.ATR,
+            _ when upper.Contains("CESSNA") => AircraftManufacturer.Cessna,
+            _ when upper.Contains("GULFSTREAM") => AircraftManufacturer.Gulfstream,
+            _ when upper.Contains("DASSAULT") => AircraftManufacturer.Dassault,
+            _ when upper.Contains("LOCKHEED") => AircraftManufacturer.Lockheed,
+            _ when upper.Contains("MCDONNELL") => AircraftManufacturer.McDonnellDouglas,
+            _ when upper.Contains("SAAB") => AircraftManufacturer.Saab,
+            _ when upper.Contains("TUPOLEV") => AircraftManufacturer.Tupolev,
+            _ when upper.Contains("SUKHOI") => AircraftManufacturer.Sukhoi,
+            _ when upper.Contains("COMAC") => AircraftManufacturer.COMAC,
+            _ when upper.Contains("MITSUBISHI") => AircraftManufacturer.Mitsubishi,
+            _ => AircraftManufacturer.Other
+        };
+    }
+
+    private static string? NormalizeRegistration(string registration)
+    {
+        var normalized = registration.Trim().ToUpperInvariant();
+        return normalized.Length > 8 ? null : normalized;
+    }
+
+    private static string? TruncateOrNull(string? value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = value.Trim();
+        return trimmed.Length > maxLength
+            ? trimmed.Substring(0, maxLength)
+            : trimmed;
+    }
+
+    private static string TruncateOrDefault(string? value, int maxLength, string fallback)
+    {
+        var trimmed = TruncateOrNull(value, maxLength);
+        return string.IsNullOrWhiteSpace(trimmed) ? fallback : trimmed;
     }
 }

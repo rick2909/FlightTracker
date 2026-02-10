@@ -21,4 +21,17 @@ public record CreateUserFlightDto
     public string? ArrivalAirportCode { get; init; }
     public DateTime? DepartureTimeUtc { get; init; }
     public DateTime? ArrivalTimeUtc { get; init; }
+
+    // Aircraft fields
+    /// <summary>
+    /// Aircraft registration (tail number). If provided and exists, fills all aircraft details and links to flight.
+    /// If provided but doesn't exist, creates a new aircraft record.
+    /// </summary>
+    public string? AircraftRegistration { get; init; }
+
+    /// <summary>
+    /// Optional operating airline IATA or ICAO code. Auto-filled from flight number if not provided.
+    /// Can be manually overridden.
+    /// </summary>
+    public string? OperatingAirlineCode { get; init; }
 }

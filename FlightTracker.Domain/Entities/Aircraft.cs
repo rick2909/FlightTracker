@@ -41,6 +41,11 @@ public class Aircraft
     public string? IcaoTypeCode { get; set; }
 
     /// <summary>
+    /// Mode S transponder code (hex), e.g., "402837". Used for aircraft lookups.
+    /// </summary>
+    public string? ModeS { get; set; }
+
+    /// <summary>
     /// Optional notes about this specific aircraft.
     /// </summary>
     public string? Notes { get; set; }

@@ -1,9 +1,6 @@
-using System.Threading;
-using System.Threading.Tasks;
-// using already present above
+using AutoMapper;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Web.Models;
-using FlightTracker.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 
 using FlightTracker.Application.Services.Interfaces;
@@ -11,7 +8,12 @@ using FlightTracker.Domain.Enums;
 
 namespace FlightTracker.Web.Controllers.Web;
 
-public class UserFlightsController(IUserFlightService userFlightService, IFlightService flightService, IFlightLookupService flightLookupService) : Controller
+public class UserFlightsController(
+    IUserFlightService userFlightService,
+    IFlightService flightService,
+    IFlightLookupService flightLookupService,
+    IAircraftPhotoService aircraftPhotoService,
+    IMapper mapper) : Controller
 {
     private const int DemoUserId = 1; // TODO: Replace with actual auth user id when wired
 
@@ -61,7 +63,7 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
         {
             return NotFound();
         }
-    var vm = MapToEditViewModel(dto);
+        var vm = mapper.Map<EditUserFlightViewModel>(dto);
         return View(vm);
     }
 
@@ -78,29 +80,18 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
                 return NotFound();
             }
             // map back into vm
-            var vm = MapToEditViewModel(current);
+            var vm = mapper.Map<EditUserFlightViewModel>(current);
             return View(vm);
         }
         try
         {
+            var userFlightDto = mapper.Map<UpdateUserFlightDto>(form);
+            var scheduleDto = mapper.Map<FlightScheduleUpdateDto>(form);
+
             var updated = await userFlightService.UpdateUserFlightAndScheduleAsync(
                 id,
-                new UpdateUserFlightDto
-                {
-                    FlightClass = form.FlightClass,
-                    SeatNumber = form.SeatNumber,
-                    Notes = form.Notes,
-                    DidFly = form.DidFly
-                },
-                new FlightScheduleUpdateDto
-                {
-                    FlightId = form.FlightId,
-                    FlightNumber = form.FlightNumber,
-                    DepartureAirportCode = form.DepartureAirportCode ?? string.Empty,
-                    ArrivalAirportCode = form.ArrivalAirportCode ?? string.Empty,
-                    DepartureTimeUtc = form.DepartureTimeUtc,
-                    ArrivalTimeUtc = form.ArrivalTimeUtc
-                },
+                userFlightDto,
+                scheduleDto,
                 cancellationToken);
             if (updated == null)
             {
@@ -135,27 +126,22 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
             return NotFound(new { status = "not_found", message = "User flight not found." });
         }
 
-    // Try lookup based on flight number and departure date
+        // Try lookup based on flight number and departure date
         var date = DateOnly.FromDateTime(dto.DepartureTimeUtc);
         var candidate = await flightLookupService.ResolveFlightAsync(dto.FlightNumber, date, cancellationToken);
 
-    if (candidate is null)
-        {
+        if (candidate is null)
             return NotFound(new { status = "not_found", message = "No flight found via lookup." });
-        }
 
         var currentFlight = await flightService.GetFlightByIdAsync(dto.FlightId, cancellationToken);
-    if (currentFlight is null)
-        {
+
+        if (currentFlight is null)
             return NotFound(new { status = "not_found", message = "Current flight not found." });
-        }
 
-    var noChanges = currentFlight.HasSameScheduleAndRoute(candidate);
+        var noChanges = currentFlight.HasSameScheduleAndRoute(candidate);
 
-    if (noChanges)
-        {
+        if (noChanges)
             return Ok(new { status = "no_changes", message = "No changes found." });
-        }
 
         // Return minimal delta payload for now (no DB update yet)
         var depCode = candidate.DepartureAirport?.IataCode ?? candidate.DepartureAirport?.IcaoCode;
@@ -174,6 +160,34 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
                 arrivalAirportCode = arrCode
             }
         });
+    }
+
+    /// <summary>
+    /// API endpoint to fetch aircraft photos via the backend service (avoids CORS issues).
+    /// </summary>
+    [HttpGet("/api/aircraft-photos")]
+    public async Task<IActionResult> GetAircraftPhoto(string? modeSCode, string? registration, int maxResults = 1, CancellationToken cancellationToken = default)
+    {
+        const int MinResults = 1;
+        const int MaxResults = 5;
+
+        if (string.IsNullOrWhiteSpace(modeSCode) && string.IsNullOrWhiteSpace(registration))
+        {
+            return BadRequest(new { error = "Either modeSCode or registration must be provided" });
+        }
+
+        if (maxResults < MinResults || maxResults > MaxResults)
+        {
+            return BadRequest(new { error = $"maxResults must be between {MinResults} and {MaxResults}." });
+        }
+
+        var result = await aircraftPhotoService.GetAircraftPhotosAsync(modeSCode, registration, maxResults, cancellationToken);
+        if (result == null)
+        {
+            return NotFound(new { error = "No photos found" });
+        }
+
+        return Ok(result);
     }
 
     private static int GetEffectiveUserId(int? requestedUserId)
@@ -235,23 +249,5 @@ public class UserFlightsController(IUserFlightService userFlightService, IFlight
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
-    }
-
-    private static EditUserFlightViewModel MapToEditViewModel(UserFlightDto dto)
-    {
-        return new EditUserFlightViewModel
-        {
-            UserFlightId = dto.Id,
-            FlightId = dto.FlightId,
-            FlightClass = dto.FlightClass,
-            SeatNumber = dto.SeatNumber,
-            DidFly = dto.DidFly,
-            Notes = dto.Notes,
-            FlightNumber = dto.FlightNumber,
-            DepartureAirportCode = dto.DepartureIataCode ?? dto.DepartureIcaoCode ?? dto.DepartureAirportCode,
-            ArrivalAirportCode = dto.ArrivalIataCode ?? dto.ArrivalIcaoCode ?? dto.ArrivalAirportCode,
-            DepartureTimeUtc = dto.DepartureTimeUtc,
-            ArrivalTimeUtc = dto.ArrivalTimeUtc
-        };
     }
 }

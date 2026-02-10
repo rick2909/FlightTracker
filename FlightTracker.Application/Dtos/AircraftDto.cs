@@ -14,6 +14,7 @@ public record AircraftDto
     public int? YearManufactured { get; init; }
     public int? PassengerCapacity { get; init; }
     public string? IcaoTypeCode { get; init; }
+    public string? ModeS { get; init; }
     public string? Notes { get; init; }
     public int? AirlineId { get; init; }
     public string? AirlineIcaoCode { get; init; }

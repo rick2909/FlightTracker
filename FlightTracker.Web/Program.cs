@@ -80,17 +80,39 @@ builder.Services.AddHttpClient<IAirportLiveService, FlightTracker.Infrastructure
 );
 
 // ADSBdb route lookup and metadata provisioner
-builder.Services.AddHttpClient<IFlightRouteLookupClient, AdsBdbClient>(c =>
+builder.Services.AddHttpClient<AdsBdbClient>(c =>
 {
     c.Timeout = TimeSpan.FromSeconds(6);
 });
+builder.Services.AddScoped<IFlightRouteLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
+builder.Services.AddScoped<IAircraftLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
 builder.Services.AddScoped<IFlightMetadataProvisionService, FlightMetadataProvisionService>();
 
 // External provider(s)
-builder.Services.AddScoped<IFlightDataProvider, FlightTracker.Infrastructure.External.OpenSkyClient>();
+builder.Services.AddScoped<IFlightDataProvider, OpenSkyClient>();
+
+// Aircraft photo service for airport-data.com API
+builder.Services.AddHttpClient<IAircraftPhotoService, AircraftPhotoService>(c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(5);
+})
+.AddPolicyHandler(
+    Policy<HttpResponseMessage>
+        .Handle<HttpRequestException>()
+        .OrResult(r => (int)r.StatusCode is >= 500 or 429)
+        .WaitAndRetryAsync(
+            Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(100), 2),
+            onRetry: (outcome, delay, attempt, ctx) => { }
+        )
+);
 
 // AutoMapper
-builder.Services.AddAutoMapper(typeof(ApplicationMappingProfile));
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<ApplicationMappingProfile>();
+    cfg.AddProfile<FlightProfile>();
+    cfg.AddProfile<FlightTracker.Web.Mapping.WebMappingProfile>();
+});
 
 // Identity (basic, for seeding users)
 builder.Services
