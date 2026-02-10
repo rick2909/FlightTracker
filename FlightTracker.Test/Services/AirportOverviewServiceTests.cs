@@ -32,19 +32,27 @@ public class AirportOverviewServiceTests
     [Fact]
     public async Task GetFlightsAsync_DefaultsLimit_WhenNonPositive()
     {
+        var now = new DateTime(2025, 01, 01, 10, 00, 00, DateTimeKind.Utc);
+        var departing = Enumerable.Range(1, 120)
+            .Select(i => new Flight { Id = i, FlightNumber = $"FT{i}", DepartureTimeUtc = now.AddMinutes(i) })
+            .ToList();
+        var arriving = Enumerable.Range(1, 120)
+            .Select(i => new Flight { Id = i + 200, FlightNumber = $"AR{i}", DepartureTimeUtc = now.AddMinutes(i) })
+            .ToList();
+
         var repo = new Mock<IFlightRepository>();
         repo.Setup(r => r.SearchByRouteAsync("JFK", null, It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Flight>());
+            .ReturnsAsync(departing);
         repo.Setup(r => r.SearchByRouteAsync(null, "JFK", It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Flight>());
+            .ReturnsAsync(arriving);
 
         var live = new Mock<IAirportLiveService>();
         var service = new AirportOverviewService(repo.Object, live.Object);
 
         var result = await service.GetFlightsAsync("JFK", null, live: false, limit: 0);
 
-        Assert.Empty(result.Departing);
-        Assert.Empty(result.Arriving);
+        Assert.Equal(100, result.Departing.Count());
+        Assert.Equal(100, result.Arriving.Count());
     }
 
     [Fact]
