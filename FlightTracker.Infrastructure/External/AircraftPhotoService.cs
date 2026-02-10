@@ -131,6 +131,15 @@ public class AircraftPhotoService : IAircraftPhotoService
             registration = Uri.EscapeDataString(registration.Trim());
         }
 
+        if (maxResults <= 0)
+        {
+            maxResults = 1;
+        }
+        else if (maxResults > 5)
+        {
+            maxResults = 5;
+        }
+
         // Build URL according to API preference order
         if (!string.IsNullOrWhiteSpace(modeSCode) && !string.IsNullOrWhiteSpace(registration))
         {

@@ -126,7 +126,7 @@ public class UserFlightsController(
             return NotFound(new { status = "not_found", message = "User flight not found." });
         }
 
-    // Try lookup based on flight number and departure date
+        // Try lookup based on flight number and departure date
         var date = DateOnly.FromDateTime(dto.DepartureTimeUtc);
         var candidate = await flightLookupService.ResolveFlightAsync(dto.FlightNumber, date, cancellationToken);
 
