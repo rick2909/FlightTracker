@@ -13,6 +13,27 @@ namespace FlightTracker.Test.Services;
 public class FlightLookupServiceTests
 {
     [Fact]
+    public async Task ResolveFlightAsync_TrimsAndUppercasesFlightNumber()
+    {
+        const string normalized = "FT300";
+        var date = new DateOnly(2025, 01, 01);
+        var flight = new Flight { Id = 30, FlightNumber = normalized };
+
+        var repo = new Mock<IFlightRepository>();
+        repo.Setup(r => r.GetByFlightNumberAndDateAsync(normalized, date, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(flight);
+
+        var provider = new Mock<IFlightDataProvider>();
+        var service = new FlightLookupService(repo.Object, provider.Object);
+
+        var result = await service.ResolveFlightAsync("  ft300 ", date);
+
+        Assert.Same(flight, result);
+        repo.Verify(r => r.GetByFlightNumberAndDateAsync(normalized, date, It.IsAny<CancellationToken>()), Times.Once);
+        provider.Verify(p => p.GetFlightByNumberAsync(It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task ResolveFlightAsync_ReturnsLocal_WhenFound()
     {
         const string flightNumber = "FT100";

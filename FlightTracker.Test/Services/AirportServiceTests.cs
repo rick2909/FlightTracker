@@ -12,6 +12,49 @@ namespace FlightTracker.Test.Services;
 public class AirportServiceTests
 {
     [Fact]
+    public async Task GetTimeZoneIdByAirportCodeAsync_ReturnsNull_WhenAirportMissing()
+    {
+        var repo = new Mock<IAirportRepository>();
+        repo.Setup(r => r.GetByCodeAsync("XXX", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Airport?)null);
+
+        var timeApi = new Mock<ITimeApiService>();
+        var service = new AirportService(repo.Object, timeApi.Object);
+
+        var result = await service.GetTimeZoneIdByAirportCodeAsync("XXX");
+
+        Assert.Null(result);
+        timeApi.Verify(t => t.GetTimeZoneIdAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<CancellationToken>()), Times.Never);
+        repo.Verify(r => r.UpdateAsync(It.IsAny<Airport>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetTimeZoneIdByAirportCodeAsync_DoesNotCallTimeApi_WhenCoordinatesMissing()
+    {
+        var airport = new Airport
+        {
+            Id = 4,
+            IataCode = "ORD",
+            Latitude = null,
+            Longitude = null,
+            TimeZoneId = null
+        };
+
+        var repo = new Mock<IAirportRepository>();
+        repo.Setup(r => r.GetByCodeAsync("ORD", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(airport);
+
+        var timeApi = new Mock<ITimeApiService>();
+        var service = new AirportService(repo.Object, timeApi.Object);
+
+        var result = await service.GetTimeZoneIdByAirportCodeAsync("ORD");
+
+        Assert.Null(result);
+        timeApi.Verify(t => t.GetTimeZoneIdAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<CancellationToken>()), Times.Never);
+        repo.Verify(r => r.UpdateAsync(It.IsAny<Airport>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task GetTimeZoneIdByAirportCodeAsync_ReturnsExistingTimeZone()
     {
         var airport = new Airport

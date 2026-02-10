@@ -212,6 +212,38 @@ public class UserFlightServiceTests
         Assert.Equal(0, stats.TotalTravelTimeInMinutes);
     }
 
+    [Fact]
+    public async Task GetUserFlightStatsAsync_HandlesMissingFlightData()
+    {
+        var flights = new List<UserFlight>
+        {
+            new() { DidFly = true, FlightClass = FlightClass.Economy, Flight = null },
+            new()
+            {
+                DidFly = true,
+                FlightClass = FlightClass.Business,
+                Flight = new Flight
+                {
+                    DepartureAirport = null,
+                    ArrivalAirport = null
+                }
+            }
+        };
+
+        var repo = new Mock<IUserFlightRepository>();
+        repo.Setup(r => r.GetUserFlightsAsync(9, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(flights);
+
+        var service = CreateService(repo.Object);
+
+        var stats = await service.GetUserFlightStatsAsync(9);
+
+        Assert.Equal(2, stats.TotalFlights);
+        Assert.Equal(0, stats.UniqueAirports);
+        Assert.Equal(0, stats.UniqueCountries);
+        Assert.Equal(0, stats.TotalTravelTimeInMinutes);
+    }
+
     private static UserFlightService CreateService(IUserFlightRepository userFlightRepository)
     {
         return new UserFlightService(

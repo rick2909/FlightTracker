@@ -16,6 +16,122 @@ namespace FlightTracker.Test.Services;
 public class AirportOverviewServiceTests
 {
     [Fact]
+    public async Task GetFlightsAsync_ReturnsEmpty_WhenCodeMissing()
+    {
+        var repo = new Mock<IFlightRepository>();
+        var live = new Mock<IAirportLiveService>();
+        var service = new AirportOverviewService(repo.Object, live.Object);
+
+        var result = await service.GetFlightsAsync(" ", null, live: false, limit: 10);
+
+        Assert.Empty(result.Departing);
+        Assert.Empty(result.Arriving);
+        repo.Verify(r => r.SearchByRouteAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetFlightsAsync_DefaultsLimit_WhenNonPositive()
+    {
+        var repo = new Mock<IFlightRepository>();
+        repo.Setup(r => r.SearchByRouteAsync("JFK", null, It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Flight>());
+        repo.Setup(r => r.SearchByRouteAsync(null, "JFK", It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Flight>());
+
+        var live = new Mock<IAirportLiveService>();
+        var service = new AirportOverviewService(repo.Object, live.Object);
+
+        var result = await service.GetFlightsAsync("JFK", null, live: false, limit: 0);
+
+        Assert.Empty(result.Departing);
+        Assert.Empty(result.Arriving);
+    }
+
+    [Fact]
+    public async Task GetFlightsAsync_ReturnsArrivingOnly_WhenDirArrivingAndLiveTrue()
+    {
+        var now = new DateTime(2025, 01, 01, 10, 00, 00, DateTimeKind.Utc);
+        var liveArriving = new List<LiveFlightDto>
+        {
+            new()
+            {
+                FlightNumber = "FT77",
+                DepartureIata = "LAX",
+                ArrivalIata = "JFK",
+                ArrivalScheduledUtc = now.AddHours(5)
+            }
+        };
+
+        var repo = new Mock<IFlightRepository>();
+        repo.Setup(r => r.SearchByRouteAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Flight>());
+
+        var live = new Mock<IAirportLiveService>();
+        live.Setup(l => l.GetDeparturesAsync("JFK", It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<LiveFlightDto>());
+        live.Setup(l => l.GetArrivalsAsync("JFK", It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(liveArriving);
+
+        var service = new AirportOverviewService(repo.Object, live.Object);
+
+        var result = await service.GetFlightsAsync("JFK", "arriving", live: true, limit: 10);
+
+        Assert.Empty(result.Departing);
+        Assert.Single(result.Arriving);
+        Assert.Equal("FT77", result.Arriving.First().FlightNumber);
+    }
+
+    [Fact]
+    public async Task GetFlightsAsync_DedupesIgnoringCaseAndWhitespace()
+    {
+        var now = new DateTime(2025, 01, 01, 10, 00, 00, DateTimeKind.Utc);
+        var dbDeparting = new List<Flight>
+        {
+            new()
+            {
+                Id = 20,
+                FlightNumber = "ft10",
+                DepartureTimeUtc = now,
+                ArrivalTimeUtc = now.AddHours(2),
+                DepartureAirport = new Airport { IataCode = "JFK" },
+                ArrivalAirport = new Airport { IataCode = "LAX" }
+            }
+        };
+
+        var liveDeparting = new List<LiveFlightDto>
+        {
+            new()
+            {
+                FlightNumber = " FT10 ",
+                DepartureIata = " jfk ",
+                ArrivalIata = " lax ",
+                DepartureScheduledUtc = now.AddMinutes(10),
+                ArrivalScheduledUtc = now.AddHours(2)
+            }
+        };
+
+        var repo = new Mock<IFlightRepository>();
+        repo.Setup(r => r.SearchByRouteAsync("JFK", null, It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(dbDeparting);
+        repo.Setup(r => r.SearchByRouteAsync(null, "JFK", It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Flight>());
+
+        var live = new Mock<IAirportLiveService>();
+        live.Setup(l => l.GetDeparturesAsync("JFK", It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(liveDeparting);
+        live.Setup(l => l.GetArrivalsAsync("JFK", It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<LiveFlightDto>());
+
+        var service = new AirportOverviewService(repo.Object, live.Object);
+
+        var result = await service.GetFlightsAsync("JFK", "departing", live: true, limit: 10);
+
+        var items = result.Departing.ToList();
+        Assert.Single(items);
+        Assert.Equal(20, items[0].Id);
+    }
+
+    [Fact]
     public async Task GetFlightsAsync_ReturnsDepartingOnly_WhenDirDepartingAndLiveFalse()
     {
         var now = new DateTime(2025, 01, 01, 10, 00, 00, DateTimeKind.Utc);
