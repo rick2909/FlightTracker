@@ -13,13 +13,11 @@ public class DashboardController(
     ILogger<DashboardController> logger,
     IUserFlightService userFlightService,
     IFlightService flightService,
-IAirportService airportService,
 IMapFlightService mapFlightService) : Controller
 {
     private readonly ILogger<DashboardController> _logger = logger;
     private readonly IUserFlightService _userFlightService = userFlightService;
     private readonly IFlightService _flightService = flightService;
-    private readonly IAirportService _airportService = airportService;
     private readonly IMapFlightService _mapFlightService = mapFlightService;
 
     /// <summary>
