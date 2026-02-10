@@ -36,7 +36,7 @@ IMapFlightService mapFlightService) : Controller
 
             // Get user flight statistics
             var stats = await _userFlightService.GetUserFlightStatsAsync(userId);
-            
+
             // Get recent user flights (last 5)
             var recentFlights = (await _userFlightService.GetUserFlightsAsync(userId))
                 .Take(5)
@@ -61,7 +61,7 @@ IMapFlightService mapFlightService) : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading dashboard for user");
-            
+
             // Return view with empty data in case of error
             var emptyViewModel = new DashboardViewModel
             {

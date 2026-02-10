@@ -100,5 +100,5 @@ public class AircraftService : IAircraftService
         return await _aircraftRepository.RegistrationExistsAsync(registration, cancellationToken);
     }
 
-    
+
 }

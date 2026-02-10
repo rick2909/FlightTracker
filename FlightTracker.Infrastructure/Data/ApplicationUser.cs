@@ -11,7 +11,7 @@ namespace FlightTracker.Infrastructure.Data;
 public class ApplicationUser : IdentityUser<int>
 {
     // Additional profile properties (e.g., FirstName, LastName) can be added later.
-    
+
     /// <summary>
     /// Navigation property for user's flight experiences.
     /// </summary>

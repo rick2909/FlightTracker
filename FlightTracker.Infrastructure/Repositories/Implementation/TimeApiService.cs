@@ -25,8 +25,8 @@ public class TimeApiService : ITimeApiService
     public TimeApiService(HttpClient http)
     {
         _http = http;
-    // Keep external calls snappy; on timeout we return null and degrade gracefully
-    _http.Timeout = TimeSpan.FromSeconds(3);
+        // Keep external calls snappy; on timeout we return null and degrade gracefully
+        _http.Timeout = TimeSpan.FromSeconds(3);
     }
 
     public async Task<string?> GetTimeZoneIdAsync(double latitude, double longitude, CancellationToken cancellationToken = default)

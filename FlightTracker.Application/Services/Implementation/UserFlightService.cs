@@ -133,27 +133,27 @@ public class UserFlightService : IUserFlightService
         FlightScheduleUpdateDto schedule,
         CancellationToken cancellationToken = default)
     {
-    // Validate inputs
-    new UpdateUserFlightDtoValidator().ValidateAndThrow(userFlight);
-    new FlightScheduleUpdateDtoValidator().ValidateAndThrow(schedule);
-    var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
-    if (existingUserFlight == null) return null;
+        // Validate inputs
+        new UpdateUserFlightDtoValidator().ValidateAndThrow(userFlight);
+        new FlightScheduleUpdateDtoValidator().ValidateAndThrow(schedule);
+        var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
+        if (existingUserFlight == null) return null;
 
-    var flight = await _flightRepository.GetByIdAsync(schedule.FlightId, cancellationToken);
-    if (flight is null) return null;
+        var flight = await _flightRepository.GetByIdAsync(schedule.FlightId, cancellationToken);
+        if (flight is null) return null;
 
-    await UpdateFlightScheduleAsync(flight, schedule, cancellationToken);
+        await UpdateFlightScheduleAsync(flight, schedule, cancellationToken);
 
-    // Update user flight fields
-    existingUserFlight.FlightClass = userFlight.FlightClass;
-    existingUserFlight.SeatNumber = userFlight.SeatNumber;
-    existingUserFlight.Notes = userFlight.Notes;
-    existingUserFlight.DidFly = userFlight.DidFly;
-    var updatedUserFlight = await _userFlightRepository.UpdateAsync(existingUserFlight, cancellationToken);
+        // Update user flight fields
+        existingUserFlight.FlightClass = userFlight.FlightClass;
+        existingUserFlight.SeatNumber = userFlight.SeatNumber;
+        existingUserFlight.Notes = userFlight.Notes;
+        existingUserFlight.DidFly = userFlight.DidFly;
+        var updatedUserFlight = await _userFlightRepository.UpdateAsync(existingUserFlight, cancellationToken);
 
-    // Reload with navs
-    var reloaded = await _userFlightRepository.GetByIdAsync(updatedUserFlight.Id, cancellationToken);
-    return await MapToDtoAsync(reloaded!, cancellationToken);
+        // Reload with navs
+        var reloaded = await _userFlightRepository.GetByIdAsync(updatedUserFlight.Id, cancellationToken);
+        return await MapToDtoAsync(reloaded!, cancellationToken);
     }
 
     public async Task<bool> DeleteUserFlightAsync(int id, CancellationToken cancellationToken = default)
@@ -319,7 +319,7 @@ public class UserFlightService : IUserFlightService
                 dto.AircraftRegistration,
                 flight.OperatingAirlineId,
                 cancellationToken);
-            
+
             if (aircraft is not null)
             {
                 flight.AircraftId = aircraft.Id;
@@ -367,7 +367,7 @@ public class UserFlightService : IUserFlightService
                 schedule.AircraftRegistration,
                 flight.OperatingAirlineId,
                 cancellationToken);
-            
+
             flight.AircraftId = aircraft?.Id;
         }
         else
@@ -415,7 +415,7 @@ public class UserFlightService : IUserFlightService
         {
             return null;
         }
-        
+
         // Check if aircraft already exists
         var existing = await _aircraftRepository.GetByRegistrationAsync(normalized, cancellationToken);
         if (existing is not null)
