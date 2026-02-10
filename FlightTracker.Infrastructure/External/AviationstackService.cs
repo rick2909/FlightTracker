@@ -43,7 +43,7 @@ public class AviationstackService : IAirportLiveService
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(cancellationToken);
 
-        var json = await JsonSerializer.DeserializeAsync<AviationstackResponse>(stream, s_Json, cancellationToken) 
+        var json = await JsonSerializer.DeserializeAsync<AviationstackResponse>(stream, s_Json, cancellationToken)
                    ?? new AviationstackResponse();
 
         var list = new List<LiveFlightDto>(json.Data?.Count ?? 0);

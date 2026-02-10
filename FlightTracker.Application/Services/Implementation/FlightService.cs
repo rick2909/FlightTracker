@@ -29,15 +29,15 @@ public class FlightService : IFlightService
     public async Task<IReadOnlyList<Flight>> GetUpcomingFlightsAsync(DateTime fromUtc, TimeSpan? window = null, CancellationToken cancellationToken = default)
     {
         var allFlights = await _flightRepository.GetAllAsync(cancellationToken);
-        
+
         var query = allFlights.Where(f => f.DepartureTimeUtc >= fromUtc);
-        
+
         if (window.HasValue)
         {
             var endTime = fromUtc.Add(window.Value);
             query = query.Where(f => f.DepartureTimeUtc <= endTime);
         }
-        
+
         return query.OrderBy(f => f.DepartureTimeUtc).ToList();
     }
 

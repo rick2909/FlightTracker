@@ -13,13 +13,11 @@ public class DashboardController(
     ILogger<DashboardController> logger,
     IUserFlightService userFlightService,
     IFlightService flightService,
-IAirportService airportService,
 IMapFlightService mapFlightService) : Controller
 {
     private readonly ILogger<DashboardController> _logger = logger;
     private readonly IUserFlightService _userFlightService = userFlightService;
     private readonly IFlightService _flightService = flightService;
-    private readonly IAirportService _airportService = airportService;
     private readonly IMapFlightService _mapFlightService = mapFlightService;
 
     /// <summary>
@@ -36,7 +34,7 @@ IMapFlightService mapFlightService) : Controller
 
             // Get user flight statistics
             var stats = await _userFlightService.GetUserFlightStatsAsync(userId);
-            
+
             // Get recent user flights (last 5)
             var recentFlights = (await _userFlightService.GetUserFlightsAsync(userId))
                 .Take(5)
@@ -61,7 +59,7 @@ IMapFlightService mapFlightService) : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error loading dashboard for user");
-            
+
             // Return view with empty data in case of error
             var emptyViewModel = new DashboardViewModel
             {

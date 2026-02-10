@@ -12,9 +12,9 @@ public class FlightTrackerDbContextFactory : IDesignTimeDbContextFactory<FlightT
     public FlightTrackerDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<FlightTrackerDbContext>();
-        
-    // Use SQLite for design-time migrations to align with development
-    optionsBuilder.UseSqlite("Data Source=flighttracker.dev.db");
+
+        // Use SQLite for design-time migrations to align with development
+        optionsBuilder.UseSqlite("Data Source=flighttracker.dev.db");
 
         return new FlightTrackerDbContext(optionsBuilder.Options);
     }

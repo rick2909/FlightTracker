@@ -22,7 +22,7 @@ public class SettingsController : Controller
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-    var user = await _userManager.FindByIdAsync("1");
+        var user = await _userManager.FindByIdAsync("1");
 
         var vm = new SettingsViewModel
         {
@@ -44,7 +44,7 @@ public class SettingsController : Controller
             ViewData["Title"] = "Settings";
             return View("Index", model);
         }
-    var user = await _userManager.FindByIdAsync("1");
+        var user = await _userManager.FindByIdAsync("1");
         if (user == null)
         {
             // No auth configured yet: accept values but don't persist to DB
@@ -94,7 +94,7 @@ public class SettingsController : Controller
         {
             return await ReturnSettingsWithErrors();
         }
-    var user = await _userManager.FindByIdAsync("1");
+        var user = await _userManager.FindByIdAsync("1");
         if (user == null)
         {
             ModelState.AddModelError(string.Empty, "Password change requires sign-in.");
@@ -126,7 +126,7 @@ public class SettingsController : Controller
 
     private async Task<IActionResult> ReturnSettingsWithErrors()
     {
-    var user = await _userManager.FindByIdAsync("1");
+        var user = await _userManager.FindByIdAsync("1");
         if (user == null)
         {
             var vmAnon = new SettingsViewModel
@@ -139,7 +139,7 @@ public class SettingsController : Controller
             ViewData["Title"] = "Settings";
             return View("Index", vmAnon);
         }
-    var vm = new SettingsViewModel
+        var vm = new SettingsViewModel
         {
             UserName = user.UserName ?? string.Empty,
             Email = user.Email ?? string.Empty,
@@ -158,8 +158,8 @@ public class SettingsController : Controller
         var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
 
         var sb = new StringBuilder();
-    // Hint Excel about the separator to avoid locale issues (e.g., semicolon locales)
-    sb.AppendLine("sep=,");
+        // Hint Excel about the separator to avoid locale issues (e.g., semicolon locales)
+        sb.AppendLine("sep=,");
         sb.AppendLine("FlightNumber,DepartureTimeUtc,ArrivalTimeUtc,DepartureAirport,ArrivalAirport,FlightClass,SeatNumber,DidFly,BookedOnUtc,Notes");
 
         foreach (var f in flights)
@@ -180,13 +180,13 @@ public class SettingsController : Controller
             sb.AppendLine();
         }
 
-    // Prepend UTF-8 BOM so Excel detects encoding and respects separator directive
-    var preamble = Encoding.UTF8.GetPreamble();
-    var contentBytes = Encoding.UTF8.GetBytes(sb.ToString());
-    var bytes = new byte[preamble.Length + contentBytes.Length];
-    Buffer.BlockCopy(preamble, 0, bytes, 0, preamble.Length);
-    Buffer.BlockCopy(contentBytes, 0, bytes, preamble.Length, contentBytes.Length);
-    return File(bytes, "text/csv; charset=utf-8", fileDownloadName: "user-flights.csv");
+        // Prepend UTF-8 BOM so Excel detects encoding and respects separator directive
+        var preamble = Encoding.UTF8.GetPreamble();
+        var contentBytes = Encoding.UTF8.GetBytes(sb.ToString());
+        var bytes = new byte[preamble.Length + contentBytes.Length];
+        Buffer.BlockCopy(preamble, 0, bytes, 0, preamble.Length);
+        Buffer.BlockCopy(contentBytes, 0, bytes, preamble.Length, contentBytes.Length);
+        return File(bytes, "text/csv; charset=utf-8", fileDownloadName: "user-flights.csv");
     }
 
     [HttpGet("/Settings/Export/All.json")]

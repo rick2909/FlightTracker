@@ -69,7 +69,7 @@ public class FlightRepository(FlightTrackerDbContext db) : IFlightRepository
             .AsNoTracking()
             .AsQueryable();
 
-    if (!string.IsNullOrWhiteSpace(dep))
+        if (!string.IsNullOrWhiteSpace(dep))
         {
             var depUpper = dep.ToUpperInvariant();
             query = query.Where(f => f.DepartureAirport != null && (
@@ -82,7 +82,7 @@ public class FlightRepository(FlightTrackerDbContext db) : IFlightRepository
             ));
         }
 
-    if (!string.IsNullOrWhiteSpace(arr))
+        if (!string.IsNullOrWhiteSpace(arr))
         {
             var arrUpper = arr.ToUpperInvariant();
             query = query.Where(f => f.ArrivalAirport != null && (

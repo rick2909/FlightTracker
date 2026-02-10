@@ -16,10 +16,10 @@ public class FlightLookupService(IFlightRepository flights, IFlightDataProvider 
         var local = await flights.GetByFlightNumberAndDateAsync(flightNumber.Trim().ToUpperInvariant(), date, cancellationToken);
         if (local != null) return local;
 
-    // Fallback: External provider by number; bias to same-day departures
-    var startOfDayUtc = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-    var candidate = await provider.GetFlightByNumberAsync(flightNumber.Trim().ToUpperInvariant(), startOfDayUtc, cancellationToken);
-    return candidate;
+        // Fallback: External provider by number; bias to same-day departures
+        var startOfDayUtc = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var candidate = await provider.GetFlightByNumberAsync(flightNumber.Trim().ToUpperInvariant(), startOfDayUtc, cancellationToken);
+        return candidate;
     }
 
     public Task<IReadOnlyList<Flight>> SearchByFlightNumberAsync(string flightNumber, DateOnly? date = null, CancellationToken cancellationToken = default)
