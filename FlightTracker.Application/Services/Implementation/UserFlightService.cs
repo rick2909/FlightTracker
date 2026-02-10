@@ -410,7 +410,11 @@ public class UserFlightService : IUserFlightService
             return null;
         }
 
-        var normalized = registration.Trim().ToUpperInvariant();
+        var normalized = NormalizeRegistration(registration);
+        if (normalized is null)
+        {
+            return null;
+        }
         
         // Check if aircraft already exists
         var existing = await _aircraftRepository.GetByRegistrationAsync(normalized, cancellationToken);
@@ -431,14 +435,21 @@ public class UserFlightService : IUserFlightService
         }
 
         // Create new aircraft with data from AdsBdb or defaults
+        var model = TruncateOrDefault(adsbData?.Type, 64, "Unknown");
+        var icaoType = TruncateOrNull(adsbData?.IcaoType, 4)?.ToUpperInvariant();
+        var modeS = TruncateOrNull(adsbData?.ModeS, 6)?.ToUpperInvariant();
+        var notes = adsbData is not null
+            ? TruncateOrNull($"Owner: {adsbData.RegisteredOwner}, Country: {adsbData.RegisteredOwnerCountry}", 500)
+            : null;
+
         var newAircraft = new Aircraft
         {
             Registration = normalized,
             Manufacturer = ParseManufacturer(adsbData?.Manufacturer),
-            Model = adsbData?.Type ?? "Unknown",
-            IcaoTypeCode = adsbData?.IcaoType,
-            ModeS = adsbData?.ModeS,
-            Notes = adsbData is not null ? $"Owner: {adsbData.RegisteredOwner}, Country: {adsbData.RegisteredOwnerCountry}" : null,
+            Model = model,
+            IcaoTypeCode = icaoType,
+            ModeS = modeS,
+            Notes = notes,
             AirlineId = airlineId
         };
 
@@ -474,5 +485,30 @@ public class UserFlightService : IUserFlightService
             _ when upper.Contains("MITSUBISHI") => AircraftManufacturer.Mitsubishi,
             _ => AircraftManufacturer.Other
         };
+    }
+
+    private static string? NormalizeRegistration(string registration)
+    {
+        var normalized = registration.Trim().ToUpperInvariant();
+        return normalized.Length > 8 ? null : normalized;
+    }
+
+    private static string? TruncateOrNull(string? value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = value.Trim();
+        return trimmed.Length > maxLength
+            ? trimmed.Substring(0, maxLength)
+            : trimmed;
+    }
+
+    private static string TruncateOrDefault(string? value, int maxLength, string fallback)
+    {
+        var trimmed = TruncateOrNull(value, maxLength);
+        return string.IsNullOrWhiteSpace(trimmed) ? fallback : trimmed;
     }
 }
