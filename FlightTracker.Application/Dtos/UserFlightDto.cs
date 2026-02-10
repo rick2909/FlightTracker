@@ -40,8 +40,8 @@ public record UserFlightDto
     public string? ArrivalIcaoCode { get; init; }
     public string ArrivalAirportName { get; init; } = string.Empty;
     public string ArrivalCity { get; init; } = string.Empty;
-    public string? DepartureTimeZoneId { get; set; }
-    public string? ArrivalTimeZoneId { get; set; }
+    public string? DepartureTimeZoneId { get; init; }
+    public string? ArrivalTimeZoneId { get; init; }
 
     // Aircraft details (optional)
     public AircraftDto? Aircraft { get; init; }

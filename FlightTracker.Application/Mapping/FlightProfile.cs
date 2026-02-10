@@ -77,7 +77,11 @@ public class FlightProfile : Profile
                     : string.Empty))
             .ForMember(dest => dest.Aircraft,
                 opt => opt.MapFrom(src => src.Flight != null ? src.Flight.Aircraft : null))
-            .ForMember(dest => dest.DepartureTimeZoneId, opt => opt.Ignore())
-            .ForMember(dest => dest.ArrivalTimeZoneId, opt => opt.Ignore());
+            .ForMember(dest => dest.DepartureTimeZoneId,
+                opt => opt.MapFrom((_, __, ___, ctx) =>
+                    ctx.Items.TryGetValue("DepartureTimeZoneId", out var value) ? value as string : null))
+            .ForMember(dest => dest.ArrivalTimeZoneId,
+                opt => opt.MapFrom((_, __, ___, ctx) =>
+                    ctx.Items.TryGetValue("ArrivalTimeZoneId", out var value) ? value as string : null));
     }
 }

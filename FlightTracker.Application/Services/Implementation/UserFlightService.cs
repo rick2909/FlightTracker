@@ -239,10 +239,11 @@ public class UserFlightService : IUserFlightService
             ? await _airportService.GetTimeZoneIdByAirportCodeAsync(arrCode, cancellationToken)
             : null;
 
-        var dto = _mapper.Map<UserFlightDto>(userFlight);
-        dto.DepartureTimeZoneId = depTz;
-        dto.ArrivalTimeZoneId = arrTz;
-        return dto;
+        return _mapper.Map<UserFlightDto>(userFlight, opt =>
+        {
+            opt.Items["DepartureTimeZoneId"] = depTz;
+            opt.Items["ArrivalTimeZoneId"] = arrTz;
+        });
     }
 
     private async Task<Flight> CreateFlightFromDtoAsync(CreateUserFlightDto dto, CancellationToken cancellationToken)
