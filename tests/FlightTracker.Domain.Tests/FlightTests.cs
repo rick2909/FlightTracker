@@ -3,7 +3,7 @@ using FlightTracker.Domain.Entities;
 using FlightTracker.Domain.Enums;
 using Xunit;
 
-namespace FlightTracker.Test.Domain;
+namespace FlightTracker.Domain.Tests;
 
 public class FlightTests
 {

@@ -27,7 +27,6 @@ public class SeedDataTests
         var aircraftCount1 = ctx1.Aircraft.Count();
         var flightsCount1 = ctx1.Flights.Count();
 
-        // Run again
         await SeedData.SeedAsync(ctx1);
 
         Assert.Equal(airportsCount1, ctx1.Airports.Count());

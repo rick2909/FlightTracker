@@ -12,7 +12,7 @@ using FlightTracker.Domain.Enums;
 using Moq;
 using Xunit;
 
-namespace FlightTracker.Test.Services;
+namespace FlightTracker.Application.Tests.Services;
 
 public class UserFlightServiceTests
 {

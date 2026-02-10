@@ -11,7 +11,7 @@ using FlightTracker.Domain.Entities;
 using Moq;
 using Xunit;
 
-namespace FlightTracker.Test.Services;
+namespace FlightTracker.Application.Tests.Services;
 
 public class AirportOverviewServiceTests
 {
