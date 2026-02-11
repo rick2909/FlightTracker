@@ -14,10 +14,15 @@ using Polly;
 using Polly.Contrib.WaitAndRetry;
 using System.Net;
 using AutoMapper;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
+using FlightTracker.Web.Models.Auth;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection(AuthSettings.SectionName));
 builder.Services.AddServerSideBlazor().AddCircuitOptions(o =>
 {
     if (builder.Environment.IsDevelopment())
@@ -187,5 +192,35 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.MapBlazorHub();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapGet("/dev-login", async (
+        HttpContext httpContext,
+        IOptions<AuthSettings> options) =>
+    {
+        var settings = options.Value;
+        if (!settings.EnableDevBypass)
+        {
+            return Results.NotFound();
+        }
+
+        // post to normal login with dev credentials
+        var form = new Dictionary<string, string>
+        {
+            { "UserNameOrEmail", settings.DevUserName ?? string.Empty },
+            { "Password", "devpassword" } // must match the seeded dev user password
+        };
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/login")
+        {
+            Content = new FormUrlEncodedContent(form)
+        };
+        var client = httpContext.RequestServices.GetRequiredService<IHttpClientFactory>().CreateClient();
+        var response = await client.SendAsync(request);
+
+        return Results.Redirect("/Dashboard");
+    });
+}
 
 app.Run();

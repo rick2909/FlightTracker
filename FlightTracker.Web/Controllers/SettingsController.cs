@@ -5,9 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 using FlightTracker.Application.Services.Interfaces;
 using System.Text;
 using System.Text.Json;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FlightTracker.Web.Controllers;
 
+[Authorize]
 public class SettingsController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -22,7 +25,8 @@ public class SettingsController : Controller
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        var user = await _userManager.FindByIdAsync("1");
+        var userId = GetCurrentUserId() ?? 1;
+        var user = await _userManager.FindByIdAsync(userId.ToString());
 
         var vm = new SettingsViewModel
         {
@@ -44,7 +48,8 @@ public class SettingsController : Controller
             ViewData["Title"] = "Settings";
             return View("Index", model);
         }
-        var user = await _userManager.FindByIdAsync("1");
+        var userId = GetCurrentUserId() ?? 1;
+        var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user == null)
         {
             // No auth configured yet: accept values but don't persist to DB
@@ -94,7 +99,10 @@ public class SettingsController : Controller
         {
             return await ReturnSettingsWithErrors();
         }
-        var user = await _userManager.FindByIdAsync("1");
+        var userId = GetCurrentUserId();
+        var user = userId.HasValue
+            ? await _userManager.FindByIdAsync(userId.Value.ToString())
+            : null;
         if (user == null)
         {
             ModelState.AddModelError(string.Empty, "Password change requires sign-in.");
@@ -126,7 +134,10 @@ public class SettingsController : Controller
 
     private async Task<IActionResult> ReturnSettingsWithErrors()
     {
-        var user = await _userManager.FindByIdAsync("1");
+        var userId = GetCurrentUserId();
+        var user = userId.HasValue
+            ? await _userManager.FindByIdAsync(userId.Value.ToString())
+            : null;
         if (user == null)
         {
             var vmAnon = new SettingsViewModel
@@ -154,7 +165,7 @@ public class SettingsController : Controller
     [HttpGet("/Settings/Export/Flights.csv")]
     public async Task<IActionResult> ExportFlightsCsv(CancellationToken cancellationToken = default)
     {
-        const int userId = 1; // demo user until auth is wired
+        var userId = GetCurrentUserId() ?? 1;
         var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
 
         var sb = new StringBuilder();
@@ -192,7 +203,7 @@ public class SettingsController : Controller
     [HttpGet("/Settings/Export/All.json")]
     public async Task<IActionResult> ExportAllJson(CancellationToken cancellationToken = default)
     {
-        const int userId = 1; // demo user until auth is wired
+        var userId = GetCurrentUserId() ?? 1;
 
         var user = await _userManager.FindByIdAsync(userId.ToString());
         var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
@@ -277,5 +288,21 @@ public class SettingsController : Controller
         }
 
         return Json(new { deletedFlights, userDeleted });
+    }
+
+    private int? GetCurrentUserId()
+    {
+        if (User?.Identity?.IsAuthenticated != true)
+        {
+            return null;
+        }
+
+        var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (int.TryParse(idStr, out var userId))
+        {
+            return userId;
+        }
+
+        return null;
     }
 }

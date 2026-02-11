@@ -5,9 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Enums;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FlightTracker.Web.Controllers.Web;
 
+[Authorize]
 public class UserFlightsController(
     IUserFlightService userFlightService,
     IFlightService flightService,
@@ -190,10 +193,31 @@ public class UserFlightsController(
         return Ok(result);
     }
 
-    private static int GetEffectiveUserId(int? requestedUserId)
+    private int GetEffectiveUserId(int? requestedUserId)
     {
-        // Replace with actual current user id from auth when available
-        return (requestedUserId.HasValue && requestedUserId.Value > 0) ? requestedUserId.Value : DemoUserId;
+        if (requestedUserId.HasValue && requestedUserId.Value > 0)
+        {
+            return requestedUserId.Value;
+        }
+
+        var currentUserId = GetCurrentUserId();
+        return currentUserId ?? DemoUserId;
+    }
+
+    private int? GetCurrentUserId()
+    {
+        if (User?.Identity?.IsAuthenticated != true)
+        {
+            return null;
+        }
+
+        var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (int.TryParse(idStr, out var userId))
+        {
+            return userId;
+        }
+
+        return null;
     }
 
     private static IEnumerable<UserFlightDto> ApplyFilters(

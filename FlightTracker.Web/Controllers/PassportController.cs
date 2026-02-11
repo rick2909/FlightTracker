@@ -31,7 +31,7 @@ public class PassportController : Controller
         // - Else if authenticated: use current user id.
         // - Else: redirect back (or Dashboard) and render nothing.
         int? userId = id;
-        int? currentUserId = 1;
+        int? currentUserId = null;
 
         if (User?.Identity?.IsAuthenticated == true)
         {
@@ -41,6 +41,8 @@ public class PassportController : Controller
                 currentUserId = parsed;
             }
         }
+
+        currentUserId ??= 1;
 
         if (userId is null)
         {
