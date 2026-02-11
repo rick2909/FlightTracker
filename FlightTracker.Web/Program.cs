@@ -12,12 +12,11 @@ using FlightTracker.Application.Mapping;
 using FlightTracker.Infrastructure.External;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
-using System.Net;
-using AutoMapper;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using FlightTracker.Web.Models.Auth;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -195,7 +194,7 @@ app.MapBlazorHub();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/dev-login", async (
+    _ = app.MapGet("/dev-login", async (
         HttpContext httpContext,
         IOptions<AuthSettings> options) =>
     {
@@ -205,19 +204,27 @@ if (app.Environment.IsDevelopment())
             return Results.NotFound();
         }
 
-        // post to normal login with dev credentials
-        var form = new Dictionary<string, string>
+        var claims = new List<Claim>
         {
-            { "UserNameOrEmail", settings.DevUserName ?? string.Empty },
-            { "Password", "devpassword" } // must match the seeded dev user password
+            new(ClaimTypes.NameIdentifier, settings.DevUserId.ToString()),
+            new(ClaimTypes.Name, settings.DevUserName ?? string.Empty),
+            new(ClaimTypes.Email, settings.DevEmail ?? string.Empty),
+            new("display_name", settings.DevDisplayName ?? string.Empty)
         };
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "/login")
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+        var returnUrl = httpContext.Request.Query["ReturnUrl"].ToString();
+        if (!string.IsNullOrWhiteSpace(returnUrl)
+            && Uri.IsWellFormedUriString(returnUrl, UriKind.Relative)
+            && returnUrl.StartsWith("/", StringComparison.Ordinal)
+            && !returnUrl.StartsWith("//", StringComparison.Ordinal))
         {
-            Content = new FormUrlEncodedContent(form)
-        };
-        var client = httpContext.RequestServices.GetRequiredService<IHttpClientFactory>().CreateClient();
-        var response = await client.SendAsync(request);
+            return Results.Redirect(returnUrl);
+        }
 
         return Results.Redirect("/Dashboard");
     });
