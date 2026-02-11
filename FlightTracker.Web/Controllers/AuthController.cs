@@ -37,12 +37,7 @@ namespace FlightTracker.Web.Controllers
                 return RedirectToAction("Index", "Dashboard");
             }
 
-            if (_authSettings.EnableDevBypass)
-            {
-                ViewBag.DevBypassEnabled = _authSettings.EnableDevBypass;
-                ViewBag.DevUserName = _authSettings.DevUserName;
-                ViewBag.DevEmail = _authSettings.DevEmail;
-            }
+            SetDevViewBag();
 
             return View(new LoginViewModel
             {
@@ -57,12 +52,7 @@ namespace FlightTracker.Web.Controllers
         {
             if (!ModelState.IsValid)
             {
-                if (_authSettings.EnableDevBypass)
-                {
-                    ViewBag.DevBypassEnabled = _authSettings.EnableDevBypass;
-                    ViewBag.DevUserName = _authSettings.DevUserName;
-                    ViewBag.DevEmail = _authSettings.DevEmail;
-                }
+                SetDevViewBag();
                 return View(model);
             }
 
@@ -75,12 +65,7 @@ namespace FlightTracker.Web.Controllers
             if (user == null)
             {
                 ModelState.AddModelError(string.Empty, "Invalid credentials.");
-                if (_authSettings.EnableDevBypass)
-                {
-                    ViewBag.DevBypassEnabled = _authSettings.EnableDevBypass;
-                    ViewBag.DevUserName = _authSettings.DevUserName;
-                    ViewBag.DevEmail = _authSettings.DevEmail;
-                }
+                SetDevViewBag();
                 return View(model);
             }
 
@@ -88,12 +73,7 @@ namespace FlightTracker.Web.Controllers
             if (!signInResult.Succeeded)
             {
                 ModelState.AddModelError(string.Empty, "Invalid credentials.");
-                if (_authSettings.EnableDevBypass)
-                {
-                    ViewBag.DevBypassEnabled = _authSettings.EnableDevBypass;
-                    ViewBag.DevUserName = _authSettings.DevUserName;
-                    ViewBag.DevEmail = _authSettings.DevEmail;
-                }
+                SetDevViewBag();
                 return View(model);
             }
 
@@ -130,6 +110,18 @@ namespace FlightTracker.Web.Controllers
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Index", "Home");
+        }
+
+        private void SetDevViewBag()
+        {
+            if (!_authSettings.EnableDevBypass )
+            {
+                return;
+            }
+
+            ViewBag.DevBypassEnabled = true;
+            ViewBag.DevUserName = _authSettings.DevUserName;
+            ViewBag.DevEmail = _authSettings.DevEmail;
         }
     }
 }

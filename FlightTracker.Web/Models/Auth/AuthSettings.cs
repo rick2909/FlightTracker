@@ -4,9 +4,9 @@ public class AuthSettings
 {
     public const string SectionName = "Auth";
 
-    public bool EnableDevBypass { get; set; }
+    public bool EnableDevBypass { get; set; } = false;
 
-    public int DevUserId { get; set; }
+    public int DevUserId { get; set; } = 1;
 
     public string DevUserName { get; set; } = string.Empty;
 
