@@ -12,6 +12,7 @@
 @use 'passport';
 @use 'settings';
 @use 'landing';
+@use 'login';
 
 .layout {
   display: flex;

@@ -55,8 +55,32 @@
   flex-shrink: 0;
   background: $color-surface;
   border-top: 1px solid $color-divider;
-  /* Match main layout footer spacing */
-  padding: 1rem 1.25rem;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar__footer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+}
+.sidebar__logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid $color-divider;
+  background: $color-surface;
+  color: $color-text-secondary;
+  cursor: pointer;
+}
+.sidebar__logout:hover {
+  color: $color-text-primary;
+  border-color: $color-accent;
 }
 
 .sidebar__logo { display: block; }
