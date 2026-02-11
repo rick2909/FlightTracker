@@ -1,0 +1,70 @@
+@model FlightTracker.Web.Models.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Sign In";
+    ViewData["ShowSidebar"] = false;
+}
+
+<div class="login-page">
+    <div class="login-card">
+        <div class="login-card__header">
+            <h1 class="login-card__title">Welcome back</h1>
+            <p class="login-card__subtitle">Sign in to continue tracking your flights.</p>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="login-form__errors">
+                @foreach (var entry in ViewData.ModelState.Values)
+                {
+                    foreach (var error in entry.Errors)
+                    {
+                        <div>@error.ErrorMessage</div>
+                    }
+                }
+            </div>
+        }
+
+        <form class="login-form" method="post" asp-controller="Auth" asp-action="Login">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+
+            <div class="login-form__field">
+                <label class="login-form__label" for="UserNameOrEmail">Username or email</label>
+                <input class="login-form__input" id="UserNameOrEmail" name="UserNameOrEmail" value="@Model.UserNameOrEmail" autocomplete="username" />
+            </div>
+            <div class="login-form__field">
+                <label class="login-form__label" for="Password">Password</label>
+                <input class="login-form__input" id="Password" name="Password" type="password" autocomplete="current-password" />
+            </div>
+            <div class="login-form__row">
+                <label class="login-form__checkbox">
+                    <input type="checkbox" name="RememberMe" value="true" @(Model.RememberMe ? "checked" : string.Empty) />
+                    Remember me
+                </label>
+                <a class="login-form__link" href="/register">Create account</a>
+            </div>
+            <div class="login-form__actions">
+                <button class="login-form__button" type="submit">
+                    <span class="material-icons" aria-hidden="true">login</span>
+                    Sign in
+                </button>
+                @if (ViewBag.DevBypassEnabled is true)
+                {
+                    <a class="login-form__link" href="/dev-login">Dev sign in</a>
+                }
+            </div>
+        </form>
+
+        @if (ViewBag.DevBypassEnabled is true)
+        {
+            <div class="login-dev">
+                <p class="login-dev__title">Development bypass enabled</p>
+                <p>Use the configured development account to sign in automatically.</p>
+                <ul class="login-dev__list">
+                    <li>User: @ViewBag.DevUserName</li>
+                    <li>Email: @ViewBag.DevEmail</li>
+                </ul>
+            </div>
+        }
+    </div>
+</div>
