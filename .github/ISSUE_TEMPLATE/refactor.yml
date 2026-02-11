@@ -1,27 +1,16 @@
-name: Task / Feature / Bug
-description: Create a structured issue for FlightTracker development.
-title: "[Type] Short description"
-labels: []
+name: Refactor
+description: Propose refactoring work for FlightTracker.
+title: "[Refactor] "
+labels:
+  - refactor
 assignees: []
 body:
-  - type: dropdown
-    id: type
-    attributes:
-      label: Issue Type
-      options:
-        - Bug
-        - Feature
-        - Task
-        - Refactor
-        - Documentation
-    validations:
-      required: true
   - type: textarea
     id: description
     attributes:
       label: Description
-      description: Clear, concise description of the problem or feature.
-      placeholder: What is happening / what do you want to add?
+      description: Clear, concise description of the refactor.
+      placeholder: What should be improved and why?
     validations:
       required: true
   - type: checkboxes
@@ -42,12 +31,6 @@ body:
       label: Acceptance Criteria
       description: Bullet list of conditions for completion.
       placeholder: "- Given ..., when ..., then ..."
-  - type: textarea
-    id: reproduction
-    attributes:
-      label: Reproduction Steps (for bugs)
-      description: Exact steps, data, or calls that reproduce the issue.
-      placeholder: "1. Go to ...\n2. Click ...\n3. Observe ..."
   - type: textarea
     id: technical
     attributes:

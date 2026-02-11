@@ -1,0 +1,65 @@
+name: Bug
+description: Report a bug in FlightTracker.
+title: "[Bug] "
+labels:
+  - bug
+assignees: []
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Clear, concise description of the problem.
+      placeholder: What is happening?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction Steps
+      description: Exact steps, data, or calls that reproduce the issue.
+      placeholder: "1. Go to ...\n2. Click ...\n3. Observe ..."
+    validations:
+      required: true
+  - type: checkboxes
+    id: layers
+    attributes:
+      label: Affected Layer(s)
+      options:
+        - label: Domain
+        - label: Application
+        - label: Infrastructure
+        - label: Presentation - API
+        - label: Presentation - Web
+        - label: Presentation - Desktop
+        - label: Presentation - Mobile
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Bullet list of conditions for completion.
+      placeholder: "- Given ..., when ..., then ..."
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical Notes / Proposed Approach
+      description: Optional design thoughts, trade-offs, dependencies.
+  - type: checkboxes
+    id: compliance
+    attributes:
+      label: Clean Architecture Compliance
+      options:
+        - label: No new outward dependencies from inner layers
+        - label: No EF attributes added to Domain
+        - label: Async methods use CancellationToken
+        - label: DTOs required for Application -> Presentation boundary
+  - type: input
+    id: estimate
+    attributes:
+      label: Estimate (optional)
+      placeholder: e.g., 2h, 1d
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context / Screenshots
+      description: Links, images, logs.
