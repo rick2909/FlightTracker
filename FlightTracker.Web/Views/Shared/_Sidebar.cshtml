@@ -111,7 +111,7 @@
             {
                 <form method="post" asp-controller="Auth" asp-action="Logout">
                     @Html.AntiForgeryToken()
-                    <button class="sidebar__logout" type="submit" title="Sign out">
+                    <button class="sidebar__logout" type="submit" title="Sign out" aria-label="Sign out">
                         <span class="material-icons" aria-hidden="true">logout</span>
                     </button>
                 </form>
