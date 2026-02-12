@@ -33,32 +33,20 @@ public class PassportController : Controller
         int? userId = id;
         int? currentUserId = null;
 
-        if (User?.Identity?.IsAuthenticated == true)
-        {
-            var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (int.TryParse(idStr, out var parsed))
-            {
-                currentUserId = parsed;
-            }
-        }
-
-        currentUserId ??= 1;
-
         if (userId is null)
         {
-            if (currentUserId is null)
+            if (!TryGetCurrentUserId(out var currentId, out var challengeResult))
             {
-                var referer = Request.Headers["Referer"].FirstOrDefault();
-                // Only allow safe local redirects; otherwise go to Dashboard
-                if (!string.IsNullOrWhiteSpace(referer) && Url.IsLocalUrl(referer))
-                {
-                    return Redirect(referer);
-                }
-
-                return RedirectToAction("Index", "Dashboard");
+                return challengeResult!;
             }
 
-            userId = currentUserId;
+            currentUserId = currentId;
+            userId = currentId;
+        }
+        else
+        {
+            TryGetCurrentUserId(out var currentId, out _);
+            currentUserId = currentId == 0 ? null : currentId;
         }
 
         var isOtherUser = currentUserId is null || userId!.Value != currentUserId.Value;
@@ -125,25 +113,23 @@ public class PassportController : Controller
         CancellationToken cancellationToken = default)
     {
         // Resolve user (prefer route id, else current user)
-        int? userId = 1;
+        int? userId = id;
         int? currentUserId = null;
-
-        if (User?.Identity?.IsAuthenticated == true)
-        {
-            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (int.TryParse(sub, out var parsed))
-            {
-                currentUserId = parsed;
-            }
-        }
 
         if (userId is null)
         {
-            if (currentUserId is null)
+            if (!TryGetCurrentUserId(out var currentId, out var challengeResult))
             {
-                return RedirectToAction(nameof(Index));
+                return challengeResult!;
             }
-            userId = currentUserId;
+
+            currentUserId = currentId;
+            userId = currentId;
+        }
+        else
+        {
+            TryGetCurrentUserId(out var currentId, out _);
+            currentUserId = currentId == 0 ? null : currentId;
         }
 
         var displayedUser = await _userManager.FindByIdAsync(userId.Value.ToString());
@@ -183,6 +169,27 @@ public class PassportController : Controller
         };
 
         return View(vm);
+    }
+
+    private bool TryGetCurrentUserId(out int userId, out IActionResult? challengeResult)
+    {
+        userId = 0;
+        challengeResult = null;
+
+        if (User?.Identity?.IsAuthenticated != true)
+        {
+            challengeResult = Challenge();
+            return false;
+        }
+
+        var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(idStr, out userId))
+        {
+            challengeResult = Challenge();
+            return false;
+        }
+
+        return true;
     }
 
     private static IEnumerable<UserFlightDto> ApplyFilters(

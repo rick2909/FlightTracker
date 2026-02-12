@@ -18,8 +18,6 @@ public class UserFlightsController(
     IAircraftPhotoService aircraftPhotoService,
     IMapper mapper) : Controller
 {
-    private const int DemoUserId = 1; // TODO: Replace with actual auth user id when wired
-
     [HttpGet("/UserFlights/{userId:int?}")]
     public async Task<IActionResult> Index(
         int? userId,
@@ -32,7 +30,10 @@ public class UserFlightsController(
         int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var effectiveUserId = GetEffectiveUserId(userId);
+        if (!TryGetEffectiveUserId(userId, out var effectiveUserId, out var challengeResult))
+        {
+            return challengeResult!;
+        }
         var flights = await userFlightService.GetUserFlightsAsync(effectiveUserId, cancellationToken);
         ViewData["RequestedUserId"] = userId;
 
@@ -193,31 +194,39 @@ public class UserFlightsController(
         return Ok(result);
     }
 
-    private int GetEffectiveUserId(int? requestedUserId)
+    private bool TryGetEffectiveUserId(int? requestedUserId, out int userId, out IActionResult? challengeResult)
     {
+        userId = 0;
+        challengeResult = null;
+
         if (requestedUserId.HasValue && requestedUserId.Value > 0)
         {
-            return requestedUserId.Value;
+            userId = requestedUserId.Value;
+            return true;
         }
 
-        var currentUserId = GetCurrentUserId();
-        return currentUserId ?? DemoUserId;
+        return TryGetCurrentUserId(out userId, out challengeResult);
     }
 
-    private int? GetCurrentUserId()
+    private bool TryGetCurrentUserId(out int userId, out IActionResult? challengeResult)
     {
+        userId = 0;
+        challengeResult = null;
+
         if (User?.Identity?.IsAuthenticated != true)
         {
-            return null;
+            challengeResult = Challenge();
+            return false;
         }
 
         var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (int.TryParse(idStr, out var userId))
+        if (!int.TryParse(idStr, out userId))
         {
-            return userId;
+            challengeResult = Challenge();
+            return false;
         }
 
-        return null;
+        return true;
     }
 
     private static IEnumerable<UserFlightDto> ApplyFilters(

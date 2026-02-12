@@ -31,7 +31,10 @@ IMapFlightService mapFlightService) : Controller
     {
         try
         {
-            var userId = GetCurrentUserId() ?? 1;
+            if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+            {
+                return challengeResult!;
+            }
 
             // Get user flight statistics
             var stats = await _userFlightService.GetUserFlightStatsAsync(userId);
@@ -82,7 +85,10 @@ IMapFlightService mapFlightService) : Controller
     {
         try
         {
-            var userId = GetCurrentUserId() ?? 1;
+            if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+            {
+                return challengeResult!;
+            }
 
             var stats = await _userFlightService.GetUserFlightStatsAsync(userId);
             var mapFlights = await _mapFlightService.GetUserMapFlightsAsync(userId, maxPast: 500, maxUpcoming: 50);
@@ -126,7 +132,10 @@ IMapFlightService mapFlightService) : Controller
     {
         try
         {
-            var userId = GetCurrentUserId() ?? 1;
+            if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+            {
+                return challengeResult!;
+            }
             var state = await BuildCurrentStateAsync(userId);
             // Prefer single selected route if available; fall back to wider set
             IEnumerable<MapFlightDto> mapFlights;
@@ -228,19 +237,24 @@ IMapFlightService mapFlightService) : Controller
         return $"{ts.Minutes}m";
     }
 
-    private int? GetCurrentUserId()
+    private bool TryGetCurrentUserId(out int userId, out IActionResult? challengeResult)
     {
+        userId = 0;
+        challengeResult = null;
+
         if (User?.Identity?.IsAuthenticated != true)
         {
-            return null;
+            challengeResult = Challenge();
+            return false;
         }
 
         var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (int.TryParse(idStr, out var userId))
+        if (!int.TryParse(idStr, out userId))
         {
-            return userId;
+            challengeResult = Challenge();
+            return false;
         }
 
-        return null;
+        return true;
     }
 }
