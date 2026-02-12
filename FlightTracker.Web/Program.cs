@@ -194,7 +194,7 @@ app.MapBlazorHub();
 
 if (app.Environment.IsDevelopment())
 {
-    _ = app.MapGet("/dev-login", async (
+    _ = app.MapPost("/dev-login", async (
         HttpContext httpContext,
         IOptions<AuthSettings> options) =>
     {
