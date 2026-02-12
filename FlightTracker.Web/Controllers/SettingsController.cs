@@ -5,9 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 using FlightTracker.Application.Services.Interfaces;
 using System.Text;
 using System.Text.Json;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FlightTracker.Web.Controllers;
 
+[Authorize]
 public class SettingsController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -22,12 +25,21 @@ public class SettingsController : Controller
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        var user = await _userManager.FindByIdAsync("1");
+        if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+        {
+            return challengeResult!;
+        }
+
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            return Challenge();
+        }
 
         var vm = new SettingsViewModel
         {
-            UserName = user?.UserName ?? "demo",
-            Email = user?.Email ?? "demo@example.com",
+            UserName = user.UserName ?? string.Empty,
+            Email = user.Email ?? string.Empty,
             ProfileVisibility = Request.Cookies["ft_profile_visibility"] ?? "private",
             Theme = Request.Cookies["ft_theme"] ?? "system"
         };
@@ -44,12 +56,16 @@ public class SettingsController : Controller
             ViewData["Title"] = "Settings";
             return View("Index", model);
         }
-        var user = await _userManager.FindByIdAsync("1");
+
+        if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+        {
+            return challengeResult!;
+        }
+
+        var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user == null)
         {
-            // No auth configured yet: accept values but don't persist to DB
-            TempData["Status"] = "Profile updated (session only)";
-            return RedirectToAction(nameof(Index));
+            return Challenge();
         }
 
         if (!string.Equals(user.UserName, model.UserName, StringComparison.Ordinal))
@@ -94,11 +110,14 @@ public class SettingsController : Controller
         {
             return await ReturnSettingsWithErrors();
         }
-        var user = await _userManager.FindByIdAsync("1");
+        if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+        {
+            return challengeResult!;
+        }
+        var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user == null)
         {
-            ModelState.AddModelError(string.Empty, "Password change requires sign-in.");
-            return await ReturnSettingsWithErrors();
+            return Challenge();
         }
 
         var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
@@ -126,19 +145,16 @@ public class SettingsController : Controller
 
     private async Task<IActionResult> ReturnSettingsWithErrors()
     {
-        var user = await _userManager.FindByIdAsync("1");
+        if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+        {
+            return challengeResult!;
+        }
+        var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user == null)
         {
-            var vmAnon = new SettingsViewModel
-            {
-                UserName = "demo",
-                Email = "demo@example.com",
-                ProfileVisibility = Request.Cookies["ft_profile_visibility"] ?? "private",
-                Theme = Request.Cookies["ft_theme"] ?? "system"
-            };
-            ViewData["Title"] = "Settings";
-            return View("Index", vmAnon);
+            return Challenge();
         }
+
         var vm = new SettingsViewModel
         {
             UserName = user.UserName ?? string.Empty,
@@ -154,7 +170,11 @@ public class SettingsController : Controller
     [HttpGet("/Settings/Export/Flights.csv")]
     public async Task<IActionResult> ExportFlightsCsv(CancellationToken cancellationToken = default)
     {
-        const int userId = 1; // demo user until auth is wired
+        if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+        {
+            return challengeResult!;
+        }
+
         var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
 
         var sb = new StringBuilder();
@@ -192,9 +212,16 @@ public class SettingsController : Controller
     [HttpGet("/Settings/Export/All.json")]
     public async Task<IActionResult> ExportAllJson(CancellationToken cancellationToken = default)
     {
-        const int userId = 1; // demo user until auth is wired
+        if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+        {
+            return challengeResult!;
+        }
 
         var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            return Challenge();
+        }
         var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
 
         // Collect preferences from cookies (client-side persistence in this demo)
@@ -255,7 +282,10 @@ public class SettingsController : Controller
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> DeleteProfile(CancellationToken cancellationToken = default)
     {
-        const int userId = 1; // demo user until auth is wired
+        if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+        {
+            return challengeResult!;
+        }
         // Delete user flights first
         var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
         var deletedFlights = 0;
@@ -277,5 +307,26 @@ public class SettingsController : Controller
         }
 
         return Json(new { deletedFlights, userDeleted });
+    }
+
+    private bool TryGetCurrentUserId(out int userId, out IActionResult? challengeResult)
+    {
+        userId = 0;
+        challengeResult = null;
+
+        if (User?.Identity?.IsAuthenticated != true)
+        {
+            challengeResult = Challenge();
+            return false;
+        }
+
+        var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(idStr, out userId))
+        {
+            challengeResult = Challenge();
+            return false;
+        }
+
+        return true;
     }
 }

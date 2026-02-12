@@ -1,0 +1,145 @@
+@use 'variables' as *;
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: radial-gradient(circle at top, rgba(52, 132, 255, 0.08), transparent 45%), $color-background;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: $color-surface;
+  border: 1px solid $color-divider;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 12px 30px rgba(18, 27, 51, 0.08);
+}
+
+.login-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-bottom: 1.5rem;
+}
+
+.login-card__title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.login-card__subtitle {
+  margin: 0;
+  color: $color-text-secondary;
+  font-size: .95rem;
+}
+
+.login-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.login-form__field {
+  display: grid;
+  gap: .35rem;
+}
+
+.login-form__label {
+  font-size: .9rem;
+  color: $color-text-secondary;
+}
+
+.login-form__input {
+  padding: .75rem .9rem;
+  border: 1px solid $color-divider;
+  border-radius: 10px;
+  background: $color-surface;
+  color: $color-text-primary;
+  font-size: .95rem;
+}
+
+.login-form__input:focus {
+  outline: none;
+  border-color: $color-accent;
+  box-shadow: 0 0 0 3px rgba(52, 132, 255, 0.2);
+}
+
+.login-form__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.login-form__checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  color: $color-text-secondary;
+  font-size: .85rem;
+}
+
+.login-form__actions {
+  display: grid;
+  gap: .75rem;
+  margin-top: .25rem;
+}
+
+.login-form__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .75rem 1rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: .95rem;
+  color: #fff;
+  background: $color-accent;
+  cursor: pointer;
+}
+
+.login-form__button:hover {
+  filter: brightness(1.02);
+}
+
+.login-form__link {
+  font-size: .85rem;
+  color: $color-accent;
+  text-decoration: none;
+}
+
+.login-form__errors {
+  background: rgba(255, 71, 87, 0.1);
+  border: 1px solid rgba(255, 71, 87, 0.2);
+  padding: .75rem;
+  border-radius: 10px;
+  color: #d3273e;
+  font-size: .85rem;
+}
+
+.login-dev {
+  margin-top: 1.25rem;
+  padding: .75rem 1rem;
+  border-radius: 12px;
+  background: rgba(22, 131, 255, 0.08);
+  border: 1px dashed rgba(22, 131, 255, 0.3);
+  color: $color-text-secondary;
+  font-size: .85rem;
+}
+
+.login-dev__title {
+  margin: 0 0 .25rem;
+  font-weight: 600;
+  color: $color-text-primary;
+}
+
+.login-dev__list {
+  margin: 0;
+  padding-left: 1rem;
+}

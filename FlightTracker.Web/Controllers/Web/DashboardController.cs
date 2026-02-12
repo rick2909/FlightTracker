@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Web.Models.ViewModels;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FlightTracker.Web.Controllers.Web;
 
@@ -9,6 +11,7 @@ namespace FlightTracker.Web.Controllers.Web;
 /// Main dashboard controller for authenticated users.
 /// Shows user's flight history, statistics, and quick actions.
 /// </summary>
+[Authorize]
 public class DashboardController(
     ILogger<DashboardController> logger,
     IUserFlightService userFlightService,
@@ -28,9 +31,10 @@ IMapFlightService mapFlightService) : Controller
     {
         try
         {
-            // TODO: Get actual user ID from authentication context
-            // For now, using a hardcoded user ID (1 = admin user from seed data)
-            var userId = 1;
+            if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+            {
+                return challengeResult!;
+            }
 
             // Get user flight statistics
             var stats = await _userFlightService.GetUserFlightStatsAsync(userId);
@@ -81,8 +85,10 @@ IMapFlightService mapFlightService) : Controller
     {
         try
         {
-            // TODO: Get actual user ID from authentication context
-            var userId = 2;
+            if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+            {
+                return challengeResult!;
+            }
 
             var stats = await _userFlightService.GetUserFlightStatsAsync(userId);
             var mapFlights = await _mapFlightService.GetUserMapFlightsAsync(userId, maxPast: 500, maxUpcoming: 50);
@@ -126,7 +132,10 @@ IMapFlightService mapFlightService) : Controller
     {
         try
         {
-            var userId = 1;
+            if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+            {
+                return challengeResult!;
+            }
             var state = await BuildCurrentStateAsync(userId);
             // Prefer single selected route if available; fall back to wider set
             IEnumerable<MapFlightDto> mapFlights;
@@ -226,5 +235,26 @@ IMapFlightService mapFlightService) : Controller
             return $"{(int)ts.TotalHours}h {ts.Minutes}m";
         }
         return $"{ts.Minutes}m";
+    }
+
+    private bool TryGetCurrentUserId(out int userId, out IActionResult? challengeResult)
+    {
+        userId = 0;
+        challengeResult = null;
+
+        if (User?.Identity?.IsAuthenticated != true)
+        {
+            challengeResult = Challenge();
+            return false;
+        }
+
+        var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(idStr, out userId))
+        {
+            challengeResult = Challenge();
+            return false;
+        }
+
+        return true;
     }
 }

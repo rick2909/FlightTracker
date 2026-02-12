@@ -15,9 +15,10 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        // For demo purposes, always show landing page
-        // In a real app, you'd check User.Identity.IsAuthenticated
-        // and redirect authenticated users to Dashboard
+        if (User?.Identity?.IsAuthenticated == true)
+        {
+            return RedirectToAction("Index", "Dashboard");
+        }
 
         return View();
     }

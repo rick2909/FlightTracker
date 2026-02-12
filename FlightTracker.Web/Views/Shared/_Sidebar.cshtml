@@ -106,11 +106,22 @@
     
     <!-- Fixed footer area -->
     <div class="sidebar__footer">
-        <button class="sidebar__collapse-btn" type="button" aria-label="Toggle sidebar" aria-expanded="true" data-sidebar-toggle>
-            <span class="collapse-icon-wrapper" aria-hidden="true">
-                <span class="material-icons collapse-icon collapse-icon-open">arrow_right_alt</span>
-                <span class="material-icons collapse-icon collapse-icon-close">close</span>
-            </span>
-        </button>
+        <div class="sidebar__footer-actions">
+            @if (User?.Identity?.IsAuthenticated == true)
+            {
+                <form method="post" asp-controller="Auth" asp-action="Logout">
+                    @Html.AntiForgeryToken()
+                    <button class="sidebar__logout" type="submit" title="Sign out" aria-label="Sign out">
+                        <span class="material-icons" aria-hidden="true">logout</span>
+                    </button>
+                </form>
+            }
+            <button class="sidebar__collapse-btn" type="button" aria-label="Toggle sidebar" aria-expanded="true" data-sidebar-toggle>
+                <span class="collapse-icon-wrapper" aria-hidden="true">
+                    <span class="material-icons collapse-icon collapse-icon-open">arrow_right_alt</span>
+                    <span class="material-icons collapse-icon collapse-icon-close">close</span>
+                </span>
+            </button>
+        </div>
     </div>
 </aside>

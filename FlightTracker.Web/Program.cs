@@ -12,12 +12,16 @@ using FlightTracker.Application.Mapping;
 using FlightTracker.Infrastructure.External;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
-using System.Net;
-using AutoMapper;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
+using FlightTracker.Web.Models.Auth;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection(AuthSettings.SectionName));
 builder.Services.AddServerSideBlazor().AddCircuitOptions(o =>
 {
     if (builder.Environment.IsDevelopment())
@@ -124,7 +128,22 @@ builder.Services
     .AddEntityFrameworkStores<FlightTrackerDbContext>()
     .AddSignInManager();
 
-// Authentication temporarily disabled (no login UI yet). Keep Identity for seeding only.
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/login";
+        options.LogoutPath = "/logout";
+        options.AccessDeniedPath = "/login";
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+            ? CookieSecurePolicy.SameAsRequest
+            : CookieSecurePolicy.Always;
+    });
+
+builder.Services.AddAuthorization();
 
 // Analytics services
 builder.Services.AddSingleton<IDistanceCalculator, DistanceCalculator>(); // stateless, safe as singleton
@@ -163,6 +182,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
@@ -174,5 +194,43 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.MapBlazorHub();
+
+if (app.Environment.IsDevelopment())
+{
+    _ = app.MapPost("/dev-login", async (
+        HttpContext httpContext,
+        IOptions<AuthSettings> options) =>
+    {
+        var settings = options.Value;
+        if (!settings.EnableDevBypass)
+        {
+            return Results.NotFound();
+        }
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, settings.DevUserId.ToString()),
+            new(ClaimTypes.Name, settings.DevUserName ?? string.Empty),
+            new(ClaimTypes.Email, settings.DevEmail ?? string.Empty),
+            new("display_name", settings.DevDisplayName ?? string.Empty)
+        };
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+        var returnUrl = httpContext.Request.Query["ReturnUrl"].ToString();
+        if (!string.IsNullOrWhiteSpace(returnUrl)
+            && Uri.IsWellFormedUriString(returnUrl, UriKind.Relative)
+            && returnUrl.StartsWith("/", StringComparison.Ordinal)
+            && !returnUrl.StartsWith("//", StringComparison.Ordinal))
+        {
+            return Results.Redirect(returnUrl);
+        }
+
+        return Results.Redirect("/Dashboard");
+    });
+}
 
 app.Run();

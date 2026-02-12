@@ -5,9 +5,12 @@ using Microsoft.AspNetCore.Mvc;
 
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Enums;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FlightTracker.Web.Controllers.Web;
 
+[Authorize]
 public class UserFlightsController(
     IUserFlightService userFlightService,
     IFlightService flightService,
@@ -15,8 +18,6 @@ public class UserFlightsController(
     IAircraftPhotoService aircraftPhotoService,
     IMapper mapper) : Controller
 {
-    private const int DemoUserId = 1; // TODO: Replace with actual auth user id when wired
-
     [HttpGet("/UserFlights/{userId:int?}")]
     public async Task<IActionResult> Index(
         int? userId,
@@ -29,7 +30,10 @@ public class UserFlightsController(
         int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var effectiveUserId = GetEffectiveUserId(userId);
+        if (!TryGetEffectiveUserId(userId, out var effectiveUserId, out var challengeResult))
+        {
+            return challengeResult!;
+        }
         var flights = await userFlightService.GetUserFlightsAsync(effectiveUserId, cancellationToken);
         ViewData["RequestedUserId"] = userId;
 
@@ -190,10 +194,39 @@ public class UserFlightsController(
         return Ok(result);
     }
 
-    private static int GetEffectiveUserId(int? requestedUserId)
+    private bool TryGetEffectiveUserId(int? requestedUserId, out int userId, out IActionResult? challengeResult)
     {
-        // Replace with actual current user id from auth when available
-        return (requestedUserId.HasValue && requestedUserId.Value > 0) ? requestedUserId.Value : DemoUserId;
+        userId = 0;
+        challengeResult = null;
+
+        if (requestedUserId.HasValue && requestedUserId.Value > 0)
+        {
+            userId = requestedUserId.Value;
+            return true;
+        }
+
+        return TryGetCurrentUserId(out userId, out challengeResult);
+    }
+
+    private bool TryGetCurrentUserId(out int userId, out IActionResult? challengeResult)
+    {
+        userId = 0;
+        challengeResult = null;
+
+        if (User?.Identity?.IsAuthenticated != true)
+        {
+            challengeResult = Challenge();
+            return false;
+        }
+
+        var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(idStr, out userId))
+        {
+            challengeResult = Challenge();
+            return false;
+        }
+
+        return true;
     }
 
     private static IEnumerable<UserFlightDto> ApplyFilters(
