@@ -21,8 +21,14 @@ namespace FlightTracker.Web.Controllers
         [HttpGet("/register")]
         public IActionResult Register()
         {
-            TempData["Message"] = "Registration functionality coming soon! Ask admin to create an account for you in the meantime.";
-            return RedirectToAction("Login");
+            if (User?.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index", "Dashboard");
+            }
+
+            SetDevViewBag();
+
+            return View(new RegisterViewModel());
         }
 
         [AllowAnonymous]

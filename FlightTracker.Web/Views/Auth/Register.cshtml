@@ -1,0 +1,59 @@
+@model FlightTracker.Web.Models.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Create Account";
+    ViewData["ShowSidebar"] = false;
+}
+
+<div class="login-page">
+    <div class="login-card">
+        <div class="login-card__header">
+            <h1 class="login-card__title">Create your account</h1>
+            <p class="login-card__subtitle">Join FlightTracker and start logging every journey.</p>
+        </div>
+
+        <div class="login-dev">
+            <p class="login-dev__title">Registration coming soon</p>
+            <p>Account creation is being finalized. For now, ask an admin to create your account.</p>
+        </div>
+
+        <form class="login-form" method="post" novalidate>
+            <div class="login-form__field">
+                <label class="login-form__label" for="DisplayName">Display name</label>
+                <input class="login-form__input" id="DisplayName" name="DisplayName" value="@Model.DisplayName" autocomplete="name" />
+            </div>
+            <div class="login-form__field">
+                <label class="login-form__label" for="UserName">Username</label>
+                <input class="login-form__input" id="UserName" name="UserName" value="@Model.UserName" autocomplete="username" />
+            </div>
+            <div class="login-form__field">
+                <label class="login-form__label" for="Email">Email</label>
+                <input class="login-form__input" id="Email" name="Email" type="email" value="@Model.Email" autocomplete="email" />
+            </div>
+            <div class="login-form__field">
+                <label class="login-form__label" for="Password">Password</label>
+                <input class="login-form__input" id="Password" name="Password" type="password" autocomplete="new-password" />
+            </div>
+            <div class="login-form__field">
+                <label class="login-form__label" for="ConfirmPassword">Confirm password</label>
+                <input class="login-form__input" id="ConfirmPassword" name="ConfirmPassword" type="password" autocomplete="new-password" />
+            </div>
+            <div class="login-form__row">
+                <label class="login-form__checkbox">
+                    <input type="checkbox" name="AcceptTerms" value="true" />
+                    I agree to the Terms and Privacy Policy
+                </label>
+                <a class="login-form__link" href="/login">Already have an account?</a>
+            </div>
+            <div class="login-form__actions">
+                <button class="login-form__button" type="button" disabled>
+                    <span class="material-icons" aria-hidden="true">person_add</span>
+                    Create account (soon)
+                </button>
+                @if (ViewBag.DevBypassEnabled is true)
+                {
+                    <a class="login-form__link" href="/dev-login">Dev sign in</a>
+                }
+            </div>
+        </form>
+    </div>
+</div>
