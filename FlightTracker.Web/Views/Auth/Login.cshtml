@@ -11,16 +11,27 @@
             <p class="login-card__subtitle">Sign in to continue tracking your flights.</p>
         </div>
 
+        @if (TempData["RegistrationSuccess"] != null && (bool)TempData["RegistrationSuccess"])
+        {
+            <div class="login-form__info" role="status">
+                <span class="material-icons login-form__info-icon" aria-hidden="true">info</span>
+                <div>Registration successful! Please sign in with your new account.</div>
+            </div>
+        }
+
         @if (!ViewData.ModelState.IsValid)
         {
-            <div class="login-form__errors">
-                @foreach (var entry in ViewData.ModelState.Values)
-                {
-                    foreach (var error in entry.Errors)
+            <div class="login-form__errors" role="alert">
+                <span class="material-icons login-form__errors-icon" aria-hidden="true">error</span>
+                <div>
+                    @foreach (var entry in ViewData.ModelState.Values)
                     {
-                        <div>@error.ErrorMessage</div>
+                        @foreach (var error in entry.Errors)
+                        {
+                            <div>@error.ErrorMessage</div>
+                        }
                     }
-                }
+                </div>
             </div>
         }
 
@@ -38,16 +49,17 @@
             </div>
             <div class="login-form__row">
                 <label class="login-form__checkbox">
-                    <input type="checkbox" name="RememberMe" value="true" @(Model.RememberMe ? "checked" : string.Empty) />
-                    Remember me
+                    <input class="login-form__checkbox-input" type="checkbox" name="RememberMe" value="true" @(Model.RememberMe ? "checked" : string.Empty) />
+                    <span class="login-form__checkbox-box" aria-hidden="true"></span>
+                    <span class="login-form__checkbox-text">Remember me</span>
                 </label>
-                <a class="login-form__link" href="/register">Create account</a>
             </div>
             <div class="login-form__actions">
                 <button class="login-form__button" type="submit">
                     <span class="material-icons" aria-hidden="true">login</span>
                     Sign in
                 </button>
+                <a class="login-form__link" href="/register">Create account</a>
                 @if (ViewBag.DevBypassEnabled is true)
                 {
                     <a class="login-form__link" href="/dev-login">Dev sign in</a>

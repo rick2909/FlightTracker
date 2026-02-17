@@ -24,7 +24,7 @@ public class UserFlight
     /// <summary>
     /// The class of service the user flew in.
     /// </summary>
-    public FlightClass FlightClass { get; set; }
+    public FlightClass FlightClass { get; set; } = FlightClass.Economy;
 
     /// <summary>
     /// The seat assignment (e.g., "12A", "1B", "34F").

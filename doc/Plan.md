@@ -171,6 +171,8 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Identity schema migrations
 - [ ] Password policy + account lockout config
 - [ ] Role setup (User, Admin) & policy stubs
+- [ ] Username validation rules (allowed characters + profanity filter source)
+- [ ] Registration flow: verify email before collecting username/password
 - [ ] Secure endpoints (JWT or cookie auth) + refresh strategy
 - [ ] Input validation hardening (anti-overposting DTOs)
 - [ ] Secrets management plan (user secrets / environment variables)

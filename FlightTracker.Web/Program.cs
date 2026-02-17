@@ -5,6 +5,7 @@ using FlightTracker.Application.Services.Implementation.Analytics;
 using FlightTracker.Application.Repositories.Interfaces;
 using FlightTracker.Infrastructure.Repositories.Implementation;
 using FlightTracker.Infrastructure.Data;
+using FlightTracker.Web.Models.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Radzen;
@@ -14,7 +15,6 @@ using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
-using FlightTracker.Web.Models.Auth;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication;
 
@@ -123,6 +123,13 @@ builder.Services
     .AddIdentityCore<ApplicationUser>(options =>
     {
         options.User.RequireUniqueEmail = true;
+        
+        // Configure password policy
+        options.Password.RequireDigit = true;
+        options.Password.RequiredLength = 6;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequireUppercase = true;
     })
     .AddRoles<IdentityRole<int>>()
     .AddEntityFrameworkStores<FlightTrackerDbContext>()
@@ -144,6 +151,9 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+
+// Application services
+builder.Services.AddScoped<IUsernameValidationService, UsernameValidationService>();
 
 // Analytics services
 builder.Services.AddSingleton<IDistanceCalculator, DistanceCalculator>(); // stateless, safe as singleton
