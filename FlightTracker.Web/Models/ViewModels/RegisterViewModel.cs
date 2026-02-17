@@ -4,9 +4,9 @@ namespace FlightTracker.Web.Models.ViewModels;
 
 public class RegisterViewModel
 {
-    [Display(Name = "Display name")]
-    [StringLength(64, MinimumLength = 2)]
-    public string DisplayName { get; set; } = string.Empty;
+    [Display(Name = "Full Name")]
+    [StringLength(64, MinimumLength = 3)]
+    public string FullName { get; set; } = string.Empty;
 
     [Display(Name = "Username")]
     [StringLength(32, MinimumLength = 3)]
@@ -23,5 +23,7 @@ public class RegisterViewModel
     [Compare(nameof(Password))]
     public string ConfirmPassword { get; set; } = string.Empty;
 
+    [Display(Name = "I accept the terms and conditions")]
+    [Range(typeof(bool), "true", "true", ErrorMessage = "You must accept the terms and conditions.")]
     public bool AcceptTerms { get; set; }
 }

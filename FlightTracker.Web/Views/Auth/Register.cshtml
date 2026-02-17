@@ -18,8 +18,8 @@
 
         <form class="login-form" method="post" novalidate>
             <div class="login-form__field">
-                <label class="login-form__label" for="DisplayName">Display name</label>
-                <input class="login-form__input" id="DisplayName" name="DisplayName" value="@Model.DisplayName" autocomplete="name" />
+                <label class="login-form__label" for="FullName">Full Name</label>
+                <input class="login-form__input" id="FullName" name="FullName" value="@Model.FullName" autocomplete="name" />
             </div>
             <div class="login-form__field">
                 <label class="login-form__label" for="UserName">Username</label>
@@ -42,13 +42,13 @@
                     <input type="checkbox" name="AcceptTerms" value="true" />
                     I agree to the Terms and Privacy Policy
                 </label>
-                <a class="login-form__link" href="/login">Already have an account?</a>
             </div>
             <div class="login-form__actions">
                 <button class="login-form__button" type="button" disabled>
                     <span class="material-icons" aria-hidden="true">person_add</span>
                     Create account (soon)
                 </button>
+                <a class="login-form__link" href="/login">Already have an account?</a>
                 @if (ViewBag.DevBypassEnabled is true)
                 {
                     <a class="login-form__link" href="/dev-login">Dev sign in</a>
