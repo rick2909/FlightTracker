@@ -37,27 +37,11 @@ namespace FlightTracker.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register([FromForm] RegisterViewModel model, CancellationToken cancellationToken = default)
         {
+            const string registrationFailedMessage = "We couldn’t complete your registration. Please check your details.";
+
             if (User?.Identity?.IsAuthenticated == true)
             {
                 return RedirectToAction("Index", "Dashboard");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                SetDevViewBag();
-                return View(model);
-            }
-
-            var existingUser = await _userManager.FindByNameAsync(model.UserName);
-            if (existingUser != null)
-            {
-                ModelState.AddModelError(nameof(RegisterViewModel.UserName), "Username is already in use.");
-            }
-
-            var existingEmail = await _userManager.FindByEmailAsync(model.Email);
-            if (existingEmail != null)
-            {
-                ModelState.AddModelError(nameof(RegisterViewModel.Email), "Email is already in use.");
             }
 
             if (!ModelState.IsValid)
@@ -77,6 +61,21 @@ namespace FlightTracker.Web.Controllers
             {
                 foreach (var error in createResult.Errors)
                 {
+                    if (string.Equals(error.Code, "DuplicateUserName", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(error.Code, "DuplicateEmail", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (string.Equals(error.Code, "DuplicateUserName", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ModelState.AddModelError("RegistrationFailed", registrationFailedMessage);
+                        }
+
+                        if (string.Equals(error.Code, "DuplicateEmail", StringComparison.OrdinalIgnoreCase))
+                        {
+                            ModelState.AddModelError("RegistrationFailed", registrationFailedMessage);
+                        }
+                        continue;
+                    }
+
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
 
