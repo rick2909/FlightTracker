@@ -26,6 +26,8 @@ public sealed class UsernameValidationService : IUsernameValidationService
 
     public Task<UsernameValidationResult> ValidateAsync(string username, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (string.IsNullOrWhiteSpace(username))
         {
             return Task.FromResult(new UsernameValidationResult(

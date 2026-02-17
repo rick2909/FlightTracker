@@ -40,8 +40,8 @@ namespace FlightTracker.Web.Controllers
         [HttpPost("/register")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register([FromForm] RegisterViewModel model, CancellationToken cancellationToken = default)
-        {
-            const string registrationFailedMessage = "We couldn’t complete your registration. Please check your details.";
+        {            cancellationToken.ThrowIfCancellationRequested();
+                        const string registrationFailedMessage = "We couldn’t complete your registration. Please check your details.";
 
             if (User?.Identity?.IsAuthenticated == true)
             {
