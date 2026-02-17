@@ -6,17 +6,20 @@ using FlightTracker.Web.Models.ViewModels;
 using FlightTracker.Web.Models.Auth;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using FlightTracker.Application.Services.Interfaces;
 
 namespace FlightTracker.Web.Controllers
 {
     public class AuthController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        IOptions<AuthSettings> authOptions) : Controller
+        IOptions<AuthSettings> authOptions,
+        IUsernameValidationService usernameValidationService) : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
         private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
         private readonly AuthSettings _authSettings = authOptions.Value;
+        private readonly IUsernameValidationService _usernameValidationService = usernameValidationService;
 
         [AllowAnonymous]
         [HttpGet("/register")]
@@ -46,6 +49,15 @@ namespace FlightTracker.Web.Controllers
 
             if (!ModelState.IsValid)
             {
+                SetDevViewBag();
+                return View(model);
+            }
+
+            // Validate username against business rules
+            var usernameValidation = await _usernameValidationService.ValidateAsync(model.UserName.Trim(), cancellationToken);
+            if (!usernameValidation.IsValid)
+            {
+                ModelState.AddModelError(nameof(RegisterViewModel.UserName), usernameValidation.ErrorMessage ?? "Invalid username.");
                 SetDevViewBag();
                 return View(model);
             }

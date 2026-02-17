@@ -15,7 +15,8 @@ using Polly.Contrib.WaitAndRetry;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using FlightTracker.Web.Models.Auth;
-using FlightTracker.Web.Validation;
+using FlightTracker.Application.Services.Interfaces;
+using FlightTracker.Application.Services.Implementation;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication;
 
@@ -129,8 +130,6 @@ builder.Services
     .AddEntityFrameworkStores<FlightTrackerDbContext>()
     .AddSignInManager();
 
-builder.Services.AddScoped<IUserValidator<ApplicationUser>, UsernamePolicyValidator>();
-
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -147,6 +146,9 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+
+// Application services
+builder.Services.AddScoped<IUsernameValidationService, UsernameValidationService>();
 
 // Analytics services
 builder.Services.AddSingleton<IDistanceCalculator, DistanceCalculator>(); // stateless, safe as singleton
