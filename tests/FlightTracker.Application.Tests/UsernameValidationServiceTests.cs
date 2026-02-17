@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Services.Implementation;
@@ -161,16 +162,15 @@ public class UsernameValidationServiceTests
     #region CancellationToken Tests
 
     [Fact]
-    public async Task ValidateAsync_RespeactsCancellationToken()
+    public async Task ValidateAsync_RespectsCancellationToken()
     {
         var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        // Service uses synchronous operations, so cancellation token won't actually cancel,
-        // but we verify the method accepts it without throwing
-        var result = await _service.ValidateAsync("validuser", cts.Token);
-
-        Assert.True(result.IsValid);
+        // Service should throw OperationCanceledException when token is canceled
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => _service.ValidateAsync("validuser", cts.Token)
+        );
     }
 
     #endregion
