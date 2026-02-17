@@ -506,7 +506,7 @@
             return arrivalLocal;
         }
 
-        if (arrivalLocal.Value <= departureLocal.Value)
+        if (arrivalLocal.Value <= departureLocal.Value && arrivalLocal.Value.AddDays(2) >= departureLocal.Value)
         {
             var nextDay = departureLocal.Value.Date.AddDays(1);
             return nextDay + arrivalLocal.Value.TimeOfDay;
