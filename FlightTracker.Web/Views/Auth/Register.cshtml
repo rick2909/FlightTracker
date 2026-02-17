@@ -65,7 +65,10 @@
                 <input class="login-form__input@(hasPasswordError ? " login-form__input--invalid" : string.Empty)" id="Password" name="Password" type="password" autocomplete="new-password" aria-invalid="@(hasPasswordError ? "true" : "false")" @(hasPasswordError ? "aria-describedby=\"Password-error\"" : "") />
                 @if (hasPasswordError)
                 {
-                    <div class="login-form__error" id="Password-error">@passwordError![0].ErrorMessage</div>
+                    for (int i = 0; i < passwordError!.Count; i++)
+                    {
+                        <div class="login-form__error" id="Password-error">@passwordError![i].ErrorMessage</div>
+                    }
                 }
             </div>
             <div class="login-form__field">

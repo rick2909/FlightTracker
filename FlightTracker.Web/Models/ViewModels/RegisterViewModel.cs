@@ -20,7 +20,8 @@ public class RegisterViewModel
 
     [Required]
     [DataType(DataType.Password)]
-    [StringLength(100, MinimumLength = 6)]
+    [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be between 6 and 100 characters.")]
+    [Display(Name = "Password", Description = "Must contain uppercase, lowercase, digit, and special character")]
     public string Password { get; set; } = string.Empty;
 
     [Required]

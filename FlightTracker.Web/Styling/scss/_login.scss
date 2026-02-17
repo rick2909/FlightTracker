@@ -163,6 +163,25 @@
   color: $color-error;
 }
 
+.login-form__info {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  background: rgba(33, 150, 243, 0.08);
+  border: 1px solid rgba(33, 150, 243, 0.2);
+  padding: .75rem;
+  border-radius: 10px;
+  color: $color-info;
+  font-size: .85rem;
+  margin-bottom: .5rem;
+}
+
+.login-form__info-icon {
+  flex-shrink: 0;
+  font-size: 1.2rem;
+  margin-top: .1rem;
+}
+
 .login-form__actions {
   display: grid;
   gap: .75rem;

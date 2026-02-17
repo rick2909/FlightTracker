@@ -125,6 +125,13 @@ builder.Services
     .AddIdentityCore<ApplicationUser>(options =>
     {
         options.User.RequireUniqueEmail = true;
+        
+        // Configure password policy
+        options.Password.RequireDigit = true;
+        options.Password.RequiredLength = 6;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequireUppercase = true;
     })
     .AddRoles<IdentityRole<int>>()
     .AddEntityFrameworkStores<FlightTrackerDbContext>()

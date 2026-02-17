@@ -6,6 +6,7 @@ using FlightTracker.Web.Models.ViewModels;
 using FlightTracker.Web.Models.Auth;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 using FlightTracker.Application.Services.Interfaces;
 
 namespace FlightTracker.Web.Controllers
@@ -62,6 +63,23 @@ namespace FlightTracker.Web.Controllers
                 return View(model);
             }
 
+            // Validate password against regex requirements
+            var passwordRegexValidations = new(Regex pattern, string errorMessage)[]
+            {
+                (new Regex(@"[A-Z]"), "Password must contain at least one uppercase letter."),
+                (new Regex(@"[a-z]"), "Password must contain at least one lowercase letter."),
+                (new Regex(@"\d"), "Password must contain at least one digit."),
+                (new Regex(@"[^\w]"), "Password must contain at least one non-alphanumeric character.")
+            };
+
+            foreach (var (pattern, errorMessage) in passwordRegexValidations)
+            {
+                if (!pattern.IsMatch(model.Password))
+                {
+                    ModelState.AddModelError(nameof(RegisterViewModel.Password), errorMessage);
+                }
+            }
+
             var user = new ApplicationUser
             {
                 FullName = model.FullName.Trim(),
@@ -98,8 +116,9 @@ namespace FlightTracker.Web.Controllers
 
             await _userManager.AddClaimAsync(user, new Claim("display_name", model.FullName));
 
-            await _signInManager.SignInAsync(user, isPersistent: false);
-            return RedirectToAction("Index", "Dashboard");
+            TempData["RegistrationSuccess"] = true;
+            TempData["RegisteredUserName"] = model.UserName;
+            return RedirectToAction("Login");
         }
 
         [AllowAnonymous]
@@ -113,8 +132,10 @@ namespace FlightTracker.Web.Controllers
 
             SetDevViewBag();
 
+            var userName = TempData["RegisteredUserName"] as string;
             return View(new LoginViewModel
             {
+                UserNameOrEmail = userName,
                 ReturnUrl = returnUrl
             });
         }

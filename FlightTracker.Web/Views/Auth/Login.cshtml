@@ -11,6 +11,14 @@
             <p class="login-card__subtitle">Sign in to continue tracking your flights.</p>
         </div>
 
+        @if (TempData["RegistrationSuccess"] != null && (bool)TempData["RegistrationSuccess"])
+        {
+            <div class="login-form__info" role="status">
+                <span class="material-icons login-form__info-icon" aria-hidden="true">info</span>
+                <div>Registration successful! Please sign in with your new account.</div>
+            </div>
+        }
+
         @if (!ViewData.ModelState.IsValid)
         {
             <div class="login-form__errors">
