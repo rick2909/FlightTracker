@@ -52,8 +52,9 @@ namespace FlightTracker.Web.Controllers
 
             var user = new ApplicationUser
             {
-                UserName = model.UserName,
-                Email = model.Email
+                FullName = model.FullName.Trim(),
+                UserName = model.UserName.Trim(),
+                Email = model.Email.Trim().ToLowerInvariant()
             };
 
             var createResult = await _userManager.CreateAsync(user, model.Password);
@@ -73,6 +74,14 @@ namespace FlightTracker.Web.Controllers
                         {
                             ModelState.AddModelError("RegistrationFailed", registrationFailedMessage);
                         }
+                        continue;
+                    }
+                    
+                    if (string.Equals(error.Code, "InvalidUserName", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(error.Code, "InvalidUserNameCharacters", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(error.Code, "ProhibitedUserName", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ModelState.AddModelError(nameof(RegisterViewModel.UserName), error.Description);
                         continue;
                     }
 

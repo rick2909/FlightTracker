@@ -15,6 +15,7 @@ using Polly.Contrib.WaitAndRetry;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using FlightTracker.Web.Models.Auth;
+using FlightTracker.Web.Validation;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication;
 
@@ -127,6 +128,8 @@ builder.Services
     .AddRoles<IdentityRole<int>>()
     .AddEntityFrameworkStores<FlightTrackerDbContext>()
     .AddSignInManager();
+
+builder.Services.AddScoped<IUserValidator<ApplicationUser>, UsernamePolicyValidator>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
