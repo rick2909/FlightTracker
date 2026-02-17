@@ -69,7 +69,7 @@ namespace FlightTracker.Web.Controllers
                 (new Regex(@"[A-Z]"), "Password must contain at least one uppercase letter."),
                 (new Regex(@"[a-z]"), "Password must contain at least one lowercase letter."),
                 (new Regex(@"\d"), "Password must contain at least one digit."),
-                (new Regex(@"[^\w]"), "Password must contain at least one non-alphanumeric character.")
+                (new Regex(@"[^A-Za-z0-9]"), "Password must contain at least one non-alphanumeric character.")
             };
 
             foreach (var (pattern, errorMessage) in passwordRegexValidations)
@@ -78,6 +78,12 @@ namespace FlightTracker.Web.Controllers
                 {
                     ModelState.AddModelError(nameof(RegisterViewModel.Password), errorMessage);
                 }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                SetDevViewBag();
+                return View(model);
             }
 
             var user = new ApplicationUser
