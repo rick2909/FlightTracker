@@ -65,13 +65,15 @@
             </div>
             <div class="login-form__field">
                 <label class="login-form__label@(hasPasswordError ? " login-form__label--invalid" : string.Empty)" for="Password">Password</label>
-                <input class="login-form__input@(hasPasswordError ? " login-form__input--invalid" : string.Empty)" id="Password" name="Password" type="password" autocomplete="new-password" aria-invalid="@(hasPasswordError ? "true" : "false")" @(hasPasswordError ? "aria-describedby=\"Password-error\"" : "") />
+                <input class="login-form__input@(hasPasswordError ? " login-form__input--invalid" : string.Empty)" id="Password" name="Password" type="password" autocomplete="new-password" aria-invalid="@(hasPasswordError ? "true" : "false")" @(hasPasswordError ? "aria-describedby=\"Password-errors\"" : "") />
                 @if (hasPasswordError)
                 {
-                    for (int i = 0; i < passwordError!.Count; i++)
-                    {
-                        <div class="login-form__error" id="Password-error">@passwordError![i].ErrorMessage</div>
-                    }
+                    <div class="login-form__error" id="Password-errors" role="alert">
+                        @for (int i = 0; i < passwordError!.Count; i++)
+                        {
+                            <div>@passwordError![i].ErrorMessage</div>
+                        }
+                    </div>
                 }
             </div>
             <div class="login-form__field">
