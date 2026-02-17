@@ -114,7 +114,15 @@ namespace FlightTracker.Web.Controllers
                 return View(model);
             }
 
-            await _userManager.AddClaimAsync(user, new Claim("display_name", model.FullName));
+            var claimResult = await _userManager.AddClaimAsync(user, new Claim("display_name", model.FullName));
+            if (!claimResult.Succeeded)
+            {
+                // Rollback user creation if claim cannot be added
+                await _userManager.DeleteAsync(user);
+                ModelState.AddModelError(string.Empty, "An unexpected error occurred during registration. Please try again.");
+                SetDevViewBag();
+                return View(model);
+            }
 
             TempData["RegistrationSuccess"] = true;
             TempData["RegisteredUserName"] = model.UserName;
