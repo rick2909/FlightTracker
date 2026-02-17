@@ -77,15 +77,7 @@ namespace FlightTracker.Web.Controllers
                     if (string.Equals(error.Code, "DuplicateUserName", StringComparison.OrdinalIgnoreCase)
                         || string.Equals(error.Code, "DuplicateEmail", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (string.Equals(error.Code, "DuplicateUserName", StringComparison.OrdinalIgnoreCase))
-                        {
-                            ModelState.AddModelError("RegistrationFailed", registrationFailedMessage);
-                        }
-
-                        if (string.Equals(error.Code, "DuplicateEmail", StringComparison.OrdinalIgnoreCase))
-                        {
-                            ModelState.AddModelError("RegistrationFailed", registrationFailedMessage);
-                        }
+                        ModelState.AddModelError("RegistrationFailed", registrationFailedMessage);
                         continue;
                     }
                     
