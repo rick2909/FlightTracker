@@ -435,8 +435,17 @@
             DidFly = DidFly
         };
 
-        DepartureTimeUtc = ConvertLocalToUtc(DepartureTimeForm, DepartureTimeZoneId);
-        ArrivalTimeUtc = ConvertLocalToUtc(ArrivalTimeForm, ArrivalTimeZoneId);
+        var departureLocal = DepartureTimeForm;
+        var arrivalLocal = ArrivalTimeForm;
+        if (arrivalLocal <= departureLocal)
+        {
+            var nextDay = departureLocal.Date.AddDays(1);
+            arrivalLocal = nextDay + arrivalLocal.TimeOfDay;
+            ArrivalTimeForm = arrivalLocal;
+        }
+
+        DepartureTimeUtc = ConvertLocalToUtc(departureLocal, DepartureTimeZoneId);
+        ArrivalTimeUtc = ConvertLocalToUtc(arrivalLocal, ArrivalTimeZoneId);
 
         var schedule = new FlightScheduleUpdateDto
         {
