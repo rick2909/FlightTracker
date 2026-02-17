@@ -5,6 +5,7 @@ using FlightTracker.Application.Services.Implementation.Analytics;
 using FlightTracker.Application.Repositories.Interfaces;
 using FlightTracker.Infrastructure.Repositories.Implementation;
 using FlightTracker.Infrastructure.Data;
+using FlightTracker.Web.Models.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Radzen;
@@ -14,9 +15,6 @@ using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
-using FlightTracker.Web.Models.Auth;
-using FlightTracker.Application.Services.Interfaces;
-using FlightTracker.Application.Services.Implementation;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication;
 
