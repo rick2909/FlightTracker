@@ -96,10 +96,7 @@ namespace FlightTracker.Web.Controllers
                 return View(model);
             }
 
-            if (!string.IsNullOrWhiteSpace(model.FullName))
-            {
-                await _userManager.AddClaimAsync(user, new Claim("display_name", model.FullName));
-            }
+            await _userManager.AddClaimAsync(user, new Claim("display_name", model.FullName));
 
             await _signInManager.SignInAsync(user, isPersistent: false);
             return RedirectToAction("Index", "Dashboard");
