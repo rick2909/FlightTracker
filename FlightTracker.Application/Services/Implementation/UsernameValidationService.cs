@@ -42,8 +42,7 @@ public sealed class UsernameValidationService : IUsernameValidationService
             ));
         }
 
-        var lowered = username.ToLowerInvariant();
-        if (ProhibitedTerms.Any(term => lowered.Contains(term, StringComparison.OrdinalIgnoreCase)))
+        if (ProhibitedTerms.Any(term => username.Contains(term, StringComparison.OrdinalIgnoreCase)))
         {
             return Task.FromResult(new UsernameValidationResult(
                 false,
