@@ -190,7 +190,7 @@ public static class SeedData
 
     private static async Task SeedUsersAsync(UserManager<ApplicationUser> userManager, CancellationToken ct)
     {
-        async Task EnsureUserAsync(string userName, string email, string password)
+        async Task EnsureUserAsync(string userName, string email, string password, string fullName)
         {
             var existing = await userManager.FindByNameAsync(userName);
             if (existing != null) return;
@@ -198,13 +198,14 @@ public static class SeedData
             {
                 UserName = userName,
                 Email = email,
-                EmailConfirmed = true
+                EmailConfirmed = true,
+                FullName = fullName
             };
             await userManager.CreateAsync(user, password);
         }
 
-        await EnsureUserAsync("admin", "admin@example.com", "Admin#123");
-        await EnsureUserAsync("demo", "demo@example.com", "Demo#123");
+        await EnsureUserAsync("admin", "admin@example.com", "Admin#123", "Administrator");
+        await EnsureUserAsync("demo", "demo@example.com", "Demo#123", "Demo User");
     }
 
     private static async Task SeedUserFlightsAsync(FlightTrackerDbContext context, UserManager<ApplicationUser> userManager, CancellationToken cancellationToken)
