@@ -5,6 +5,7 @@ using FlightTracker.Infrastructure.Data;
 using FlightTracker.Web.Models.ViewModels;
 using FlightTracker.Web.Models.Auth;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace FlightTracker.Web.Controllers
 {
@@ -29,6 +30,67 @@ namespace FlightTracker.Web.Controllers
             SetDevViewBag();
 
             return View(new RegisterViewModel());
+        }
+
+        [AllowAnonymous]
+        [HttpPost("/register")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register([FromForm] RegisterViewModel model, CancellationToken cancellationToken = default)
+        {
+            if (User?.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index", "Dashboard");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                SetDevViewBag();
+                return View(model);
+            }
+
+            var existingUser = await _userManager.FindByNameAsync(model.UserName);
+            if (existingUser != null)
+            {
+                ModelState.AddModelError(nameof(RegisterViewModel.UserName), "Username is already in use.");
+            }
+
+            var existingEmail = await _userManager.FindByEmailAsync(model.Email);
+            if (existingEmail != null)
+            {
+                ModelState.AddModelError(nameof(RegisterViewModel.Email), "Email is already in use.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                SetDevViewBag();
+                return View(model);
+            }
+
+            var user = new ApplicationUser
+            {
+                UserName = model.UserName,
+                Email = model.Email
+            };
+
+            var createResult = await _userManager.CreateAsync(user, model.Password);
+            if (!createResult.Succeeded)
+            {
+                foreach (var error in createResult.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                SetDevViewBag();
+                return View(model);
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.FullName))
+            {
+                await _userManager.AddClaimAsync(user, new Claim("display_name", model.FullName));
+            }
+
+            await _signInManager.SignInAsync(user, isPersistent: false);
+            return RedirectToAction("Index", "Dashboard");
         }
 
         [AllowAnonymous]
