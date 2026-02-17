@@ -27,10 +27,13 @@
         @if (ViewData.ModelState.ContainsKey("RegistrationFailed") && ViewData.ModelState["RegistrationFailed"]?.Errors.Count > 0)
         {
             <div class="login-form__errors" role="alert">
-                @foreach (var error in ViewData.ModelState["RegistrationFailed"]!.Errors)
-                {
-                    <div>@error.ErrorMessage</div>
-                }
+                <span class="material-icons login-form__errors-icon" aria-hidden="true">error</span>
+                <div>
+                    @foreach (var error in ViewData.ModelState["RegistrationFailed"]!.Errors)
+                    {
+                        <div>@error.ErrorMessage</div>
+                    }
+                </div>
             </div>
         }
 

@@ -21,14 +21,17 @@
 
         @if (!ViewData.ModelState.IsValid)
         {
-            <div class="login-form__errors">
-                @foreach (var entry in ViewData.ModelState.Values)
-                {
-                    foreach (var error in entry.Errors)
+            <div class="login-form__errors" role="alert">
+                <span class="material-icons login-form__errors-icon" aria-hidden="true">error</span>
+                <div>
+                    @foreach (var entry in ViewData.ModelState.Values)
                     {
-                        <div>@error.ErrorMessage</div>
+                        @foreach (var error in entry.Errors)
+                        {
+                            <div>@error.ErrorMessage</div>
+                        }
                     }
-                }
+                </div>
             </div>
         }
 
