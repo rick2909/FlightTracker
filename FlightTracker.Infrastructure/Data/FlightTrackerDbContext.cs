@@ -101,6 +101,13 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
             entity.HasIndex(a => a.IcaoCode).IsUnique().HasFilter("[IcaoCode] IS NOT NULL");
         });
 
+        builder.Entity<ApplicationUser>(entity =>
+        {
+            entity.Property(u => u.FullName)
+                  .HasMaxLength(128)
+                  .IsRequired();
+        });
+
         // Configure UserFlight entity
         builder.Entity<UserFlight>(entity =>
         {
