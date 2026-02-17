@@ -24,15 +24,12 @@
             <p class="login-card__subtitle">Join FlightTracker and start logging every journey.</p>
         </div>
 
-        @if (!ViewData.ModelState.IsValid)
+        @if (ViewData.ModelState.ContainsKey("RegistrationFailed") && ViewData.ModelState["RegistrationFailed"]?.Errors.Count > 0)
         {
-            <div class="login-form__errors">
-                @foreach (var entry in ViewData.ModelState.Values)
+            <div class="login-form__errors" role="alert">
+                @foreach (var error in ViewData.ModelState["RegistrationFailed"]!.Errors)
                 {
-                    foreach (var error in entry.Errors)
-                    {
-                        <div>@error.ErrorMessage</div>
-                    }
+                    <div>@error.ErrorMessage</div>
                 }
             </div>
         }
@@ -41,54 +38,54 @@
             @Html.AntiForgeryToken()
             <div class="login-form__field">
                 <label class="login-form__label@(hasFullNameError ? " login-form__label--invalid" : string.Empty)" for="FullName">Full Name</label>
-                <input class="login-form__input@(hasFullNameError ? " login-form__input--invalid" : string.Empty)" id="FullName" name="FullName" value="@Model.FullName" autocomplete="name" />
+                <input class="login-form__input@(hasFullNameError ? " login-form__input--invalid" : string.Empty)" id="FullName" name="FullName" value="@Model.FullName" autocomplete="name" aria-invalid="@(hasFullNameError ? "true" : "false")" @(hasFullNameError ? "aria-describedby=\"FullName-error\"" : "") />
                 @if (hasFullNameError)
                 {
-                    <div class="login-form__error">@fullNameError![0].ErrorMessage</div>
+                    <div class="login-form__error" id="FullName-error">@fullNameError![0].ErrorMessage</div>
                 }
             </div>
             <div class="login-form__field">
                 <label class="login-form__label@(hasUserNameError ? " login-form__label--invalid" : string.Empty)" for="UserName">Username</label>
-                <input class="login-form__input@(hasUserNameError ? " login-form__input--invalid" : string.Empty)" id="UserName" name="UserName" value="@Model.UserName" autocomplete="username" />
+                <input class="login-form__input@(hasUserNameError ? " login-form__input--invalid" : string.Empty)" id="UserName" name="UserName" value="@Model.UserName" autocomplete="username" aria-invalid="@(hasUserNameError ? "true" : "false")" @(hasUserNameError ? "aria-describedby=\"UserName-error\"" : "") />
                 @if (hasUserNameError)
                 {
-                    <div class="login-form__error">@userNameError![0].ErrorMessage</div>
+                    <div class="login-form__error" id="UserName-error">@userNameError![0].ErrorMessage</div>
                 }
             </div>
             <div class="login-form__field">
                 <label class="login-form__label@(hasEmailError ? " login-form__label--invalid" : string.Empty)" for="Email">Email</label>
-                <input class="login-form__input@(hasEmailError ? " login-form__input--invalid" : string.Empty)" id="Email" name="Email" type="email" value="@Model.Email" autocomplete="email" />
+                <input class="login-form__input@(hasEmailError ? " login-form__input--invalid" : string.Empty)" id="Email" name="Email" type="email" value="@Model.Email" autocomplete="email" aria-invalid="@(hasEmailError ? "true" : "false")" @(hasEmailError ? "aria-describedby=\"Email-error\"" : "") />
                 @if (hasEmailError)
                 {
-                    <div class="login-form__error">@emailError![0].ErrorMessage</div>
+                    <div class="login-form__error" id="Email-error">@emailError![0].ErrorMessage</div>
                 }
             </div>
             <div class="login-form__field">
                 <label class="login-form__label@(hasPasswordError ? " login-form__label--invalid" : string.Empty)" for="Password">Password</label>
-                <input class="login-form__input@(hasPasswordError ? " login-form__input--invalid" : string.Empty)" id="Password" name="Password" type="password" autocomplete="new-password" />
+                <input class="login-form__input@(hasPasswordError ? " login-form__input--invalid" : string.Empty)" id="Password" name="Password" type="password" autocomplete="new-password" aria-invalid="@(hasPasswordError ? "true" : "false")" @(hasPasswordError ? "aria-describedby=\"Password-error\"" : "") />
                 @if (hasPasswordError)
                 {
-                    <div class="login-form__error">@passwordError![0].ErrorMessage</div>
+                    <div class="login-form__error" id="Password-error">@passwordError![0].ErrorMessage</div>
                 }
             </div>
             <div class="login-form__field">
                 <label class="login-form__label@(hasConfirmPasswordError ? " login-form__label--invalid" : string.Empty)" for="ConfirmPassword">Confirm password</label>
-                <input class="login-form__input@(hasConfirmPasswordError ? " login-form__input--invalid" : string.Empty)" id="ConfirmPassword" name="ConfirmPassword" type="password" autocomplete="new-password" />
+                <input class="login-form__input@(hasConfirmPasswordError ? " login-form__input--invalid" : string.Empty)" id="ConfirmPassword" name="ConfirmPassword" type="password" autocomplete="new-password" aria-invalid="@(hasConfirmPasswordError ? "true" : "false")" @(hasConfirmPasswordError ? "aria-describedby=\"ConfirmPassword-error\"" : "") />
                 @if (hasConfirmPasswordError)
                 {
-                    <div class="login-form__error">@confirmPasswordError![0].ErrorMessage</div>
+                    <div class="login-form__error" id="ConfirmPassword-error">@confirmPasswordError![0].ErrorMessage</div>
                 }
             </div>
             <div class="login-form__row">
                 <label class="login-form__checkbox@(hasAcceptTermsError ? " login-form__checkbox--invalid" : string.Empty)">
-                    <input class="login-form__checkbox-input" type="checkbox" name="AcceptTerms" value="true" @(Model.AcceptTerms ? "checked" : string.Empty) />
+                    <input class="login-form__checkbox-input" type="checkbox" name="AcceptTerms" value="true" @(Model.AcceptTerms ? "checked" : string.Empty) aria-invalid="@(hasAcceptTermsError ? "true" : "false")" @(hasAcceptTermsError ? "aria-describedby=\"AcceptTerms-error\"" : "") />
                     <span class="login-form__checkbox-box" aria-hidden="true"></span>
                     <span class="login-form__checkbox-text">I agree to the Terms and Privacy Policy</span>
                 </label>
             </div>
             @if (hasAcceptTermsError)
             {
-                <div class="login-form__error">@acceptTermsError![0].ErrorMessage</div>
+                <div class="login-form__error" id="AcceptTerms-error">@acceptTermsError![0].ErrorMessage</div>
             }
             <div class="login-form__actions">
                 <button class="login-form__button" type="submit">
