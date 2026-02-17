@@ -23,7 +23,7 @@
                     </div>
                     <div class="ft-form__field">
                         <label>Date (UTC)</label>
-                        <RadzenDatePicker @bind-Value="numberSearchDate" DateFormat="yyyy-MM-dd" />
+                        <RadzenDatePicker @bind-Value="numberSearchDate" DateFormat="dd-MM-yyyy" />
                     </div>
                     <div class="ft-form__field" style="align-self:end;">
                         <RadzenButton Text="Search" Icon="search" Click="SearchByNumber" />
@@ -42,7 +42,7 @@
                             <div class="ft-result">
                                 <div class="ft-result__main">
                                     <div class="ft-result__title"><strong>@f.FlightNumber</strong> @(f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode) → @(f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode)</div>
-                                    <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
+                                    <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("dd-MM-yyyy HH:mm") UTC</div>
                                 </div>
                                 <div class="ft-result__actions">
                                     <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectFlightFullAsync(f)" />
@@ -65,7 +65,7 @@
                     </div>
                     <div class="ft-form__field">
                         <label>Date (UTC)</label>
-                        <RadzenDatePicker @bind-Value="routeDate" DateFormat="yyyy-MM-dd" />
+                        <RadzenDatePicker @bind-Value="routeDate" DateFormat="dd-MM-yyyy" />
                     </div>
                     <div class="ft-form__field" style="align-self:end;">
                         <RadzenButton Text="Search" Icon="search" Click="SearchByRoute" />
@@ -84,7 +84,7 @@
                             <div class="ft-result">
                                 <div class="ft-result__main">
                                     <div class="ft-result__title">@f.FlightNumber @(f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode) → @(f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode)</div>
-                                    <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
+                                    <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("dd-MM-yyyy HH:mm") UTC</div>
                                 </div>
                                 <div class="ft-result__actions">
                                     <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectFlightFullAsync(f)" />
@@ -113,7 +113,7 @@
                         </div>
                         <div class="ft-form__field">
                             <label>Departure (local)</label>
-                            <RadzenDatePicker @bind-Value="validation.DepartureTimeLocal" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                            <RadzenDatePicker TValue="DateTime?" Value="validation.DepartureTimeLocal" Change="@(args => validation.ArrivalTimeLocal = args)" DateFormat="dd-MM-yyyy HH:mm" ShowTime="true" Style="width:100%" />
                             <ValidationMessage For="() => validation.DepartureTimeLocal" />
                         </div>
                     </div>
@@ -125,7 +125,7 @@
                         </div>
                         <div class="ft-form__field">
                             <label>Arrival (local)</label>
-                            <RadzenDatePicker @bind-Value="validation.ArrivalTimeLocal" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                            <RadzenDatePicker @bind-Value="validation.ArrivalTimeLocal" DateFormat="dd-MM-yyyy HH:mm" ShowTime="true" Style="width:100%" />
                             <ValidationMessage For="() => validation.ArrivalTimeLocal" />
                         </div>
                     </div>
