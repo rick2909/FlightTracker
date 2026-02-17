@@ -78,9 +78,60 @@
 .login-form__checkbox {
   display: inline-flex;
   align-items: center;
-  gap: .4rem;
+  gap: .6rem;
   color: $color-text-secondary;
   font-size: .85rem;
+  cursor: pointer;
+}
+
+.login-form__checkbox-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.login-form__checkbox-box {
+  width: .95rem;
+  height: .95rem;
+  border-radius: .3rem;
+  border: 1px solid $color-divider;
+  background: $color-surface;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+
+.login-form__checkbox-box::after {
+  content: '';
+  width: .4rem;
+  height: .6rem;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: translateY(-1px) rotate(45deg) scale(0.6);
+  opacity: 0;
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+.login-form__checkbox-input:focus-visible + .login-form__checkbox-box {
+  border-color: $color-accent;
+  box-shadow: 0 0 0 3px rgba(52, 132, 255, 0.2);
+}
+
+.login-form__checkbox-input:checked + .login-form__checkbox-box {
+  background: $color-accent;
+  border-color: $color-accent;
+}
+
+.login-form__checkbox-input:checked + .login-form__checkbox-box::after {
+  opacity: 1;
+  transform: translateY(-.1rem) rotate(45deg) scale(.85);
+}
+
+.login-form__checkbox-text {
+  color: $color-text-secondary;
 }
 
 .login-form__actions {

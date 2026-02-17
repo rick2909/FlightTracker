@@ -38,16 +38,17 @@
             </div>
             <div class="login-form__row">
                 <label class="login-form__checkbox">
-                    <input type="checkbox" name="RememberMe" value="true" @(Model.RememberMe ? "checked" : string.Empty) />
-                    Remember me
+                    <input class="login-form__checkbox-input" type="checkbox" name="RememberMe" value="true" @(Model.RememberMe ? "checked" : string.Empty) />
+                    <span class="login-form__checkbox-box" aria-hidden="true"></span>
+                    <span class="login-form__checkbox-text">Remember me</span>
                 </label>
-                <a class="login-form__link" href="/register">Create account</a>
             </div>
             <div class="login-form__actions">
                 <button class="login-form__button" type="submit">
                     <span class="material-icons" aria-hidden="true">login</span>
                     Sign in
                 </button>
+                <a class="login-form__link" href="/register">Create account</a>
                 @if (ViewBag.DevBypassEnabled is true)
                 {
                     <a class="login-form__link" href="/dev-login">Dev sign in</a>
