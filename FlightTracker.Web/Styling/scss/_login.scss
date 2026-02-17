@@ -54,7 +54,7 @@
 }
 
 .login-form__label--invalid {
-  color: #d3273e;
+  color: $color-error;
 }
 
 .login-form__input {
@@ -73,12 +73,12 @@
 }
 
 .login-form__input--invalid {
-  border-color: #d3273e;
+  border-color: $color-error;
   box-shadow: 0 0 0 2px rgba(211, 39, 62, 0.15);
 }
 
 .login-form__input--invalid:focus {
-  border-color: #d3273e;
+  border-color: $color-error;
   box-shadow: 0 0 0 3px rgba(211, 39, 62, 0.2);
 }
 
@@ -149,18 +149,18 @@
 }
 
 .login-form__checkbox--invalid .login-form__checkbox-box {
-  border-color: #d3273e;
+  border-color: $color-error;
   box-shadow: 0 0 0 2px rgba(211, 39, 62, 0.15);
 }
 
 .login-form__checkbox--invalid .login-form__checkbox-text {
-  color: #d3273e;
+  color: $color-error;
 }
 
 .login-form__error {
   margin-top: .25rem;
   font-size: .8rem;
-  color: #d3273e;
+  color: $color-error;
 }
 
 .login-form__actions {
@@ -199,7 +199,7 @@
   border: 1px solid rgba(255, 71, 87, 0.2);
   padding: .75rem;
   border-radius: 10px;
-  color: #d3273e;
+  color: $color-error;
   font-size: .85rem;
 }
 
