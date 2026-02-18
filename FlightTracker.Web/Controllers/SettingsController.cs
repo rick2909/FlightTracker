@@ -135,6 +135,12 @@ public class SettingsController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult UpdatePreferences([FromForm] PreferencesViewModel model, [FromServices] IWebHostEnvironment env)
     {
+        if (!ModelState.IsValid)
+        {
+            TempData["Status"] = "Preferences not saved";
+            return RedirectToAction(nameof(Index));
+        }
+
         // Persist simple preferences in cookies (1 year)
         var opts = new CookieOptions
         {
