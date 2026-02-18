@@ -414,7 +414,7 @@ public class UserFlightService : IUserFlightService
             }
             catch (ArgumentException ex)
             {
-                throw new Exception($"{ex.Message}. get Icao code from https://www.avcodes.co.uk/aptcodesearch.asp");
+                throw new Exception($"{ex.Message}. get Icao code from https://www.flightradar24.com/airport/{code} or https://airport-data.com/world-airports/{code}");
             }
             catch (Exception ex)
             {
