@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Application.Dtos;
+using Microsoft.Extensions.Configuration;
 
 namespace FlightTracker.Infrastructure.External;
 
@@ -13,7 +14,7 @@ namespace FlightTracker.Infrastructure.External;
 /// Client for AirportDB.io API to fetch airport information by ICAO code.
 /// Slowly populates database with new airports as they are discovered.
 /// </summary>
-public sealed class AirportDbClient(HttpClient http) : IAirportLookupClient
+public sealed class AirportDbClient(HttpClient http, IConfiguration configuration) : IAirportLookupClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -28,7 +29,7 @@ public sealed class AirportDbClient(HttpClient http) : IAirportLookupClient
         if (string.IsNullOrWhiteSpace(icaoCode))
             return null;
 
-        var apiToken = Environment.GetEnvironmentVariable("AIRPORTDB_API_TOKEN");
+        var apiToken = configuration["ApiKeys:AirportDB"];
         if (string.IsNullOrWhiteSpace(apiToken))
             return null; // API token not configured; skip enrichment
 
