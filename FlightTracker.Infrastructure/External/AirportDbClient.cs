@@ -64,10 +64,17 @@ public sealed class AirportDbClient(HttpClient http, IConfiguration configuratio
                 AirportType: airport.Type
             );
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (HttpRequestException)
+        {
+            throw new HttpRequestException("Error occurred while calling AirportDB API.");
+        }
         catch
         {
-            // Log error if needed; fail gracefully
-            return null;
+            throw new Exception("Unexpected error occurred while calling AirportDB API.");
         }
     }
 

@@ -406,19 +406,20 @@ public class UserFlightService : IUserFlightService
             }
             catch (HttpRequestException)
             {
-                throw new HttpRequestException($"Failed to enrich airport {code} from AirportDB API.");
+                // Non-fatal; enrichment failed, continue to throw below
+                Debug.WriteLine($"Failed to enrich airport {code} from AirportDB API.");
             }
             catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                throw new TaskCanceledException($"Timeout enriching airport {code} from AirportDB API.");
+                Debug.WriteLine($"Timeout enriching airport {code} from AirportDB API.");
             }
             catch (ArgumentException ex)
             {
-                throw new Exception($"{ex.Message}. get Icao code from https://www.flightradar24.com/data/airport/{code} or https://airport-data.com/world-airports/{code}");
+                throw new ArgumentException($"{ex.Message}. Get ICAO code from https://www.flightradar24.com/data/airport/{code} or https://airport-data.com/world-airports/{code}");
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
+                throw new Exception($"Unexpected error enriching airport {code}: {ex.Message}");
             }
 
             throw new ArgumentException("Invalid airport code(s) provided.");

@@ -21,7 +21,7 @@ public sealed class AirportEnrichmentService(
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(icaoCode))
-            throw new ArgumentNullException(nameof(icaoCode), "ICAO code must be provided.");
+            throw new ArgumentNullException(nameof(icaoCode), "An ICAO code must be provided.");
 
         if (icaoCode.Length != 4)
             throw new ArgumentException("ICAO code must be 4 characters long.", nameof(icaoCode));
