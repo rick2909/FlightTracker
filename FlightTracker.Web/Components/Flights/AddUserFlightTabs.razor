@@ -267,6 +267,16 @@
                 validation.SeatNumber = null;
                 flightClass = FlightClass.Economy;
                 notes = null;
+
+                // Reset validation fields
+                validation.FlightNumber = null;
+                validation.DepartureAirportCode = null;
+                validation.ArrivalAirportCode = null;
+                validation.DepartureTimeLocal = null;
+                validation.ArrivalTimeLocal = null;
+                validation.AircraftRegistration = null;
+                validation.OperatingAirlineCode = null;
+
                 _tabIndex = PreferManualTab ? 2 : 0;
             }
         }
@@ -506,7 +516,7 @@
             return arrivalLocal;
         }
 
-        if (arrivalLocal.Value <= departureLocal.Value && arrivalLocal.Value.AddDays(2) >= departureLocal.Value)
+        if (arrivalLocal.Value <= departureLocal.Value && arrivalLocal.Value.AddHours(30) >= departureLocal.Value)
         {
             var nextDay = departureLocal.Value.Date.AddDays(1);
             return nextDay + arrivalLocal.Value.TimeOfDay;

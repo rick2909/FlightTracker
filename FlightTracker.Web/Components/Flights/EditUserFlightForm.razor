@@ -437,7 +437,7 @@
 
         var departureLocal = DepartureTimeForm;
         var arrivalLocal = ArrivalTimeForm;
-        if (arrivalLocal <= departureLocal)
+        if (arrivalLocal <= departureLocal && arrivalLocal.AddHours(30) >= departureLocal)
         {
             var nextDay = departureLocal.Date.AddDays(1);
             arrivalLocal = nextDay + arrivalLocal.TimeOfDay;
