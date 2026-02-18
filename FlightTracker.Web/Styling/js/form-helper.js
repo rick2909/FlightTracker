@@ -6,6 +6,25 @@
 window.FlightTracker = window.FlightTracker || {};
 
 /**
+ * Apply theme to document root.
+ * @param {string} value - theme value: dark|light|system
+ */
+window.FlightTracker.applyTheme = function(value) {
+    try {
+        const classList = document.documentElement.classList;
+        classList.remove('theme-dark', 'theme-light');
+        if (value === 'dark') {
+            classList.add('theme-dark');
+        }
+        if (value === 'light') {
+            classList.add('theme-light');
+        }
+    } catch (error) {
+        console.error('Theme apply failed:', error);
+    }
+};
+
+/**
  * Submit a form with anti-forgery token protection
  * @param {string} url - The endpoint URL
  * @param {string} token - The anti-forgery token

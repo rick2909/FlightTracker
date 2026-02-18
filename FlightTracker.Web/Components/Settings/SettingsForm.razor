@@ -141,8 +141,7 @@
 
     private async Task ApplyThemeAsync(string value)
     {
-        await JS.InvokeVoidAsync("eval", @"(function(v){try{var c=document.documentElement.classList;c.remove('theme-dark','theme-light');if(v==='dark')c.add('theme-dark');if(v==='light')c.add('theme-light');}catch(e){}})(" +
-            System.Text.Json.JsonSerializer.Serialize(value) + ")");
+        await JS.InvokeVoidAsync("FlightTracker.applyTheme", value);
     }
 
     private Task NotifyAsync(string message, Radzen.NotificationSeverity severity)
