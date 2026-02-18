@@ -15,17 +15,8 @@ namespace FlightTracker.Infrastructure.External;
 /// <summary>
 /// Aviationstack implementation for live airport departures/arrivals.
 /// </summary>
-public class AviationstackService : IAirportLiveService
+public class AviationstackService (HttpClient http, IConfiguration configuration) : IAirportLiveService
 {
-    private readonly HttpClient _http;
-    private readonly string _apiKey;
-
-    public AviationstackService(HttpClient http, IConfiguration config)
-    {
-        _http = http;
-        _apiKey = config["Aviationstack:ApiKey"] ?? string.Empty;
-    }
-
     public Task<IReadOnlyList<LiveFlightDto>> GetDeparturesAsync(string airportCode, int limit = 50, CancellationToken cancellationToken = default)
         => QueryAsync(depIata: airportCode, arrIata: null, limit: limit, cancellationToken);
 
@@ -34,12 +25,13 @@ public class AviationstackService : IAirportLiveService
 
     private async Task<IReadOnlyList<LiveFlightDto>> QueryAsync(string? depIata, string? arrIata, int limit, CancellationToken cancellationToken)
     {
-        var url = $"https://api.aviationstack.com/v1/flights?access_key={Uri.EscapeDataString(_apiKey)}&limit={limit}";
+        var apiKey = configuration["ApiKeys:Aviationstack"] ?? string.Empty;
+        var url = $"https://api.aviationstack.com/v1/flights?access_key={Uri.EscapeDataString(apiKey)}&limit={limit}";
         if (!string.IsNullOrWhiteSpace(depIata)) url += $"&dep_iata={Uri.EscapeDataString(depIata!)}";
         if (!string.IsNullOrWhiteSpace(arrIata)) url += $"&arr_iata={Uri.EscapeDataString(arrIata!)}";
 
         using var req = new HttpRequestMessage(HttpMethod.Get, url);
-        using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        using var resp = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         resp.EnsureSuccessStatusCode();
         await using var stream = await resp.Content.ReadAsStreamAsync(cancellationToken);
 

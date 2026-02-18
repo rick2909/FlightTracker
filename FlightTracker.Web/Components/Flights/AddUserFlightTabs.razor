@@ -23,7 +23,7 @@
                     </div>
                     <div class="ft-form__field">
                         <label>Date (UTC)</label>
-                        <RadzenDatePicker @bind-Value="numberSearchDate" DateFormat="yyyy-MM-dd" />
+                        <RadzenDatePicker @bind-Value="numberSearchDate" DateFormat="dd-MM-yyyy" />
                     </div>
                     <div class="ft-form__field" style="align-self:end;">
                         <RadzenButton Text="Search" Icon="search" Click="SearchByNumber" />
@@ -42,7 +42,7 @@
                             <div class="ft-result">
                                 <div class="ft-result__main">
                                     <div class="ft-result__title"><strong>@f.FlightNumber</strong> @(f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode) → @(f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode)</div>
-                                    <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
+                                    <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("dd-MM-yyyy HH:mm") UTC</div>
                                 </div>
                                 <div class="ft-result__actions">
                                     <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectFlightFullAsync(f)" />
@@ -65,7 +65,7 @@
                     </div>
                     <div class="ft-form__field">
                         <label>Date (UTC)</label>
-                        <RadzenDatePicker @bind-Value="routeDate" DateFormat="yyyy-MM-dd" />
+                        <RadzenDatePicker @bind-Value="routeDate" DateFormat="dd-MM-yyyy" />
                     </div>
                     <div class="ft-form__field" style="align-self:end;">
                         <RadzenButton Text="Search" Icon="search" Click="SearchByRoute" />
@@ -84,7 +84,7 @@
                             <div class="ft-result">
                                 <div class="ft-result__main">
                                     <div class="ft-result__title">@f.FlightNumber @(f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode) → @(f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode)</div>
-                                    <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") UTC</div>
+                                    <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("dd-MM-yyyy HH:mm") UTC</div>
                                 </div>
                                 <div class="ft-result__actions">
                                     <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectFlightFullAsync(f)" />
@@ -113,7 +113,7 @@
                         </div>
                         <div class="ft-form__field">
                             <label>Departure (local)</label>
-                            <RadzenDatePicker @bind-Value="validation.DepartureTimeLocal" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                            <RadzenDatePicker TValue="DateTime?" Value="validation.DepartureTimeLocal" Change="@(args => validation.ArrivalTimeLocal = args)" DateFormat="dd-MM-yyyy HH:mm" ShowTime="true" Style="width:100%" />
                             <ValidationMessage For="() => validation.DepartureTimeLocal" />
                         </div>
                     </div>
@@ -125,7 +125,7 @@
                         </div>
                         <div class="ft-form__field">
                             <label>Arrival (local)</label>
-                            <RadzenDatePicker @bind-Value="validation.ArrivalTimeLocal" DateFormat="yyyy-MM-dd HH:mm" ShowTime="true" Style="width:100%" />
+                            <RadzenDatePicker @bind-Value="validation.ArrivalTimeLocal" DateFormat="dd-MM-yyyy HH:mm" ShowTime="true" Style="width:100%" />
                             <ValidationMessage For="() => validation.ArrivalTimeLocal" />
                         </div>
                     </div>
@@ -236,35 +236,49 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Value is not null)
+        if (!ReferenceEquals(Value, _lastValue))
         {
-            flightId = Value.FlightId;
-            flightNumber = Value.FlightNumber;
-            flightDate = Value.FlightDate;
-            validation.SeatNumber = Value.SeatNumber;
-            flightClass = Value.FlightClass;
-            notes = Value.Notes;
+            _lastValue = Value;
+            if (Value is not null)
+            {
+                flightId = Value.FlightId;
+                flightNumber = Value.FlightNumber;
+                flightDate = Value.FlightDate;
+                validation.SeatNumber = Value.SeatNumber;
+                flightClass = Value.FlightClass;
+                notes = Value.Notes;
 
-            // Prefill manual fields when provided
-            validation.FlightNumber = Value.FlightNumber;
-            validation.DepartureAirportCode = Value.DepartureAirportCode;
-            validation.ArrivalAirportCode = Value.ArrivalAirportCode;
-            validation.DepartureTimeLocal = await ConvertUtcToLocalAsync(Value.DepartureTimeUtc, Value.DepartureAirportCode);
-            validation.ArrivalTimeLocal = await ConvertUtcToLocalAsync(Value.ArrivalTimeUtc, Value.ArrivalAirportCode);
-            validation.AircraftRegistration = Value.AircraftRegistration;
-            validation.OperatingAirlineCode = Value.OperatingAirlineCode;
+                // Prefill manual fields when provided
+                validation.FlightNumber = Value.FlightNumber;
+                validation.DepartureAirportCode = Value.DepartureAirportCode;
+                validation.ArrivalAirportCode = Value.ArrivalAirportCode;
+                validation.DepartureTimeLocal = await ConvertUtcToLocalAsync(Value.DepartureTimeUtc, Value.DepartureAirportCode);
+                validation.ArrivalTimeLocal = await ConvertUtcToLocalAsync(Value.ArrivalTimeUtc, Value.ArrivalAirportCode);
+                validation.AircraftRegistration = Value.AircraftRegistration;
+                validation.OperatingAirlineCode = Value.OperatingAirlineCode;
 
-            _tabIndex = PreferManualTab ? 2 : 0;
-        }
-        else
-        {
-            flightId = 0;
-            flightNumber = null;
-            flightDate = null;
-            validation.SeatNumber = null;
-            flightClass = FlightClass.Economy;
-            notes = null;
-            _tabIndex = PreferManualTab ? 2 : 0;
+                _tabIndex = PreferManualTab ? 2 : 0;
+            }
+            else
+            {
+                flightId = 0;
+                flightNumber = null;
+                flightDate = null;
+                validation.SeatNumber = null;
+                flightClass = FlightClass.Economy;
+                notes = null;
+
+                // Reset validation fields
+                validation.FlightNumber = null;
+                validation.DepartureAirportCode = null;
+                validation.ArrivalAirportCode = null;
+                validation.DepartureTimeLocal = null;
+                validation.ArrivalTimeLocal = null;
+                validation.AircraftRegistration = null;
+                validation.OperatingAirlineCode = null;
+
+                _tabIndex = PreferManualTab ? 2 : 0;
+            }
         }
     }
 
@@ -374,8 +388,17 @@
         if (!CanSave) return;
         if (OnSave.HasDelegate)
         {
+            var adjustedArrivalLocal = EnsureArrivalAfterDepartureLocal(
+                validation.DepartureTimeLocal,
+                validation.ArrivalTimeLocal);
+
+            if (adjustedArrivalLocal != validation.ArrivalTimeLocal)
+            {
+                validation.ArrivalTimeLocal = adjustedArrivalLocal;
+            }
+
             var depUtc = await ConvertLocalToUtcAsync(validation.DepartureTimeLocal, validation.DepartureAirportCode);
-            var arrUtc = await ConvertLocalToUtcAsync(validation.ArrivalTimeLocal, validation.ArrivalAirportCode);
+            var arrUtc = await ConvertLocalToUtcAsync(adjustedArrivalLocal, validation.ArrivalAirportCode);
             var dto = new CreateUserFlightDto
             {
                 FlightId = flightId,
@@ -485,6 +508,24 @@
         if (string.IsNullOrWhiteSpace(airportCode)) return null;
         return await AirportService.GetTimeZoneIdByAirportCodeAsync(airportCode.Trim());
     }
+
+    private static DateTime? EnsureArrivalAfterDepartureLocal(DateTime? departureLocal, DateTime? arrivalLocal)
+    {
+        if (!departureLocal.HasValue || !arrivalLocal.HasValue)
+        {
+            return arrivalLocal;
+        }
+
+        if (arrivalLocal.Value <= departureLocal.Value && arrivalLocal.Value.AddHours(30) >= departureLocal.Value)
+        {
+            var nextDay = departureLocal.Value.Date.AddDays(1);
+            return nextDay + arrivalLocal.Value.TimeOfDay;
+        }
+
+        return arrivalLocal;
+    }
+
+    private CreateUserFlightDto? _lastValue;
 
     private readonly FlightClass[] _classes = Enum.GetValues<FlightClass>();
 }

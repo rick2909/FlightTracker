@@ -14,6 +14,15 @@ public class ApplicationMappingProfile : Profile
     public ApplicationMappingProfile()
     {
         CreateMap<Airport, AirportDto>();
+        CreateMap<AirportEnrichmentDto, Airport>()
+            .ForMember(dest => dest.City,
+                opt => opt.MapFrom(src => src.Municipality ?? string.Empty))
+            .ForMember(dest => dest.Country,
+                opt => opt.MapFrom(src => src.CountryName ?? string.Empty))
+            .ForMember(dest => dest.Name,
+                opt => opt.MapFrom(src => src.Name ?? string.Empty))
+            .ForMember(dest => dest.TimeZoneId,
+                opt => opt.MapFrom(src => (string?)null));
         CreateMap<Aircraft, AircraftDto>()
             .ForMember(dest => dest.AirlineIcaoCode,
                 opt => opt.MapFrom(src => src.Airline != null ? src.Airline.IcaoCode : null))

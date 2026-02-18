@@ -24,6 +24,7 @@ public class UserFlightService : IUserFlightService
     private readonly IAirlineRepository _airlineRepository;
     private readonly IAircraftRepository _aircraftRepository;
     private readonly IAircraftLookupClient _aircraftLookupClient;
+    private readonly IAirportEnrichmentService _airportEnrichmentService;
     private readonly IMapper _mapper;
 
     public UserFlightService(
@@ -35,6 +36,7 @@ public class UserFlightService : IUserFlightService
         IAirlineRepository airlineRepository,
         IAircraftRepository aircraftRepository,
         IAircraftLookupClient aircraftLookupClient,
+        IAirportEnrichmentService airportEnrichmentService,
         IMapper mapper)
     {
         _userFlightRepository = userFlightRepository;
@@ -45,6 +47,7 @@ public class UserFlightService : IUserFlightService
         _airlineRepository = airlineRepository;
         _aircraftRepository = aircraftRepository;
         _aircraftLookupClient = aircraftLookupClient;
+        _airportEnrichmentService = airportEnrichmentService;
         _mapper = mapper;
     }
 
@@ -392,6 +395,33 @@ public class UserFlightService : IUserFlightService
         var airport = await _airportService.GetAirportByCodeAsync(code, cancellationToken);
         if (airport is null)
         {
+            // Try to enrich airport from external API if not found
+            try
+            {
+                var enrichedAirport = await _airportEnrichmentService.EnrichAirportAsync(code, cancellationToken);
+                if (enrichedAirport is not null)
+                {
+                    return enrichedAirport.Id;
+                }
+            }
+            catch (HttpRequestException)
+            {
+                // Non-fatal; enrichment failed, continue to throw below
+                Debug.WriteLine($"Failed to enrich airport {code} from AirportDB API.");
+            }
+            catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                Debug.WriteLine($"Timeout enriching airport {code} from AirportDB API.");
+            }
+            catch (ArgumentException ex)
+            {
+                throw new ArgumentException($"{ex.Message}. Get ICAO code from https://www.flightradar24.com/data/airport/{code} or https://airport-data.com/world-airports/{code}");
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unexpected error enriching airport {code}: {ex.Message}");
+            }
+
             throw new ArgumentException("Invalid airport code(s) provided.");
         }
         return airport.Id;

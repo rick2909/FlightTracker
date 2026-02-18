@@ -92,6 +92,14 @@ builder.Services.AddScoped<IFlightRouteLookupClient>(sp => sp.GetRequiredService
 builder.Services.AddScoped<IAircraftLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
 builder.Services.AddScoped<IFlightMetadataProvisionService, FlightMetadataProvisionService>();
 
+// AirportDB client for airport enrichment
+builder.Services.AddHttpClient<AirportDbClient>(c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(6);
+});
+builder.Services.AddScoped<IAirportLookupClient>(sp => sp.GetRequiredService<AirportDbClient>());
+builder.Services.AddScoped<IAirportEnrichmentService, AirportEnrichmentService>();
+
 // External provider(s)
 builder.Services.AddScoped<IFlightDataProvider, OpenSkyClient>();
 

@@ -101,11 +101,15 @@
                     Create account
                 </button>
                 <a class="login-form__link" href="/login">Already have an account?</a>
-                @if (ViewBag.DevBypassEnabled is true)
-                {
-                    <a class="login-form__link" href="/dev-login">Dev sign in</a>
-                }
             </div>
         </form>
+
+            @if (ViewBag.DevBypassEnabled is true)
+            {
+                <form method="post" action="/dev-login" class="login-form__dev-login-form">
+                    @Html.AntiForgeryToken()
+                    <button class="login-form__link login-form__dev-login-button" type="submit">Dev sign in</button>
+                </form>
+            }
     </div>
 </div>

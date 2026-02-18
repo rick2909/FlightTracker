@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Services.Interfaces;
 
-namespace FlightTracker.Infrastructure.Repositories.Implementation;
+namespace FlightTracker.Infrastructure.External;
 
 /// <summary>
 /// Calls https://timeapi.io/api/timezone/coordinate to get IANA time zone by lat/lon.

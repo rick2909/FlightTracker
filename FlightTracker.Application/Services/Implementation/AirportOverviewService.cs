@@ -142,7 +142,7 @@ public class AirportOverviewService(
                 : l.AircraftIcaoType,
             DepartureTimeUtc = (l.DepartureActualUtc ?? l.DepartureScheduledUtc)?.ToString("o", CultureInfo.InvariantCulture),
             ArrivalTimeUtc = (l.ArrivalActualUtc ?? l.ArrivalScheduledUtc)?.ToString("o", CultureInfo.InvariantCulture),
-            DepartureCode = l.DepartureIata ?? l.DepartureIcao,
-            ArrivalCode = l.ArrivalIata ?? l.ArrivalIcao
+            DepartureCode = l.DepartureIcao ?? l.DepartureIata,
+            ArrivalCode = l.ArrivalIcao ?? l.ArrivalIata
         };
 }

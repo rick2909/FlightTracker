@@ -255,6 +255,7 @@ public class UserFlightServiceTests
             new Mock<IAirlineRepository>().Object,
             new Mock<IAircraftRepository>().Object,
             new Mock<IAircraftLookupClient>().Object,
+            new Mock<IAirportEnrichmentService>().Object,
             new Mock<IMapper>().Object);
     }
 
@@ -275,6 +276,7 @@ public class UserFlightServiceTests
             new Mock<IAirlineRepository>().Object,
             new Mock<IAircraftRepository>().Object,
             new Mock<IAircraftLookupClient>().Object,
+            new Mock<IAirportEnrichmentService>().Object,
             mapper);
     }
 

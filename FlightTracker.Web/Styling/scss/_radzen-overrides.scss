@@ -104,6 +104,17 @@
   --rz-dialog-border-radius: var(--md3-radius-xl);
 }
 
+// Notifications
+.rz-notification-item,
+.rz-notification-item-wrapper {
+  border-radius: var(--md3-radius-md);
+  overflow: hidden;
+}
+
+.rz-notification-item-content {
+  border-radius: inherit;
+}
+
 /* Radzen component rounding aligned to MD3 */
 .rz-card { border-radius: var(--rz-card-border-radius, var(--md3-radius-md)); overflow: hidden; }
 .rz-dialog { border-radius: var(--rz-dialog-border-radius, var(--md3-radius-xl)); overflow: hidden; }

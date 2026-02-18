@@ -149,7 +149,7 @@ namespace FlightTracker.Web.Controllers
             var userName = TempData["RegisteredUserName"] as string;
             return View(new LoginViewModel
             {
-                UserNameOrEmail = userName,
+                UserNameOrEmail = userName ?? string.Empty,
                 ReturnUrl = returnUrl
             });
         }

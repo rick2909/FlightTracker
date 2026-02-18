@@ -51,6 +51,25 @@
     font-size: .85rem;
     margin-top: $spacing-1;
   }
+
+  .validation-summary-errors {
+    margin-bottom: $spacing-3;
+    padding: $spacing-2 $spacing-3;
+    border: 1px solid rgba($color-error, 0.35);
+    border-radius: var(--md3-radius-md);
+    background: rgba($color-error, 0.08);
+    color: $color-error;
+    font-size: .9rem;
+
+    ul {
+      margin: 0;
+      padding-left: 1.1rem;
+    }
+
+    li {
+      margin: 0.15rem 0;
+    }
+  }
 }
 
 // Responsive: stack rows on narrow screens
