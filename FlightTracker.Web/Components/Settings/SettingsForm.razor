@@ -9,6 +9,7 @@
 @code {
     private class ProfileModel
     {
+        public string FullName { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
     }
@@ -30,6 +31,9 @@
     private IReadOnlyList<string> themeOptions = new[] { "system", "light", "dark" };
 
     [Parameter]
+    public string FullName { get; set; } = string.Empty;
+
+    [Parameter]
     public string UserName { get; set; } = string.Empty;
 
     [Parameter]
@@ -43,6 +47,7 @@
 
     protected override void OnParametersSet()
     {
+        profile.FullName = FullName ?? string.Empty;
         profile.UserName = UserName ?? string.Empty;
         profile.Email = Email ?? string.Empty;
         visibility = string.IsNullOrWhiteSpace(ProfileVisibility) ? "private" : ProfileVisibility;
@@ -52,7 +57,7 @@
 
     private async Task SaveProfileAsync()
     {
-        var data = new { UserName = profile.UserName, Email = profile.Email };
+        var data = new { FullName = profile.FullName, UserName = profile.UserName, Email = profile.Email };
         var result = await SubmitFormAsync("/Settings/UpdateProfile", data);
         
         if (result)
@@ -158,6 +163,10 @@
     <Tabs>
         <RadzenTabsItem Text="Profile">
             <div class="settings-form">
+                <div class="settings-form__row">
+                    <label class="rz-label">Full Name</label>
+                    <RadzenTextBox @bind-Value="profile.FullName" Style="width: 100%" />
+                </div>
                 <div class="settings-form__row">
                     <label class="rz-label">Username</label>
                     <RadzenTextBox @bind-Value="profile.UserName" Style="width: 100%" />

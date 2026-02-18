@@ -6,7 +6,12 @@ public class SettingsViewModel
 {
     // Profile
     [Required]
+    [Display(Name = "Full Name")]
     [StringLength(64, MinimumLength = 3)]
+    public string FullName { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(32, MinimumLength = 3)]
     public string UserName { get; set; } = string.Empty;
 
     [Required]

@@ -39,6 +39,7 @@ public class SettingsController : Controller
 
         var vm = new SettingsViewModel
         {
+            FullName = user.FullName ?? string.Empty,
             UserName = user.UserName ?? string.Empty,
             Email = user.Email ?? string.Empty,
             ProfileVisibility = Request.Cookies["ft_profile_visibility"] ?? "private",
@@ -69,6 +70,11 @@ public class SettingsController : Controller
             return Challenge();
         }
 
+        if (!string.Equals(user.FullName, model.FullName, StringComparison.Ordinal))
+        {
+            user.FullName = model.FullName;
+        }
+
         if (!string.Equals(user.UserName, model.UserName, StringComparison.Ordinal))
         {
             var setName = await _userManager.SetUserNameAsync(user, model.UserName);
@@ -91,6 +97,12 @@ public class SettingsController : Controller
                 user.EmailConfirmed = true;
                 await _userManager.UpdateAsync(user);
             }
+        }
+
+        // Update the FullName change if any
+        if (!string.Equals(user.FullName, model.FullName, StringComparison.Ordinal))
+        {
+            await _userManager.UpdateAsync(user);
         }
 
         if (!ModelState.IsValid)
@@ -171,6 +183,7 @@ public class SettingsController : Controller
 
         var vm = new SettingsViewModel
         {
+            FullName = user.FullName ?? string.Empty,
             UserName = user.UserName ?? string.Empty,
             Email = user.Email ?? string.Empty,
             ProfileVisibility = Request.Cookies["ft_profile_visibility"] ?? "private",
