@@ -30,12 +30,23 @@ window.FlightTracker.submitForm = async function(url, token, data) {
             redirect: 'manual'
         });
         
-        // Check if response is a redirect (controller returns RedirectToAction)
-        if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400)) {
+        // Treat redirects (RedirectToAction) as success
+        if (response.type === 'opaqueredirect' || (response.status >= 300 && response.status < 400) || response.redirected) {
             return { success: true, redirectUrl: response.headers.get('Location') };
         }
-        
-        return { success: response.ok };
+
+        // If JSON, allow server to signal success/failure
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            const payload = await response.json();
+            if (typeof payload?.success === 'boolean') {
+                return { success: payload.success, errors: payload.errors };
+            }
+            return { success: response.ok };
+        }
+
+        // Non-redirect HTML (e.g., validation errors) should be treated as failure
+        return { success: false };
     } catch (error) {
         console.error('Form submission failed:', error);
         return { success: false };
