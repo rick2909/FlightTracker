@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace FlightTracker.Web.Controllers;
 
 [Authorize]
+[AutoValidateAntiforgeryToken]
 public class SettingsController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -279,7 +280,7 @@ public class SettingsController : Controller
 
     // ===== Danger zone: delete all user flights (demo only) =====
     [HttpPost("/Settings/DeleteProfile")]
-    [IgnoreAntiforgeryToken]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteProfile(CancellationToken cancellationToken = default)
     {
         if (!TryGetCurrentUserId(out var userId, out var challengeResult))

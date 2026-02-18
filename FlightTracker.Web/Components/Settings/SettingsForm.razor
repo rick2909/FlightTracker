@@ -1,8 +1,11 @@
 @using FlightTracker.Infrastructure.Data
-@inject Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
+@using Microsoft.AspNetCore.Antiforgery
 @inject Radzen.NotificationService NotificationService
 @inject Radzen.DialogService DialogService
 @inject IJSRuntime JS
+@inject IAntiforgery Antiforgery
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@inject Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager
 
 @code {
     private class ProfileModel
@@ -29,6 +32,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        // Load initial values; in a real scenario, get from authenticated user claims or pass as parameter
         var user = await UserManager.FindByIdAsync("1");
         profile.UserName = user?.UserName ?? "demo";
         profile.Email = user?.Email ?? "demo@example.com";
@@ -51,33 +55,17 @@
 
     private async Task SaveProfileAsync()
     {
-        var user = await UserManager.FindByIdAsync("1");
-        if (user == null)
+        var data = new { UserName = profile.UserName, Email = profile.Email };
+        var result = await SubmitFormAsync("/Settings/UpdateProfile", data);
+        
+        if (result)
         {
-            await NotifyAsync("Profile updated (session only)", Radzen.NotificationSeverity.Info);
-            return;
+            await NotifyAsync("Profile updated", Radzen.NotificationSeverity.Success);
         }
-        if (!string.Equals(user.UserName, profile.UserName, StringComparison.Ordinal))
+        else
         {
-            var r1 = await UserManager.SetUserNameAsync(user, profile.UserName);
-            if (!r1.Succeeded)
-            {
-                await NotifyAsync(string.Join("; ", r1.Errors.Select(e => e.Description)), Radzen.NotificationSeverity.Error);
-                return;
-            }
+            await NotifyAsync("Profile update failed", Radzen.NotificationSeverity.Error);
         }
-        if (!string.Equals(user.Email, profile.Email, StringComparison.OrdinalIgnoreCase))
-        {
-            var r2 = await UserManager.SetEmailAsync(user, profile.Email);
-            if (!r2.Succeeded)
-            {
-                await NotifyAsync(string.Join("; ", r2.Errors.Select(e => e.Description)), Radzen.NotificationSeverity.Error);
-                return;
-            }
-            user.EmailConfirmed = true;
-            await UserManager.UpdateAsync(user);
-        }
-    await NotifyAsync("Profile updated", Radzen.NotificationSeverity.Success);
     }
 
     private async Task ChangePasswordAsync()
@@ -87,29 +75,71 @@
             await NotifyAsync("Passwords do not match", Radzen.NotificationSeverity.Warning);
             return;
         }
-        var user = await UserManager.FindByIdAsync("1");
-        if (user == null)
+
+        var data = new
         {
-            await NotifyAsync("Password change requires sign-in", Radzen.NotificationSeverity.Warning);
-            return;
-        }
-        var res = await UserManager.ChangePasswordAsync(user, pwd.CurrentPassword, pwd.NewPassword);
-        if (!res.Succeeded)
+            CurrentPassword = pwd.CurrentPassword,
+            NewPassword = pwd.NewPassword,
+            ConfirmNewPassword = pwd.ConfirmNewPassword
+        };
+        
+        var result = await SubmitFormAsync("/Settings/ChangePassword", data);
+        
+        if (result)
         {
-            await NotifyAsync(string.Join("; ", res.Errors.Select(e => e.Description)), Radzen.NotificationSeverity.Error);
-            return;
+            pwd = new();
+            await NotifyAsync("Password changed", Radzen.NotificationSeverity.Success);
         }
-        pwd = new();
-    await NotifyAsync("Password changed", Radzen.NotificationSeverity.Success);
+        else
+        {
+            await NotifyAsync("Password change failed", Radzen.NotificationSeverity.Error);
+        }
     }
 
     private async Task SavePreferencesAsync()
     {
-    visibility = isPublic ? "public" : "private";
-    await SetCookieAsync("ft_profile_visibility", visibility);
-        await SetCookieAsync("ft_theme", theme);
-        await ApplyThemeAsync(theme);
-    await NotifyAsync("Preferences saved", Radzen.NotificationSeverity.Success);
+        visibility = isPublic ? "public" : "private";
+        
+        var data = new { Theme = theme, ProfileVisibility = visibility };
+        var result = await SubmitFormAsync("/Settings/UpdatePreferences", data);
+        
+        if (result)
+        {
+            await ApplyThemeAsync(theme);
+            await NotifyAsync("Preferences saved", Radzen.NotificationSeverity.Success);
+        }
+        else
+        {
+            await NotifyAsync("Preferences save failed", Radzen.NotificationSeverity.Error);
+        }
+    }
+
+    private async Task<bool> SubmitFormAsync(string url, object data)
+    {
+        try
+        {
+            var httpContext = HttpContextAccessor.HttpContext;
+            if (httpContext == null)
+            {
+                return false;
+            }
+
+            var tokens = Antiforgery.GetAndStoreTokens(httpContext);
+            var token = tokens.RequestToken ?? string.Empty;
+
+            var result = await JS.InvokeAsync<System.Text.Json.JsonElement>(
+                "FlightTracker.submitForm",
+                url,
+                token,
+                data
+            );
+
+            return result.GetProperty("success").GetBoolean();
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private async Task ApplyThemeAsync(string value)
@@ -121,12 +151,6 @@
     private async Task<string?> GetCookieAsync(string name)
     {
         return await JS.InvokeAsync<string?>("eval", $"(function(){{var m=document.cookie.match(/(?:^|; ){name}=([^;]+)/);return m?decodeURIComponent(m[1]):null;}})()");
-    }
-
-    private async Task SetCookieAsync(string name, string value)
-    {
-        var js = $"document.cookie = '{name}=' + encodeURIComponent('{value}') + '; path=/; max-age=' + (3600*24*365) + '; samesite=lax';";
-        await JS.InvokeVoidAsync("eval", js);
     }
 
     private Task NotifyAsync(string message, Radzen.NotificationSeverity severity)
@@ -258,13 +282,16 @@
                 ShowClose = false
             }
         );
+        
         if (ok != true) return;
-        try
+
+        var result = await SubmitFormAsync("/Settings/DeleteProfile", new { });
+        
+        if (result)
         {
-            @* await JS.InvokeVoidAsync("fetch", "/Settings/DeleteProfile", new { method = "POST" }); *@
-            await NotifyAsync("Profile deleted (demo)", Radzen.NotificationSeverity.Success);
+            await NotifyAsync("Profile deleted", Radzen.NotificationSeverity.Success);
         }
-        catch
+        else
         {
             await NotifyAsync("Delete failed", Radzen.NotificationSeverity.Error);
         }
