@@ -3,5 +3,9 @@
     ViewData["Title"] = "Settings";
 }
 
-<component type="typeof(FlightTracker.Web.Components.Settings.SettingsForm)" render-mode="Server" />
-<script src="~/js/form-helper.js" asp-append-version="true"></script>
+<component type="typeof(FlightTracker.Web.Components.Settings.SettingsForm)"
+           render-mode="Server"
+           param-UserName="@Model.UserName"
+           param-Email="@Model.Email"
+           param-ProfileVisibility="@Model.ProfileVisibility"
+           param-Theme="@Model.Theme" />
