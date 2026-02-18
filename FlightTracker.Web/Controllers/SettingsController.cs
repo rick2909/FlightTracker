@@ -133,10 +133,17 @@ public class SettingsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult UpdatePreferences([FromForm] PreferencesViewModel model)
+    public IActionResult UpdatePreferences([FromForm] PreferencesViewModel model, [FromServices] IWebHostEnvironment env)
     {
         // Persist simple preferences in cookies (1 year)
-        var opts = new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), IsEssential = true, SameSite = SameSiteMode.Lax };
+        var opts = new CookieOptions
+        {
+            Expires = DateTimeOffset.UtcNow.AddYears(1),
+            IsEssential = true,
+            SameSite = SameSiteMode.Lax,
+            HttpOnly = true,
+            Secure = !env.IsDevelopment()
+        };
         if (!string.IsNullOrWhiteSpace(model.Theme)) Response.Cookies.Append("ft_theme", model.Theme, opts);
         if (!string.IsNullOrWhiteSpace(model.ProfileVisibility)) Response.Cookies.Append("ft_profile_visibility", model.ProfileVisibility, opts);
 
