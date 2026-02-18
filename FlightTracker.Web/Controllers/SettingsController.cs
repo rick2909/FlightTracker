@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace FlightTracker.Web.Controllers;
 
 [Authorize]
+[AutoValidateAntiforgeryToken]
 public class SettingsController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -132,10 +133,23 @@ public class SettingsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult UpdatePreferences([FromForm] PreferencesViewModel model)
+    public IActionResult UpdatePreferences([FromForm] PreferencesViewModel model, [FromServices] IWebHostEnvironment env)
     {
+        if (!ModelState.IsValid)
+        {
+            TempData["Status"] = "Preferences not saved";
+            return RedirectToAction(nameof(Index));
+        }
+
         // Persist simple preferences in cookies (1 year)
-        var opts = new CookieOptions { Expires = DateTimeOffset.UtcNow.AddYears(1), IsEssential = true, SameSite = SameSiteMode.Lax };
+        var opts = new CookieOptions
+        {
+            Expires = DateTimeOffset.UtcNow.AddYears(1),
+            IsEssential = true,
+            SameSite = SameSiteMode.Lax,
+            HttpOnly = true,
+            Secure = !env.IsDevelopment()
+        };
         if (!string.IsNullOrWhiteSpace(model.Theme)) Response.Cookies.Append("ft_theme", model.Theme, opts);
         if (!string.IsNullOrWhiteSpace(model.ProfileVisibility)) Response.Cookies.Append("ft_profile_visibility", model.ProfileVisibility, opts);
 
@@ -279,7 +293,7 @@ public class SettingsController : Controller
 
     // ===== Danger zone: delete all user flights (demo only) =====
     [HttpPost("/Settings/DeleteProfile")]
-    [IgnoreAntiforgeryToken]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteProfile(CancellationToken cancellationToken = default)
     {
         if (!TryGetCurrentUserId(out var userId, out var challengeResult))

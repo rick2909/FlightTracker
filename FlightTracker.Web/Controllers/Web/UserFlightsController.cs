@@ -121,7 +121,7 @@ public class UserFlightsController(
 
     // Placeholder API endpoint to load/refresh flight details from external providers.
     // Will call lookup/services later; for now returns current UserFlightDto.
-    [HttpPost("/UserFlights/{id:int}/LoadFromApi")]
+    [HttpGet("/UserFlights/{id:int}/LoadFromApi")]
     public async Task<IActionResult> LoadFromApi(int id, CancellationToken cancellationToken = default)
     {
         var dto = await userFlightService.GetByIdAsync(id, cancellationToken);

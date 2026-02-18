@@ -22,6 +22,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection(AuthSettings.SectionName));
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddServerSideBlazor().AddCircuitOptions(o =>
 {
     if (builder.Environment.IsDevelopment())
