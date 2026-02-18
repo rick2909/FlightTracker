@@ -60,13 +60,23 @@
         var data = new { FullName = profile.FullName, UserName = profile.UserName, Email = profile.Email };
         var result = await SubmitFormAsync("/Settings/UpdateProfile", data);
         
-        if (result)
+        if (result.Success)
         {
-            await NotifyAsync("Profile updated", Radzen.NotificationSeverity.Success);
+            // Update sidebar display name if it changed
+            if (!string.IsNullOrEmpty(result.DisplayName))
+            {
+                await JS.InvokeVoidAsync("FlightTracker.updateDisplayName", result.DisplayName);
+            }
+            await NotifyAsync("Profile updated successfully", Radzen.NotificationSeverity.Success);
+        }
+        else if (result.Errors?.Count > 0)
+        {
+            var errorMessage = string.Join("; ", result.Errors);
+            await NotifyAsync(errorMessage, Radzen.NotificationSeverity.Error);
         }
         else
         {
-            await NotifyAsync("Profile update failed", Radzen.NotificationSeverity.Error);
+            await NotifyAsync("Failed to update profile", Radzen.NotificationSeverity.Error);
         }
     }
 
@@ -74,7 +84,7 @@
     {
         if (pwd.NewPassword != pwd.ConfirmNewPassword)
         {
-            await NotifyAsync("Passwords do not match", Radzen.NotificationSeverity.Warning);
+            await NotifyAsync("New passwords do not match", Radzen.NotificationSeverity.Warning);
             return;
         }
 
@@ -87,14 +97,19 @@
         
         var result = await SubmitFormAsync("/Settings/ChangePassword", data);
         
-        if (result)
+        if (result.Success)
         {
             pwd = new();
-            await NotifyAsync("Password changed", Radzen.NotificationSeverity.Success);
+            await NotifyAsync("Password changed successfully", Radzen.NotificationSeverity.Success);
+        }
+        else if (result.Errors?.Count > 0)
+        {
+            var errorMessage = string.Join("; ", result.Errors);
+            await NotifyAsync(errorMessage, Radzen.NotificationSeverity.Error);
         }
         else
         {
-            await NotifyAsync("Password change failed", Radzen.NotificationSeverity.Error);
+            await NotifyAsync("Failed to change password", Radzen.NotificationSeverity.Error);
         }
     }
 
@@ -105,25 +120,30 @@
         var data = new { Theme = theme, ProfileVisibility = visibility };
         var result = await SubmitFormAsync("/Settings/UpdatePreferences", data);
         
-        if (result)
+        if (result.Success)
         {
             await ApplyThemeAsync(theme);
-            await NotifyAsync("Preferences saved", Radzen.NotificationSeverity.Success);
+            await NotifyAsync("Preferences saved successfully", Radzen.NotificationSeverity.Success);
+        }
+        else if (result.Errors?.Count > 0)
+        {
+            var errorMessage = string.Join("; ", result.Errors);
+            await NotifyAsync(errorMessage, Radzen.NotificationSeverity.Error);
         }
         else
         {
-            await NotifyAsync("Preferences save failed", Radzen.NotificationSeverity.Error);
+            await NotifyAsync("Failed to save preferences", Radzen.NotificationSeverity.Error);
         }
     }
 
-    private async Task<bool> SubmitFormAsync(string url, object data)
+    private async Task<(bool Success, List<string>? Errors, string? DisplayName)> SubmitFormAsync(string url, object data)
     {
         try
         {
             var httpContext = HttpContextAccessor.HttpContext;
             if (httpContext == null)
             {
-                return false;
+                return (false, new List<string> { "Unable to access HTTP context" }, null);
             }
 
             var tokens = Antiforgery.GetAndStoreTokens(httpContext);
@@ -136,11 +156,38 @@
                 data
             );
 
-            return result.GetProperty("success").GetBoolean();
+            var success = result.GetProperty("success").GetBoolean();
+            List<string>? errors = null;
+            string? displayName = null;
+
+            if (result.TryGetProperty("errors", out var errorsElement))
+            {
+                errors = new List<string>();
+                if (errorsElement.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    foreach (var error in errorsElement.EnumerateArray())
+                    {
+                        if (error.ValueKind == System.Text.Json.JsonValueKind.String)
+                        {
+                            errors.Add(error.GetString() ?? "Unknown error");
+                        }
+                    }
+                }
+            }
+
+            if (result.TryGetProperty("displayName", out var displayNameElement))
+            {
+                if (displayNameElement.ValueKind == System.Text.Json.JsonValueKind.String)
+                {
+                    displayName = displayNameElement.GetString();
+                }
+            }
+
+            return (success, errors, displayName);
         }
-        catch
+        catch (Exception ex)
         {
-            return false;
+            return (false, new List<string> { $"Unexpected error: {ex.Message}" }, null);
         }
     }
 
@@ -287,13 +334,18 @@
 
         var result = await SubmitFormAsync("/Settings/DeleteProfile", new { });
         
-        if (result)
+        if (result.Success)
         {
-            await NotifyAsync("Profile deleted", Radzen.NotificationSeverity.Success);
+            await NotifyAsync("Profile deleted successfully", Radzen.NotificationSeverity.Success);
+        }
+        else if (result.Errors?.Count > 0)
+        {
+            var errorMessage = string.Join("; ", result.Errors);
+            await NotifyAsync(errorMessage, Radzen.NotificationSeverity.Error);
         }
         else
         {
-            await NotifyAsync("Delete failed", Radzen.NotificationSeverity.Error);
+            await NotifyAsync("Failed to delete profile", Radzen.NotificationSeverity.Error);
         }
     }
 }

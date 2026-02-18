@@ -16,11 +16,13 @@ public class SettingsController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IUserFlightService _userFlightService;
+    private readonly IUsernameValidationService _usernameValidationService;
 
-    public SettingsController(UserManager<ApplicationUser> userManager, IUserFlightService userFlightService)
+    public SettingsController(UserManager<ApplicationUser> userManager, IUserFlightService userFlightService, IUsernameValidationService usernameValidationService)
     {
         _userManager = userManager;
         _userFlightService = userFlightService;
+        _usernameValidationService = usernameValidationService;
     }
 
     [HttpGet]
@@ -55,8 +57,8 @@ public class SettingsController : Controller
     {
         if (!ModelState.IsValid)
         {
-            ViewData["Title"] = "Settings";
-            return View("Index", model);
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, errors });
         }
 
         if (!TryGetCurrentUserId(out var userId, out var challengeResult))
@@ -73,14 +75,29 @@ public class SettingsController : Controller
         if (!string.Equals(user.FullName, model.FullName, StringComparison.Ordinal))
         {
             user.FullName = model.FullName;
+            // Update display_name claim
+            var displayNameClaim = (await _userManager.GetClaimsAsync(user)).FirstOrDefault(c => c.Type == "display_name");
+            if (displayNameClaim != null)
+            {
+                await _userManager.RemoveClaimAsync(user, displayNameClaim);
+            }
+            await _userManager.AddClaimAsync(user, new Claim("display_name", model.FullName));
         }
 
         if (!string.Equals(user.UserName, model.UserName, StringComparison.Ordinal))
         {
+            // Validate username against business rules
+            var usernameValidation = await _usernameValidationService.ValidateAsync(model.UserName.Trim());
+            if (!usernameValidation.IsValid)
+            {
+                return Json(new { success = false, errors = new[] { usernameValidation.ErrorMessage ?? "Invalid username." } });
+            }
+
             var setName = await _userManager.SetUserNameAsync(user, model.UserName);
             if (!setName.Succeeded)
             {
-                foreach (var e in setName.Errors) ModelState.AddModelError("UserName", e.Description);
+                var errors = setName.Errors.Select(e => e.Description).ToList();
+                return Json(new { success = false, errors });
             }
         }
 
@@ -89,7 +106,8 @@ public class SettingsController : Controller
             var setEmail = await _userManager.SetEmailAsync(user, model.Email);
             if (!setEmail.Succeeded)
             {
-                foreach (var e in setEmail.Errors) ModelState.AddModelError("Email", e.Description);
+                var errors = setEmail.Errors.Select(e => e.Description).ToList();
+                return Json(new { success = false, errors });
             }
             else
             {
@@ -99,20 +117,10 @@ public class SettingsController : Controller
             }
         }
 
-        // Update the FullName change if any
-        if (!string.Equals(user.FullName, model.FullName, StringComparison.Ordinal))
-        {
-            await _userManager.UpdateAsync(user);
-        }
-
-        if (!ModelState.IsValid)
-        {
-            ViewData["Title"] = "Settings";
-            return View("Index", model);
-        }
+        await _userManager.UpdateAsync(user);
 
         TempData["Status"] = "Profile updated";
-        return RedirectToAction(nameof(Index));
+        return Json(new { success = true, displayName = user.FullName });
     }
 
     [HttpPost]
@@ -121,7 +129,8 @@ public class SettingsController : Controller
     {
         if (!ModelState.IsValid)
         {
-            return await ReturnSettingsWithErrors();
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, errors });
         }
         if (!TryGetCurrentUserId(out var userId, out var challengeResult))
         {
@@ -136,11 +145,12 @@ public class SettingsController : Controller
         var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
         if (!result.Succeeded)
         {
-            foreach (var e in result.Errors) ModelState.AddModelError(string.Empty, e.Description);
-            return await ReturnSettingsWithErrors();
+            var errors = result.Errors.Select(e => e.Description).ToList();
+            return Json(new { success = false, errors });
         }
+        
         TempData["Status"] = "Password changed";
-        return RedirectToAction(nameof(Index));
+        return Json(new { success = true });
     }
 
     [HttpPost]
@@ -149,8 +159,8 @@ public class SettingsController : Controller
     {
         if (!ModelState.IsValid)
         {
-            TempData["Status"] = "Preferences not saved";
-            return RedirectToAction(nameof(Index));
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, errors });
         }
 
         // Persist simple preferences in cookies (1 year)
@@ -166,7 +176,7 @@ public class SettingsController : Controller
         if (!string.IsNullOrWhiteSpace(model.ProfileVisibility)) Response.Cookies.Append("ft_profile_visibility", model.ProfileVisibility, opts);
 
         TempData["Status"] = "Preferences saved";
-        return RedirectToAction(nameof(Index));
+        return Json(new { success = true });
     }
 
     private async Task<IActionResult> ReturnSettingsWithErrors()

@@ -144,9 +144,9 @@ builder.Services
     .AddEntityFrameworkStores<FlightTrackerDbContext>()
     .AddSignInManager();
 
-builder.Services
-    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+var authBuilder = builder.Services
+    .AddAuthentication(IdentityConstants.ApplicationScheme)
+    .AddCookie(IdentityConstants.ApplicationScheme, options =>
     {
         options.LoginPath = "/login";
         options.LogoutPath = "/logout";
@@ -234,10 +234,10 @@ if (app.Environment.IsDevelopment())
             new("display_name", settings.DevDisplayName ?? string.Empty)
         };
 
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var identity = new ClaimsIdentity(claims, IdentityConstants.ApplicationScheme);
         var principal = new ClaimsPrincipal(identity);
 
-        await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+        await httpContext.SignInAsync(IdentityConstants.ApplicationScheme, principal);
 
         var returnUrl = httpContext.Request.Query["ReturnUrl"].ToString();
         if (!string.IsNullOrWhiteSpace(returnUrl)

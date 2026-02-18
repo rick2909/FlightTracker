@@ -25,8 +25,6 @@ public class SettingsViewModel
     [RegularExpression("^(light|dark|system)$")]
     public string Theme { get; set; } = "system";
 
-    // Nested forms
-    public ChangePasswordViewModel ChangePassword { get; set; } = new();
     public PreferencesViewModel Preferences => new() { ProfileVisibility = ProfileVisibility, Theme = Theme };
 }
 
