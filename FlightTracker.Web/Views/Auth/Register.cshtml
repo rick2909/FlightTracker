@@ -106,7 +106,7 @@
 
             @if (ViewBag.DevBypassEnabled is true)
             {
-                <form method="post" href="dev-login" class="login-form__dev-login-form">
+                <form method="post" action="/dev-login" class="login-form__dev-login-form">
                     @Html.AntiForgeryToken()
                     <button class="login-form__link login-form__dev-login-button" type="submit">Dev sign in</button>
                 </form>
