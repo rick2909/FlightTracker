@@ -414,7 +414,7 @@ public class UserFlightService : IUserFlightService
             }
             catch (ArgumentException ex)
             {
-                throw new Exception($"{ex.Message}. get Icao code from https://www.flightradar24.com/airport/{code} or https://airport-data.com/world-airports/{code}");
+                throw new Exception($"{ex.Message}. get Icao code from https://www.flightradar24.com/data/airport/{code} or https://airport-data.com/world-airports/{code}");
             }
             catch (Exception ex)
             {
