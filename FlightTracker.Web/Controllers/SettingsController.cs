@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using System.Text.RegularExpressions;
 
 namespace FlightTracker.Web.Controllers;
 
@@ -136,10 +137,33 @@ public class SettingsController : Controller
         {
             return challengeResult!;
         }
+
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user == null)
         {
             return Challenge();
+        }
+
+        // Validate password against regex requirements
+        var passwordRegexValidations = new(Regex pattern, string errorMessage)[]
+        {
+            (new Regex(@"[A-Z]"), "Password must contain at least one uppercase letter."),
+            (new Regex(@"[a-z]"), "Password must contain at least one lowercase letter."),
+            (new Regex(@"\d"), "Password must contain at least one digit."),
+            (new Regex(@"[^A-Za-z0-9]"), "Password must contain at least one non-alphanumeric character.")
+        };
+
+        foreach (var (pattern, errorMessage) in passwordRegexValidations)
+        {
+            if (!pattern.IsMatch(model.NewPassword))
+            {
+                ModelState.AddModelError(nameof(ChangePasswordViewModel.NewPassword), errorMessage);
+            }
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
         }
 
         var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
