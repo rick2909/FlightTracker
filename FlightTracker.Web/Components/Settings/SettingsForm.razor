@@ -338,11 +338,6 @@
 
     <RadzenTabsItem Text="Preferences">
             <div class="settings-form">
-                <div class="settings-form__row">
-                    <label class="rz-label">Theme</label>
-                    <RadzenDropDown @bind-Value="theme" TValue="string" Data="@themeOptions" Style="width: 100%" />
-                </div>
-
                 <div class="settings-form__two-col">
                     <section class="settings-form__panel">
                         <h4 class="settings-form__section-title">Display & Units</h4>
@@ -369,6 +364,10 @@
                             <label class="rz-label">Date format</label>
                             <RadzenDropDown @bind-Value="dateFormat" TValue="DateFormat" Data="@dateFormatOptions" TextProperty="Text" ValueProperty="Value" Style="width: 100%" />
                             <small class="settings-form__hint">How dates are displayed throughout the app.</small>
+                        </div>
+                        <div class="settings-form__row">
+                            <label class="rz-label">Theme</label>
+                            <RadzenDropDown @bind-Value="theme" TValue="string" Data="@themeOptions" Style="width: 100%" />
                         </div>
                     </section>
 
