@@ -26,7 +26,7 @@ public class SettingsViewModel
     [RegularExpression("^(light|dark|system)$")]
     public string Theme { get; set; } = "system";
 
-    public PreferencesViewModel Preferences => new() { ProfileVisibility = ProfileVisibility, Theme = Theme };
+    public PreferencesViewModel Preferences { get; set; } = new();
 }
 
 public class ChangePasswordViewModel
