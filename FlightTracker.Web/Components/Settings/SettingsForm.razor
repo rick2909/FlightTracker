@@ -1,5 +1,6 @@
 @using Microsoft.AspNetCore.Antiforgery
 @using Microsoft.AspNetCore.Components
+@using FlightTracker.Domain.Enums
 @inject Radzen.NotificationService NotificationService
 @inject Radzen.DialogService DialogService
 @inject IJSRuntime JS
@@ -26,9 +27,40 @@
     private string visibility = "private";
     private bool isPublic;
     private string theme = "system";
+    
+    // Display & Units
+    private DistanceUnit distanceUnit = DistanceUnit.Miles;
+    private TemperatureUnit temperatureUnit = TemperatureUnit.Celsius;
+    private TimeFormat timeFormat = TimeFormat.TwentyFourHour;
+    private DateFormat dateFormat = DateFormat.YearMonthDay;
+    
     private record Option(string Text, string Value);
     private IReadOnlyList<Option> visibilityOptions = new[] { new Option("Public", "public"), new Option("Private", "private") };
     private IReadOnlyList<string> themeOptions = new[] { "system", "light", "dark" };
+    private IReadOnlyList<Option<DistanceUnit>> distanceUnitOptions = new[]
+    {
+        new Option<DistanceUnit>("Miles (mi)", DistanceUnit.Miles),
+        new Option<DistanceUnit>("Kilometers (km)", DistanceUnit.Kilometers),
+        new Option<DistanceUnit>("Nautical Miles (NM)", DistanceUnit.NauticalMiles)
+    };
+    private IReadOnlyList<Option<TemperatureUnit>> temperatureUnitOptions = new[]
+    {
+        new Option<TemperatureUnit>("Celsius (°C)", TemperatureUnit.Celsius),
+        new Option<TemperatureUnit>("Fahrenheit (°F)", TemperatureUnit.Fahrenheit)
+    };
+    private IReadOnlyList<Option<TimeFormat>> timeFormatOptions = new[]
+    {
+        new Option<TimeFormat>("24-hour (14:30)", TimeFormat.TwentyFourHour),
+        new Option<TimeFormat>("12-hour (2:30 PM)", TimeFormat.TwelveHour)
+    };
+    private IReadOnlyList<Option<DateFormat>> dateFormatOptions = new[]
+    {
+        new Option<DateFormat>("DD/MM/YYYY (25/12/2025)", DateFormat.DayMonthYear),
+        new Option<DateFormat>("MM/DD/YYYY (12/25/2025)", DateFormat.MonthDayYear),
+        new Option<DateFormat>("YYYY-MM-DD (2025-12-25)", DateFormat.YearMonthDay)
+    };
+    
+    private record Option<T>(string Text, T Value);
 
     [Parameter]
     public string FullName { get; set; } = string.Empty;
@@ -44,6 +76,18 @@
 
     [Parameter]
     public string Theme { get; set; } = "system";
+    
+    [Parameter]
+    public DistanceUnit DistanceUnit { get; set; } = DistanceUnit.Miles;
+    
+    [Parameter]
+    public TemperatureUnit TemperatureUnit { get; set; } = TemperatureUnit.Celsius;
+    
+    [Parameter]
+    public TimeFormat TimeFormat { get; set; } = TimeFormat.TwentyFourHour;
+    
+    [Parameter]
+    public DateFormat DateFormat { get; set; } = DateFormat.YearMonthDay;
 
     protected override void OnParametersSet()
     {
@@ -53,6 +97,12 @@
         visibility = string.IsNullOrWhiteSpace(ProfileVisibility) ? "private" : ProfileVisibility;
         theme = string.IsNullOrWhiteSpace(Theme) ? "system" : Theme;
         isPublic = string.Equals(visibility, "public", StringComparison.OrdinalIgnoreCase);
+        
+        // Set display & units
+        distanceUnit = DistanceUnit;
+        temperatureUnit = TemperatureUnit;
+        timeFormat = TimeFormat;
+        dateFormat = DateFormat;
     }
 
     private async Task SaveProfileAsync()
@@ -115,7 +165,15 @@
     {
         visibility = isPublic ? "public" : "private";
         
-        var data = new { Theme = theme, ProfileVisibility = visibility };
+        var data = new
+        {
+            Theme = theme,
+            ProfileVisibility = visibility,
+            DistanceUnit = (int)distanceUnit,
+            TemperatureUnit = (int)temperatureUnit,
+            TimeFormat = (int)timeFormat,
+            DateFormat = (int)dateFormat
+        };
         var result = await SubmitFormAsync("/Settings/UpdatePreferences", data);
         
         if (result.Success)
@@ -255,6 +313,34 @@
                 <div class="settings-form__row">
                     <label class="rz-label">Theme</label>
                     <RadzenDropDown @bind-Value="theme" TValue="string" Data="@themeOptions" Style="width: 100%" />
+                </div>
+                
+                <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--rz-border-color);" />
+                
+                <h4 style="margin-bottom: 1rem; color: var(--rz-text-color);">Display & Units</h4>
+                
+                <div class="settings-form__row">
+                    <label class="rz-label">Distance unit</label>
+                    <RadzenDropDown @bind-Value="distanceUnit" TValue="DistanceUnit" Data="@distanceUnitOptions" TextProperty="Text" ValueProperty="Value" Style="width: 100%" />
+                    <small class="settings-form__hint">How distances are displayed on your passport and flight details.</small>
+                </div>
+                
+                <div class="settings-form__row">
+                    <label class="rz-label">Temperature unit</label>
+                    <RadzenDropDown @bind-Value="temperatureUnit" TValue="TemperatureUnit" Data="@temperatureUnitOptions" TextProperty="Text" ValueProperty="Value" Style="width: 100%" />
+                    <small class="settings-form__hint">For weather data (when available).</small>
+                </div>
+                
+                <div class="settings-form__row">
+                    <label class="rz-label">Time format</label>
+                    <RadzenDropDown @bind-Value="timeFormat" TValue="TimeFormat" Data="@timeFormatOptions" TextProperty="Text" ValueProperty="Value" Style="width: 100%" />
+                    <small class="settings-form__hint">How times are displayed throughout the app.</small>
+                </div>
+                
+                <div class="settings-form__row">
+                    <label class="rz-label">Date format</label>
+                    <RadzenDropDown @bind-Value="dateFormat" TValue="DateFormat" Data="@dateFormatOptions" TextProperty="Text" ValueProperty="Value" Style="width: 100%" />
+                    <small class="settings-form__hint">How dates are displayed throughout the app.</small>
                 </div>
 
                 <RadzenButton Text="Save preferences" Click="@(_ => SavePreferencesAsync())" Icon="settings" />

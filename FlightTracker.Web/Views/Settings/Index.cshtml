@@ -9,6 +9,10 @@
            param-UserName="@Model.UserName"
            param-Email="@Model.Email"
            param-ProfileVisibility="@Model.ProfileVisibility"
-           param-Theme="@Model.Theme" />
+           param-Theme="@Model.Theme"
+           param-DistanceUnit="@Model.Preferences.DistanceUnit"
+           param-TemperatureUnit="@Model.Preferences.TemperatureUnit"
+           param-TimeFormat="@Model.Preferences.TimeFormat"
+           param-DateFormat="@Model.Preferences.DateFormat" />
 
 <script src="~/js/form-helper.js" asp-append-version="true"></script>

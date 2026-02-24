@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using FlightTracker.Domain.Enums;
 
 namespace FlightTracker.Web.Models.ViewModels;
 
@@ -52,4 +53,13 @@ public class PreferencesViewModel
 
     [RegularExpression("^(light|dark|system)$")]
     public string Theme { get; set; } = "system";
+
+    // Display & Units
+    public DistanceUnit DistanceUnit { get; set; } = DistanceUnit.Miles;
+
+    public TemperatureUnit TemperatureUnit { get; set; } = TemperatureUnit.Celsius;
+
+    public TimeFormat TimeFormat { get; set; } = TimeFormat.TwentyFourHour;
+
+    public DateFormat DateFormat { get; set; } = DateFormat.YearMonthDay;
 }

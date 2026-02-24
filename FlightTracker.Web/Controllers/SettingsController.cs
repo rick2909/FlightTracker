@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.RegularExpressions;
+using FlightTracker.Domain.Enums;
 
 namespace FlightTracker.Web.Controllers;
 
@@ -19,13 +20,20 @@ public class SettingsController : Controller
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IUserFlightService _userFlightService;
     private readonly IUsernameValidationService _usernameValidationService;
+    private readonly IUserPreferencesService _userPreferencesService;
 
-    public SettingsController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IUserFlightService userFlightService, IUsernameValidationService usernameValidationService)
+    public SettingsController(
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        IUserFlightService userFlightService,
+        IUsernameValidationService usernameValidationService,
+        IUserPreferencesService userPreferencesService)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _userFlightService = userFlightService;
         _usernameValidationService = usernameValidationService;
+        _userPreferencesService = userPreferencesService;
     }
 
     [HttpGet]
@@ -42,6 +50,8 @@ public class SettingsController : Controller
             return Challenge();
         }
 
+        var preferences = await _userPreferencesService.GetOrCreateAsync(userId, default);
+
         var vm = new SettingsViewModel
         {
             FullName = user.FullName ?? string.Empty,
@@ -50,6 +60,13 @@ public class SettingsController : Controller
             ProfileVisibility = Request.Cookies["ft_profile_visibility"] ?? "private",
             Theme = Request.Cookies["ft_theme"] ?? "system"
         };
+        
+        // Set display & units from database
+        vm.Preferences.DistanceUnit = preferences.DistanceUnit;
+        vm.Preferences.TemperatureUnit = preferences.TemperatureUnit;
+        vm.Preferences.TimeFormat = preferences.TimeFormat;
+        vm.Preferences.DateFormat = preferences.DateFormat;
+        
         ViewData["Title"] = "Settings";
         return View(vm);
     }
@@ -184,12 +201,17 @@ public class SettingsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult UpdatePreferences([FromForm] PreferencesViewModel model, [FromServices] IWebHostEnvironment env)
+    public async Task<IActionResult> UpdatePreferences([FromForm] PreferencesViewModel model, [FromServices] IWebHostEnvironment env, CancellationToken cancellationToken = default)
     {
         if (!ModelState.IsValid)
         {
             var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
             return Json(new { success = false, errors });
+        }
+
+        if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+        {
+            return challengeResult!;
         }
 
         // Persist simple preferences in cookies (1 year)
@@ -203,6 +225,18 @@ public class SettingsController : Controller
         };
         if (!string.IsNullOrWhiteSpace(model.Theme)) Response.Cookies.Append("ft_theme", model.Theme, opts);
         if (!string.IsNullOrWhiteSpace(model.ProfileVisibility)) Response.Cookies.Append("ft_profile_visibility", model.ProfileVisibility, opts);
+
+        // Persist display & units preferences to database
+        var preferencesDto = new Application.Dtos.UserPreferencesDto
+        {
+            UserId = userId,
+            DistanceUnit = model.DistanceUnit,
+            TemperatureUnit = model.TemperatureUnit,
+            TimeFormat = model.TimeFormat,
+            DateFormat = model.DateFormat
+        };
+        
+        await _userPreferencesService.UpdateAsync(userId, preferencesDto, cancellationToken);
 
         TempData["Status"] = "Preferences saved";
         return Json(new { success = true });

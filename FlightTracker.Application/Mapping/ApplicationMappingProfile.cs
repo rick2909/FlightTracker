@@ -32,5 +32,9 @@ public class ApplicationMappingProfile : Profile
                 opt => opt.MapFrom(src => src.Airline != null ? src.Airline.Name : null));
 
         CreateMap<CreateAircraftDto, Aircraft>();
+
+        // UserPreferences mapping
+        CreateMap<UserPreferences, UserPreferencesDto>();
+        CreateMap<UserPreferencesDto, UserPreferences>();
     }
 }

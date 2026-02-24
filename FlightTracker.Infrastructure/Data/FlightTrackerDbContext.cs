@@ -16,6 +16,7 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
     public DbSet<UserFlight> UserFlights => Set<UserFlight>();
     public DbSet<Aircraft> Aircraft => Set<Aircraft>();
     public DbSet<Airline> Airlines => Set<Airline>();
+    public DbSet<UserPreferences> UserPreferences => Set<UserPreferences>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -129,6 +130,18 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
             // Create composite index for performance
             entity.HasIndex(uf => new { uf.UserId, uf.FlightId });
             entity.HasIndex(uf => uf.BookedOnUtc);
+        });
+
+        // Configure UserPreferences entity
+        builder.Entity<UserPreferences>(entity =>
+        {
+            entity.Property(p => p.DistanceUnit).HasConversion<string>().IsRequired();
+            entity.Property(p => p.TemperatureUnit).HasConversion<string>().IsRequired();
+            entity.Property(p => p.TimeFormat).HasConversion<string>().IsRequired();
+            entity.Property(p => p.DateFormat).HasConversion<string>().IsRequired();
+
+            // One-to-one relationship with ApplicationUser
+            entity.HasIndex(p => p.UserId).IsUnique();
         });
     }
 }

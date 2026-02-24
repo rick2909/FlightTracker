@@ -4,6 +4,7 @@ using FlightTracker.Application.Services.Interfaces.Analytics;
 using FlightTracker.Application.Services.Implementation.Analytics;
 using FlightTracker.Application.Repositories.Interfaces;
 using FlightTracker.Infrastructure.Repositories.Implementation;
+using FlightTracker.Infrastructure.Repositories;
 using FlightTracker.Infrastructure.Data;
 using FlightTracker.Web.Models.Auth;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +45,7 @@ builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 builder.Services.AddScoped<IUserFlightRepository, UserFlightRepository>();
 builder.Services.AddScoped<IAircraftRepository, AircraftRepository>();
 builder.Services.AddScoped<IAirlineRepository, AirlineRepository>();
+builder.Services.AddScoped<IUserPreferencesRepository, UserPreferencesRepository>();
 
 // Register application services
 builder.Services.AddScoped<IAirportService, AirportService>();
@@ -52,6 +54,7 @@ builder.Services.AddScoped<IUserFlightService, UserFlightService>();
 builder.Services.AddScoped<IMapFlightService, MapFlightService>();
 builder.Services.AddScoped<IPassportService, PassportService>();
 builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
+builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
 builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
 {
     c.Timeout = TimeSpan.FromSeconds(3);
