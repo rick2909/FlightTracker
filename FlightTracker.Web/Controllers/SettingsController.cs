@@ -67,6 +67,14 @@ public class SettingsController : Controller
         vm.Preferences.TimeFormat = preferences.TimeFormat;
         vm.Preferences.DateFormat = preferences.DateFormat;
         
+        // Set privacy & sharing from database
+        vm.Preferences.ProfileVisibilityLevel = preferences.ProfileVisibility;
+        vm.Preferences.ShowTotalMiles = preferences.ShowTotalMiles;
+        vm.Preferences.ShowAirlines = preferences.ShowAirlines;
+        vm.Preferences.ShowCountries = preferences.ShowCountries;
+        vm.Preferences.ShowMapRoutes = preferences.ShowMapRoutes;
+        vm.Preferences.EnableActivityFeed = preferences.EnableActivityFeed;
+        
         ViewData["Title"] = "Settings";
         return View(vm);
     }
@@ -233,7 +241,13 @@ public class SettingsController : Controller
             DistanceUnit = model.DistanceUnit,
             TemperatureUnit = model.TemperatureUnit,
             TimeFormat = model.TimeFormat,
-            DateFormat = model.DateFormat
+            DateFormat = model.DateFormat,
+            ProfileVisibility = model.ProfileVisibilityLevel,
+            ShowTotalMiles = model.ShowTotalMiles,
+            ShowAirlines = model.ShowAirlines,
+            ShowCountries = model.ShowCountries,
+            ShowMapRoutes = model.ShowMapRoutes,
+            EnableActivityFeed = model.EnableActivityFeed
         };
         
         await _userPreferencesService.UpdateAsync(userId, preferencesDto, cancellationToken);

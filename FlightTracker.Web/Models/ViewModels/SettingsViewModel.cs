@@ -62,4 +62,17 @@ public class PreferencesViewModel
     public TimeFormat TimeFormat { get; set; } = TimeFormat.TwentyFourHour;
 
     public DateFormat DateFormat { get; set; } = DateFormat.YearMonthDay;
+    
+    // Privacy & Sharing
+    public ProfileVisibilityLevel ProfileVisibilityLevel { get; set; } = ProfileVisibilityLevel.Private;
+    
+    public bool ShowTotalMiles { get; set; } = true;
+    
+    public bool ShowAirlines { get; set; } = true;
+    
+    public bool ShowCountries { get; set; } = true;
+    
+    public bool ShowMapRoutes { get; set; } = true;
+    
+    public bool EnableActivityFeed { get; set; } = false;
 }

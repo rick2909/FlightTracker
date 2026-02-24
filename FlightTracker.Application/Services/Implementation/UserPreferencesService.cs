@@ -69,6 +69,12 @@ public class UserPreferencesService : IUserPreferencesService
         existing.TemperatureUnit = preferences.TemperatureUnit;
         existing.TimeFormat = preferences.TimeFormat;
         existing.DateFormat = preferences.DateFormat;
+        existing.ProfileVisibility = preferences.ProfileVisibility;
+        existing.ShowTotalMiles = preferences.ShowTotalMiles;
+        existing.ShowAirlines = preferences.ShowAirlines;
+        existing.ShowCountries = preferences.ShowCountries;
+        existing.ShowMapRoutes = preferences.ShowMapRoutes;
+        existing.EnableActivityFeed = preferences.EnableActivityFeed;
         existing.UpdatedAtUtc = DateTime.UtcNow;
 
         var updated = await _repository.UpdateAsync(existing, cancellationToken);

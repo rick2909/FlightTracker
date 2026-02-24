@@ -23,6 +23,8 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 - [x] Entities: Flight, Airport (POCO)
 - [x] Introduce `FlightStatus` enum (replace string Status) — mapped via EF conversion in DbContext
+- [x] Add UserPreferences entity with display & unit enums (DistanceUnit, TemperatureUnit, TimeFormat, DateFormat)
+- [x] Add ProfileVisibilityLevel enum for privacy settings
 - [ ] Add value object (e.g., AirportCode) to reduce string duplication (optional)
 - [ ] Add domain exceptions (e.g., FlightNotFoundException)
 - [ ] Introduce IClock abstraction reference boundary (interface only, implementation outward)
@@ -42,6 +44,8 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Define external provider abstraction: IFlightDataProvider (live flight & track retrieval)
 - [x] Define airport live data abstraction: IAirportLiveService (departures/arrivals)
 - [x] Add AirportOverviewService (merges DB + live provider results with de-duplication)
+- [x] Add IUserPreferencesService + UserPreferencesService for user settings management
+- [x] Add UserPreferencesDto with display, unit, and privacy fields
 - [ ] Define IFlightStatsService + DTOs for passport/stats (TotalFlights, TotalHours, MonthlyCounts)
 - [ ] Add aggregation DTOs for Passport details: AirlineStatsDto { AirlineName, AirlineIata, Count }, AircraftTypeStatsDto { TypeCode, Count }
 - [ ] Implement IFlightStatsService (group-by airline and aircraft type for a user)
@@ -53,11 +57,12 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 ## 4. Infrastructure Layer
 
 - [x] DbContext with Identity (ApplicationUser) + Flights/Airports
-- [x] Repositories (FlightRepository, AirportRepository)
+- [x] Repositories (FlightRepository, AirportRepository, UserPreferencesRepository)
 - [x] SeedData (airports + sample flights + users)
 - [x] Add initial EF Core migration
 - [x] Replace string Status with enum mapping (conversion)
 - [x] Implement repository interfaces in new folder structure after relocation decision
+- [x] Add UserPreferences table with migrations (AddUserPreferences, AddPrivacySharingSettings)
 - [ ] Add EF configuration classes (separate from OnModelCreating) if model grows
 - [ ] External API client scaffolds: OpenSkyClient (implements IFlightDataProvider) (Deferred)
 - [ ] Add caching layer (MemoryCache) decorator for IFlightDataProvider
@@ -91,7 +96,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Map component via JS interop (MapLibre or Leaflet) spike
 - [x] Flight list & selection panel (Airports page: departing/arriving)
 - [x] Airport overview/detail page (map + lists; initial version with live toggle)
-- [x] Settings page (profile basics + preferences cookies + CSV/JSON export)
+- [x] Settings page (profile, password, display & units preferences, privacy & sharing, CSV/JSON export)
 - [x] Wire Airports UI to AirportOverviewService with optional Aviationstack live data
 - [ ] NEW: Passport details view (more in-depth stats inside Passport)
 	- [x] Route: `/Passport/{id?}` gains a "Details" tab/section (or `/Passport/{id?}/Details` action)
@@ -169,16 +174,64 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 ## 12. Security & Auth
 
 - [x] Identity schema migrations
+- [x] Username validation service with business rules
 - [ ] Password policy + account lockout config
 - [ ] Role setup (User, Admin) & policy stubs
-- [ ] Username validation rules (allowed characters + profanity filter source)
 - [ ] Registration flow: verify email before collecting username/password
 - [ ] Secure endpoints (JWT or cookie auth) + refresh strategy
 - [ ] Input validation hardening (anti-overposting DTOs)
 - [ ] Secrets management plan (user secrets / environment variables)
 - [ ] 2FA / MFA support (Deferred)
 
-## 13. Developer Experience
+## 13. User Settings & Preferences
+
+- [x] Settings page baseline (profile, password, theme, visibility)
+- [x] **Display & Units Preferences**
+	- [x] Add DistanceUnit, TemperatureUnit, TimeFormat, DateFormat enums
+	- [x] Create UserPreferences entity with database storage
+	- [x] Implement repository and service layers
+	- [x] Add UI controls in Settings → Preferences tab
+	- [x] Migrate from cookie-based to database storage
+	- [ ] Create helper services/formatters to use preferences throughout app
+	- [ ] Update Passport page to display distances in user's preferred unit
+	- [ ] Apply date/time formatting preferences in flight details
+- [ ] **Privacy & Sharing Settings**
+	- [x] Enhance ProfileVisibility with granular levels (Public/Private)
+	- [x] Add StatsVisibility flags (show/hide total miles, airlines, countries)
+	- [x] Add MapVisibility toggle (show/hide routes on public profile)
+	- [x] Add ActivityFeed preference (enable/disable flight sharing)
+	- [x] Create ProfileVisibilityLevel enum
+	- [x] Add privacy fields to UserPreferences entity and database
+	- [x] Update UI with toggle switches in Settings → Preferences tab
+	- [ ] Implement access control logic for public profile views
+	- [ ] Apply privacy settings when rendering Passport page
+- [ ] **Notification Preferences** (Deferred)
+	- [ ] Email notifications toggle
+	- [ ] Flight update alerts preference
+	- [ ] Weekly digest opt-in
+	- [ ] Browser push notification settings
+- [ ] **Data & API Integration Settings** (Deferred)
+	- [ ] User-provided API keys (OpenSky, FR24, Aviationstack)
+	- [ ] Auto-sync toggle for external enrichment
+	- [ ] Data refresh frequency selector
+	- [ ] API usage/quota display
+- [ ] **Passport Customization** (Deferred)
+	- [ ] Avatar/profile photo upload
+	- [ ] Home airport preference
+	- [ ] Favorite airline pin
+	- [ ] Travel goals (yearly flight/distance targets)
+	- [ ] Badge visibility toggles
+- [ ] **Map Preferences** (Deferred)
+	- [ ] Map style selector (Light/Dark/Satellite/Terrain)
+	- [ ] Default zoom level
+	- [ ] Route display options (all/recent X flights)
+	- [ ] Clustering toggle
+- [ ] **Import/Export Enhancements** (Deferred)
+	- [ ] Auto-backup frequency (Daily/Weekly/Monthly)
+	- [ ] PDF export with charts
+	- [ ] Import from other flight trackers (standardized format)
+
+## 14. Developer Experience
 
 - [x] README draft (project purpose, quick start)
 - [ ] Add solution-level build script (format, test, coverage)
@@ -188,7 +241,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [ ] Issue templates / PR template
 - [ ] Code coverage badge & threshold enforcement (Deferred)
 
-## 14. Documentation & Diagrams
+## 15. Documentation & Diagrams
 
 - [ ] Update architecture diagram (layers & dependencies)
 - [ ] Document provider abstraction (OpenSky -> interface mapping)
@@ -197,7 +250,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [ ] Flight state machine (Pre-flight → At airport → In-flight → Landed → Archived)
 - [ ] Sequence diagram for live tracking broadcast (Deferred)
 
-## 15. Future / Stretch Ideas
+## 16. Future / Stretch Ideas
 
 - [ ] Offline mode (local cache, sync) (Deferred)
 - [ ] Notifications (pre-flight alerts, gate changes) via SignalR / push (Deferred)

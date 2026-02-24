@@ -34,6 +34,14 @@
     private TimeFormat timeFormat = TimeFormat.TwentyFourHour;
     private DateFormat dateFormat = DateFormat.YearMonthDay;
     
+    // Privacy & Sharing
+    private ProfileVisibilityLevel profileVisibilityLevel = ProfileVisibilityLevel.Private;
+    private bool showTotalMiles = true;
+    private bool showAirlines = true;
+    private bool showCountries = true;
+    private bool showMapRoutes = true;
+    private bool enableActivityFeed = false;
+    
     private record Option(string Text, string Value);
     private IReadOnlyList<Option> visibilityOptions = new[] { new Option("Public", "public"), new Option("Private", "private") };
     private IReadOnlyList<string> themeOptions = new[] { "system", "light", "dark" };
@@ -88,6 +96,24 @@
     
     [Parameter]
     public DateFormat DateFormat { get; set; } = DateFormat.YearMonthDay;
+    
+    [Parameter]
+    public ProfileVisibilityLevel ProfileVisibilityLevel { get; set; } = ProfileVisibilityLevel.Private;
+    
+    [Parameter]
+    public bool ShowTotalMiles { get; set; } = true;
+    
+    [Parameter]
+    public bool ShowAirlines { get; set; } = true;
+    
+    [Parameter]
+    public bool ShowCountries { get; set; } = true;
+    
+    [Parameter]
+    public bool ShowMapRoutes { get; set; } = true;
+    
+    [Parameter]
+    public bool EnableActivityFeed { get; set; } = false;
 
     protected override void OnParametersSet()
     {
@@ -103,6 +129,14 @@
         temperatureUnit = TemperatureUnit;
         timeFormat = TimeFormat;
         dateFormat = DateFormat;
+        
+        // Set privacy & sharing
+        profileVisibilityLevel = ProfileVisibilityLevel;
+        showTotalMiles = ShowTotalMiles;
+        showAirlines = ShowAirlines;
+        showCountries = ShowCountries;
+        showMapRoutes = ShowMapRoutes;
+        enableActivityFeed = EnableActivityFeed;
     }
 
     private async Task SaveProfileAsync()
@@ -172,7 +206,13 @@
             DistanceUnit = (int)distanceUnit,
             TemperatureUnit = (int)temperatureUnit,
             TimeFormat = (int)timeFormat,
-            DateFormat = (int)dateFormat
+            DateFormat = (int)dateFormat,
+            ProfileVisibilityLevel = (int)profileVisibilityLevel,
+            ShowTotalMiles = showTotalMiles,
+            ShowAirlines = showAirlines,
+            ShowCountries = showCountries,
+            ShowMapRoutes = showMapRoutes,
+            EnableActivityFeed = enableActivityFeed
         };
         var result = await SubmitFormAsync("/Settings/UpdatePreferences", data);
         
@@ -341,6 +381,58 @@
                     <label class="rz-label">Date format</label>
                     <RadzenDropDown @bind-Value="dateFormat" TValue="DateFormat" Data="@dateFormatOptions" TextProperty="Text" ValueProperty="Value" Style="width: 100%" />
                     <small class="settings-form__hint">How dates are displayed throughout the app.</small>
+                </div>
+                
+                <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--rz-border-color);" />
+                
+                <h4 style="margin-bottom: 1rem; color: var(--rz-text-color);">Privacy & Sharing</h4>
+                
+                <div class="settings-form__row">
+                    <label class="rz-label">Profile visibility</label>
+                    <RadzenDropDown @bind-Value="profileVisibilityLevel" TValue="ProfileVisibilityLevel" 
+                        Data="@(new[] { ProfileVisibilityLevel.Private, ProfileVisibilityLevel.Public })"
+                        Style="width: 100%" />
+                    <small class="settings-form__hint">Who can view your profile and flight statistics.</small>
+                </div>
+                
+                <div class="settings-form__row">
+                    <div class="settings-form__switch-row">
+                        <label class="rz-label">Show total miles</label>
+                        <RadzenSwitch @bind-Value="showTotalMiles" />
+                    </div>
+                    <small class="settings-form__hint">Display total distance flown on public profile.</small>
+                </div>
+                
+                <div class="settings-form__row">
+                    <div class="settings-form__switch-row">
+                        <label class="rz-label">Show airlines visited</label>
+                        <RadzenSwitch @bind-Value="showAirlines" />
+                    </div>
+                    <small class="settings-form__hint">Display airline statistics on public profile.</small>
+                </div>
+                
+                <div class="settings-form__row">
+                    <div class="settings-form__switch-row">
+                        <label class="rz-label">Show countries visited</label>
+                        <RadzenSwitch @bind-Value="showCountries" />
+                    </div>
+                    <small class="settings-form__hint">Display country list on public profile.</small>
+                </div>
+                
+                <div class="settings-form__row">
+                    <div class="settings-form__switch-row">
+                        <label class="rz-label">Show flight routes on map</label>
+                        <RadzenSwitch @bind-Value="showMapRoutes" />
+                    </div>
+                    <small class="settings-form__hint">Display your flight routes on the public profile map.</small>
+                </div>
+                
+                <div class="settings-form__row">
+                    <div class="settings-form__switch-row">
+                        <label class="rz-label">Activity feed</label>
+                        <RadzenSwitch @bind-Value="enableActivityFeed" />
+                    </div>
+                    <small class="settings-form__hint">Share when you add new flights (future feature).</small>
                 </div>
 
                 <RadzenButton Text="Save preferences" Click="@(_ => SavePreferencesAsync())" Icon="settings" />
