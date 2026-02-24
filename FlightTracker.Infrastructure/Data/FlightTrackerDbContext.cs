@@ -139,6 +139,7 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
             entity.Property(p => p.TemperatureUnit).HasConversion<string>().IsRequired();
             entity.Property(p => p.TimeFormat).HasConversion<string>().IsRequired();
             entity.Property(p => p.DateFormat).HasConversion<string>().IsRequired();
+            entity.Property(p => p.ProfileVisibility).HasConversion<string>().IsRequired();
 
             // One-to-one relationship with ApplicationUser
             entity.HasIndex(p => p.UserId).IsUnique();
