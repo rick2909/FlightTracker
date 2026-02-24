@@ -1,3 +1,5 @@
+@use 'variables' as *;
+
 .settings-form {
   max-width: 32rem; // ~512px
   padding: 0.5rem 0.75rem;
@@ -24,5 +26,34 @@
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+  }
+
+  &__two-col {
+    display: grid;
+    gap: 1rem;
+    margin: 0.75rem 0 1rem;
+  }
+
+  &__panel {
+    padding: 0.75rem;
+    border: 1px solid var(--rz-border-color, #e5e5e5);
+    border-radius: 0.5rem;
+    background: var(--rz-base-background-color, #fff);
+  }
+
+  &__section-title {
+    margin: 0 0 0.75rem;
+    color: var(--rz-text-color);
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: $bp-md) {
+  .settings-form {
+    max-width: 72rem; // ~1152px
+
+    &__two-col {
+      grid-template-columns: 1fr 1fr;
+    }
   }
 }

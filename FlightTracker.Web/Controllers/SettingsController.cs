@@ -8,7 +8,8 @@ using System.Text.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.RegularExpressions;
-using FlightTracker.Domain.Enums;
+using AutoMapper;
+using FlightTracker.Application.Dtos;
 
 namespace FlightTracker.Web.Controllers;
 
@@ -21,19 +22,22 @@ public class SettingsController : Controller
     private readonly IUserFlightService _userFlightService;
     private readonly IUsernameValidationService _usernameValidationService;
     private readonly IUserPreferencesService _userPreferencesService;
+    private readonly IMapper _mapper;
 
     public SettingsController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         IUserFlightService userFlightService,
         IUsernameValidationService usernameValidationService,
-        IUserPreferencesService userPreferencesService)
+        IUserPreferencesService userPreferencesService,
+        IMapper mapper)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _userFlightService = userFlightService;
         _usernameValidationService = usernameValidationService;
         _userPreferencesService = userPreferencesService;
+        _mapper = mapper;
     }
 
     [HttpGet]
@@ -235,20 +239,8 @@ public class SettingsController : Controller
         if (!string.IsNullOrWhiteSpace(model.ProfileVisibility)) Response.Cookies.Append("ft_profile_visibility", model.ProfileVisibility, opts);
 
         // Persist display & units preferences to database
-        var preferencesDto = new Application.Dtos.UserPreferencesDto
-        {
-            UserId = userId,
-            DistanceUnit = model.DistanceUnit,
-            TemperatureUnit = model.TemperatureUnit,
-            TimeFormat = model.TimeFormat,
-            DateFormat = model.DateFormat,
-            ProfileVisibility = model.ProfileVisibilityLevel,
-            ShowTotalMiles = model.ShowTotalMiles,
-            ShowAirlines = model.ShowAirlines,
-            ShowCountries = model.ShowCountries,
-            ShowMapRoutes = model.ShowMapRoutes,
-            EnableActivityFeed = model.EnableActivityFeed
-        };
+        var preferencesDto = _mapper.Map<UserPreferencesDto>(model);
+        preferencesDto.UserId = userId;
         
         await _userPreferencesService.UpdateAsync(userId, preferencesDto, cancellationToken);
 
