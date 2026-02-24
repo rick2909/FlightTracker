@@ -62,12 +62,10 @@
         
         if (result.Success)
         {
-            // Update sidebar display name if it changed
-            if (!string.IsNullOrEmpty(result.DisplayName))
-            {
-                await JS.InvokeVoidAsync("FlightTracker.updateDisplayName", result.DisplayName);
-            }
             await NotifyAsync("Profile updated successfully", Radzen.NotificationSeverity.Success);
+            // Refresh page to update all displayed data with new values from server
+            await Task.Delay(500);
+            await JS.InvokeVoidAsync("location.reload");
         }
         else if (result.Errors?.Count > 0)
         {

@@ -16,12 +16,14 @@ namespace FlightTracker.Web.Controllers;
 public class SettingsController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IUserFlightService _userFlightService;
     private readonly IUsernameValidationService _usernameValidationService;
 
-    public SettingsController(UserManager<ApplicationUser> userManager, IUserFlightService userFlightService, IUsernameValidationService usernameValidationService)
+    public SettingsController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IUserFlightService userFlightService, IUsernameValidationService usernameValidationService)
     {
         _userManager = userManager;
+        _signInManager = signInManager;
         _userFlightService = userFlightService;
         _usernameValidationService = usernameValidationService;
     }
@@ -119,6 +121,9 @@ public class SettingsController : Controller
         }
 
         await _userManager.UpdateAsync(user);
+
+        // Refresh sign-in to update cookie with new claims
+        await _signInManager.RefreshSignInAsync(user);
 
         TempData["Status"] = "Profile updated";
         return Json(new { success = true, displayName = user.FullName });

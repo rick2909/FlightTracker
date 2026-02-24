@@ -25,22 +25,6 @@ window.FlightTracker.applyTheme = function(value) {
 };
 
 /**
- * Update display name in sidebar and page
- * @param {string} displayName - The new display name
- */
-window.FlightTracker.updateDisplayName = function(displayName) {
-    try {
-        // Update all elements with data-display-name attribute
-        const elements = document.querySelectorAll('[data-display-name]');
-        elements.forEach(el => {
-            el.textContent = displayName;
-        });
-    } catch (error) {
-        console.error('Display name update failed:', error);
-    }
-};
-
-/**
  * Submit a form with anti-forgery token protection
  * @param {string} url - The endpoint URL
  * @param {string} token - The anti-forgery token
