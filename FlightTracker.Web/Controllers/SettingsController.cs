@@ -111,21 +111,35 @@ public class SettingsController : Controller
             var displayNameClaim = (await _userManager.GetClaimsAsync(user)).FirstOrDefault(c => c.Type == "display_name");
             if (displayNameClaim != null)
             {
-                await _userManager.RemoveClaimAsync(user, displayNameClaim);
+                var removeClaim = await _userManager.RemoveClaimAsync(user, displayNameClaim);
+                if (!removeClaim.Succeeded)
+                {
+                    var errors = removeClaim.Errors.Select(e => e.Description).ToList();
+                    return Json(new { success = false, errors });
+                }
             }
-            await _userManager.AddClaimAsync(user, new Claim("display_name", model.FullName));
+
+            var addClaim = await _userManager.AddClaimAsync(
+                user,
+                new Claim("display_name", model.FullName));
+            if (!addClaim.Succeeded)
+            {
+                var errors = addClaim.Errors.Select(e => e.Description).ToList();
+                return Json(new { success = false, errors });
+            }
         }
 
-        if (!string.Equals(user.UserName, model.UserName, StringComparison.Ordinal))
+        var trimmedUserName = model.UserName.Trim();
+        if (!string.Equals(user.UserName, trimmedUserName, StringComparison.Ordinal))
         {
             // Validate username against business rules
-            var usernameValidation = await _usernameValidationService.ValidateAsync(model.UserName.Trim());
+            var usernameValidation = await _usernameValidationService.ValidateAsync(trimmedUserName);
             if (!usernameValidation.IsValid)
             {
                 return Json(new { success = false, errors = new[] { usernameValidation.ErrorMessage ?? "Invalid username." } });
             }
 
-            var setName = await _userManager.SetUserNameAsync(user, model.UserName);
+            var setName = await _userManager.SetUserNameAsync(user, trimmedUserName);
             if (!setName.Succeeded)
             {
                 var errors = setName.Errors.Select(e => e.Description).ToList();
@@ -145,11 +159,15 @@ public class SettingsController : Controller
             {
                 // If you require confirmation, you'd generate token & send email. For now mark confirmed to keep demo simple.
                 user.EmailConfirmed = true;
-                await _userManager.UpdateAsync(user);
             }
         }
 
-        await _userManager.UpdateAsync(user);
+        var updateUser = await _userManager.UpdateAsync(user);
+        if (!updateUser.Succeeded)
+        {
+            var errors = updateUser.Errors.Select(e => e.Description).ToList();
+            return Json(new { success = false, errors });
+        }
 
         // Refresh sign-in to update cookie with new claims
         await _signInManager.RefreshSignInAsync(user);
@@ -197,7 +215,8 @@ public class SettingsController : Controller
 
         if (!ModelState.IsValid)
         {
-            return View(model);
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, errors });
         }
 
         var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
