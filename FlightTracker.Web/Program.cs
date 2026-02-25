@@ -67,7 +67,7 @@ builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
         )
 );
 builder.Services.AddScoped<IFlightLookupService, FlightLookupService>();
-builder.Services.AddHttpClient<IAirportLiveService, FlightTracker.Infrastructure.External.AviationstackService>(c =>
+builder.Services.AddHttpClient<IAirportLiveService, AviationstackService>(c =>
 {
     c.Timeout = TimeSpan.FromSeconds(6);
 })
