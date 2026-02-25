@@ -115,7 +115,7 @@ public class UserFlightServiceTests
         var flightService = new Mock<IFlightService>();
         flightService
             .Setup(s => s.AddFlightAsync(It.IsAny<Flight>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Flight { Id = 77 });
+            .ReturnsAsync(Result<Flight>.Success(new Flight { Id = 77 }));
 
         var mapper = CreateMapper();
 

@@ -336,7 +336,18 @@ public class UserFlightService : IUserFlightService
             }
         }
 
-        return await _flightService.AddFlightAsync(flight, cancellationToken);
+        var addFlightResult = await _flightService.AddFlightAsync(
+            flight,
+            cancellationToken);
+
+        if (addFlightResult.IsFailure || addFlightResult.Value is null)
+        {
+            throw new InvalidOperationException(
+                addFlightResult.ErrorMessage
+                ?? "Failed to create flight.");
+        }
+
+        return addFlightResult.Value;
     }
 
     private async Task UpdateFlightScheduleAsync(Flight flight, FlightScheduleUpdateDto schedule, CancellationToken cancellationToken)
@@ -386,7 +397,16 @@ public class UserFlightService : IUserFlightService
             flight.AircraftId = null;
         }
 
-        await _flightService.UpdateFlightAsync(flight, cancellationToken);
+        var updateFlightResult = await _flightService.UpdateFlightAsync(
+            flight,
+            cancellationToken);
+
+        if (updateFlightResult.IsFailure)
+        {
+            throw new InvalidOperationException(
+                updateFlightResult.ErrorMessage
+                ?? "Failed to update flight.");
+        }
     }
 
     private static void EnsureArrivalAfterDeparture(DateTime departureUtc, DateTime arrivalUtc)

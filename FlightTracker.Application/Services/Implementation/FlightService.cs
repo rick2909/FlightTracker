@@ -1,5 +1,6 @@
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Application.Repositories.Interfaces;
+using FlightTracker.Application.Results;
 using FlightTracker.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -21,38 +22,114 @@ public class FlightService : IFlightService
         _flightRepository = flightRepository;
     }
 
-    public async Task<Flight?> GetFlightByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Result<Flight>> GetFlightByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _flightRepository.GetByIdAsync(id, cancellationToken);
-    }
-
-    public async Task<IReadOnlyList<Flight>> GetUpcomingFlightsAsync(DateTime fromUtc, TimeSpan? window = null, CancellationToken cancellationToken = default)
-    {
-        var allFlights = await _flightRepository.GetAllAsync(cancellationToken);
-
-        var query = allFlights.Where(f => f.DepartureTimeUtc >= fromUtc);
-
-        if (window.HasValue)
+        try
         {
-            var endTime = fromUtc.Add(window.Value);
-            query = query.Where(f => f.DepartureTimeUtc <= endTime);
+            var flight = await _flightRepository.GetByIdAsync(
+                id,
+                cancellationToken);
+
+            return Result<Flight>.Success(flight);
         }
-
-        return query.OrderBy(f => f.DepartureTimeUtc).ToList();
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<Flight>.Failure(
+                ex.Message,
+                "flight.by_id.load_failed");
+        }
     }
 
-    public async Task<Flight> AddFlightAsync(Flight flight, CancellationToken cancellationToken = default)
+    public async Task<Result<IReadOnlyList<Flight>>> GetUpcomingFlightsAsync(DateTime fromUtc, TimeSpan? window = null, CancellationToken cancellationToken = default)
     {
-        return await _flightRepository.AddAsync(flight, cancellationToken);
+        try
+        {
+            var allFlights = await _flightRepository.GetAllAsync(cancellationToken);
+
+            var query = allFlights.Where(f => f.DepartureTimeUtc >= fromUtc);
+
+            if (window.HasValue)
+            {
+                var endTime = fromUtc.Add(window.Value);
+                query = query.Where(f => f.DepartureTimeUtc <= endTime);
+            }
+
+            var flights = query.OrderBy(f => f.DepartureTimeUtc).ToList();
+            return Result<IReadOnlyList<Flight>>.Success(flights);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<IReadOnlyList<Flight>>.Failure(
+                ex.Message,
+                "flight.upcoming.load_failed");
+        }
     }
 
-    public async Task UpdateFlightAsync(Flight flight, CancellationToken cancellationToken = default)
+    public async Task<Result<Flight>> AddFlightAsync(Flight flight, CancellationToken cancellationToken = default)
     {
-        await _flightRepository.UpdateAsync(flight, cancellationToken);
+        try
+        {
+            var created = await _flightRepository.AddAsync(
+                flight,
+                cancellationToken);
+
+            return Result<Flight>.Success(created);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<Flight>.Failure(
+                ex.Message,
+                "flight.add.failed");
+        }
     }
 
-    public async Task DeleteFlightAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Result> UpdateFlightAsync(Flight flight, CancellationToken cancellationToken = default)
     {
-        await _flightRepository.DeleteAsync(id, cancellationToken);
+        try
+        {
+            await _flightRepository.UpdateAsync(flight, cancellationToken);
+            return Result.Success();
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure(
+                ex.Message,
+                "flight.update.failed");
+        }
+    }
+
+    public async Task<Result> DeleteFlightAsync(int id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await _flightRepository.DeleteAsync(id, cancellationToken);
+            return Result.Success();
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure(
+                ex.Message,
+                "flight.delete.failed");
+        }
     }
 }

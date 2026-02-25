@@ -137,7 +137,21 @@ public class UserFlightsController(
         if (candidate is null)
             return NotFound(new { status = "not_found", message = "No flight found via lookup." });
 
-        var currentFlight = await flightService.GetFlightByIdAsync(dto.FlightId, cancellationToken);
+        var currentFlightResult = await flightService.GetFlightByIdAsync(
+            dto.FlightId,
+            cancellationToken);
+
+        if (currentFlightResult.IsFailure)
+        {
+            return StatusCode(500, new
+            {
+                status = "error",
+                message = currentFlightResult.ErrorMessage
+                    ?? "Failed to load current flight."
+            });
+        }
+
+        var currentFlight = currentFlightResult.Value;
 
         if (currentFlight is null)
             return NotFound(new { status = "not_found", message = "Current flight not found." });

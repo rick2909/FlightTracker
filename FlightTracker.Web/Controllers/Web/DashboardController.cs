@@ -182,7 +182,11 @@ IMapFlightService mapFlightService) : Controller
         }
 
         // Estimate gates/terminals via detail lookup if available from Flight entity
-        var flightEntity = await _flightService.GetFlightByIdAsync(chosen.FlightId);
+        var flightEntityResult = await _flightService.GetFlightByIdAsync(
+            chosen.FlightId);
+        var flightEntity = flightEntityResult.IsSuccess
+            ? flightEntityResult.Value
+            : null;
         var state = new FlightTracker.Web.Models.ViewModels.FlightStateViewModel
         {
             Flight = chosen,
