@@ -13,7 +13,6 @@ using FlightTracker.Application.Mapping;
 using FlightTracker.Infrastructure.External;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication;
@@ -146,7 +145,7 @@ builder.Services
     .AddEntityFrameworkStores<FlightTrackerDbContext>()
     .AddSignInManager();
 
-var authBuilder = builder.Services
+builder.Services
     .AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddCookie(IdentityConstants.ApplicationScheme, options =>
     {
