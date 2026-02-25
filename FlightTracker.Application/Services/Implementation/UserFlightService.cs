@@ -2,6 +2,7 @@ using AutoMapper;
 using System.Net.Http;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Dtos.Validation;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
 using FlightTracker.Domain.Enums;
@@ -54,130 +55,249 @@ public class UserFlightService : IUserFlightService
         _clock = clock;
     }
 
-    public async Task<IEnumerable<UserFlightDto>> GetUserFlightsAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<UserFlightDto>>> GetUserFlightsAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var userFlights = await _userFlightRepository.GetUserFlightsAsync(userId, cancellationToken);
-        var list = new List<UserFlightDto>();
-        foreach (var uf in userFlights)
+        try
         {
-            list.Add(await MapToDtoAsync(uf, cancellationToken));
+            var userFlights = await _userFlightRepository.GetUserFlightsAsync(userId, cancellationToken);
+            var list = new List<UserFlightDto>();
+            foreach (var uf in userFlights)
+            {
+                list.Add(await MapToDtoAsync(uf, cancellationToken));
+            }
+
+            return Result<IEnumerable<UserFlightDto>>.Success(list);
         }
-        return list;
-    }
-
-    public async Task<UserFlightDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-    {
-        var userFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
-        return userFlight != null ? await MapToDtoAsync(userFlight, cancellationToken) : null;
-    }
-
-    public async Task<IEnumerable<UserFlightDto>> GetUserFlightsByClassAsync(int userId, FlightClass flightClass, CancellationToken cancellationToken = default)
-    {
-        var userFlights = await _userFlightRepository.GetUserFlightsByClassAsync(userId, flightClass, cancellationToken);
-        var list = new List<UserFlightDto>();
-        foreach (var uf in userFlights)
+        catch (OperationCanceledException)
         {
-            list.Add(await MapToDtoAsync(uf, cancellationToken));
+            throw;
         }
-        return list;
+        catch (Exception ex)
+        {
+            return Result<IEnumerable<UserFlightDto>>.Failure(
+                ex.Message,
+                "userflight.list.load_failed");
+        }
     }
 
-    public async Task<UserFlightDto> AddUserFlightAsync(int userId, CreateUserFlightDto createDto, CancellationToken cancellationToken = default)
+    public async Task<Result<UserFlightDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        // Validate input
-        new CreateUserFlightDtoValidator().ValidateAndThrow(createDto);
-        // Use existing flight if provided; otherwise create from fields
-        Flight flight = createDto.FlightId > 0
-            ? await _flightRepository.GetByIdAsync(createDto.FlightId, cancellationToken)
-                ?? throw new ArgumentException($"Flight with ID {createDto.FlightId} not found.", nameof(createDto.FlightId))
-            : await CreateFlightFromDtoAsync(createDto, cancellationToken);
-
-        // Check duplicate user-flight record
-        var hasFlown = await _userFlightRepository.HasUserFlownFlightAsync(userId, flight.Id, cancellationToken);
-        if (hasFlown)
+        try
         {
-            throw new InvalidOperationException($"User {userId} has already recorded flight {flight.Id}.");
+            var userFlight = await _userFlightRepository.GetByIdAsync(
+                id,
+                cancellationToken);
+
+            if (userFlight is null)
+            {
+                return Result<UserFlightDto>.Success(null);
+            }
+
+            var dto = await MapToDtoAsync(userFlight, cancellationToken);
+            return Result<UserFlightDto>.Success(dto);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<UserFlightDto>.Failure(
+                ex.Message,
+                "userflight.by_id.load_failed");
+        }
+    }
+
+    public async Task<Result<IEnumerable<UserFlightDto>>> GetUserFlightsByClassAsync(int userId, FlightClass flightClass, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var userFlights = await _userFlightRepository
+                .GetUserFlightsByClassAsync(userId, flightClass, cancellationToken);
+
+            var list = new List<UserFlightDto>();
+            foreach (var uf in userFlights)
+            {
+                list.Add(await MapToDtoAsync(uf, cancellationToken));
+            }
+
+            return Result<IEnumerable<UserFlightDto>>.Success(list);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<IEnumerable<UserFlightDto>>.Failure(
+                ex.Message,
+                "userflight.by_class.load_failed");
+        }
+    }
+
+    public async Task<Result<UserFlightDto>> AddUserFlightAsync(int userId, CreateUserFlightDto createDto, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Validate input
+            new CreateUserFlightDtoValidator().ValidateAndThrow(createDto);
+            // Use existing flight if provided; otherwise create from fields
+            Flight flight = createDto.FlightId > 0
+                ? await _flightRepository.GetByIdAsync(createDto.FlightId, cancellationToken)
+                    ?? throw new ArgumentException($"Flight with ID {createDto.FlightId} not found.", nameof(createDto.FlightId))
+                : await CreateFlightFromDtoAsync(createDto, cancellationToken);
+
+            // Check duplicate user-flight record
+            var hasFlown = await _userFlightRepository.HasUserFlownFlightAsync(userId, flight.Id, cancellationToken);
+            if (hasFlown)
+            {
+                throw new InvalidOperationException($"User {userId} has already recorded flight {flight.Id}.");
+            }
+
+            var userFlight = new UserFlight
+            {
+                UserId = userId,
+                FlightId = flight.Id,
+                FlightClass = createDto.FlightClass,
+                SeatNumber = createDto.SeatNumber,
+                Notes = createDto.Notes,
+                DidFly = createDto.DidFly,
+                BookedOnUtc = _clock.UtcNow
+            };
+
+            var savedUserFlight = await _userFlightRepository.AddAsync(userFlight, cancellationToken);
+            var reloadedUserFlight = await _userFlightRepository.GetByIdAsync(savedUserFlight.Id, cancellationToken);
+            var dto = await MapToDtoAsync(reloadedUserFlight!, cancellationToken);
+
+            return Result<UserFlightDto>.Success(dto);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<UserFlightDto>.Failure(
+                ex.Message,
+                "userflight.add.failed");
         }
 
-        var userFlight = new UserFlight
-        {
-            UserId = userId,
-            FlightId = flight.Id,
-            FlightClass = createDto.FlightClass,
-            SeatNumber = createDto.SeatNumber,
-            Notes = createDto.Notes,
-            DidFly = createDto.DidFly,
-            BookedOnUtc = _clock.UtcNow
-        };
-
-        var savedUserFlight = await _userFlightRepository.AddAsync(userFlight, cancellationToken);
-        var reloadedUserFlight = await _userFlightRepository.GetByIdAsync(savedUserFlight.Id, cancellationToken);
-        return await MapToDtoAsync(reloadedUserFlight!, cancellationToken);
-
     }
-    public async Task<UserFlightDto?> UpdateUserFlightAsync(int id, CreateUserFlightDto updateDto, CancellationToken cancellationToken = default)
+
+    public async Task<Result<UserFlightDto>> UpdateUserFlightAsync(int id, CreateUserFlightDto updateDto, CancellationToken cancellationToken = default)
     {
-        var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
-        if (existingUserFlight == null)
+        try
         {
-            return null;
+            var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
+            if (existingUserFlight == null)
+            {
+                return Result<UserFlightDto>.Success(null);
+            }
+
+            // Update properties
+            existingUserFlight.FlightClass = updateDto.FlightClass;
+            existingUserFlight.SeatNumber = updateDto.SeatNumber;
+            existingUserFlight.Notes = updateDto.Notes;
+            existingUserFlight.DidFly = updateDto.DidFly;
+
+            var updatedUserFlight = await _userFlightRepository.UpdateAsync(existingUserFlight, cancellationToken);
+            var dto = await MapToDtoAsync(updatedUserFlight, cancellationToken);
+
+            return Result<UserFlightDto>.Success(dto);
         }
-
-        // Update properties
-        existingUserFlight.FlightClass = updateDto.FlightClass;
-        existingUserFlight.SeatNumber = updateDto.SeatNumber;
-        existingUserFlight.Notes = updateDto.Notes;
-        existingUserFlight.DidFly = updateDto.DidFly;
-
-        var updatedUserFlight = await _userFlightRepository.UpdateAsync(existingUserFlight, cancellationToken);
-        return await MapToDtoAsync(updatedUserFlight, cancellationToken);
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<UserFlightDto>.Failure(
+                ex.Message,
+                "userflight.update.failed");
+        }
     }
 
-    public async Task<UserFlightDto?> UpdateUserFlightAndScheduleAsync(
+    public async Task<Result<UserFlightDto>> UpdateUserFlightAndScheduleAsync(
         int id,
         UpdateUserFlightDto userFlight,
         FlightScheduleUpdateDto schedule,
         CancellationToken cancellationToken = default)
     {
-        // Validate inputs
-        new UpdateUserFlightDtoValidator().ValidateAndThrow(userFlight);
-        new FlightScheduleUpdateDtoValidator().ValidateAndThrow(schedule);
-        var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
-        if (existingUserFlight == null) return null;
-
-        var flight = await _flightRepository.GetByIdAsync(schedule.FlightId, cancellationToken);
-        if (flight is null) return null;
-
-        await UpdateFlightScheduleAsync(flight, schedule, cancellationToken);
-
-        // Update user flight fields
-        existingUserFlight.FlightClass = userFlight.FlightClass;
-        existingUserFlight.SeatNumber = userFlight.SeatNumber;
-        existingUserFlight.Notes = userFlight.Notes;
-        existingUserFlight.DidFly = userFlight.DidFly;
-        var updatedUserFlight = await _userFlightRepository.UpdateAsync(existingUserFlight, cancellationToken);
-
-        // Reload with navs
-        var reloaded = await _userFlightRepository.GetByIdAsync(updatedUserFlight.Id, cancellationToken);
-        return await MapToDtoAsync(reloaded!, cancellationToken);
-    }
-
-    public async Task<bool> DeleteUserFlightAsync(int id, CancellationToken cancellationToken = default)
-    {
-        var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
-        if (existingUserFlight == null)
+        try
         {
-            return false;
-        }
+            // Validate inputs
+            new UpdateUserFlightDtoValidator().ValidateAndThrow(userFlight);
+            new FlightScheduleUpdateDtoValidator().ValidateAndThrow(schedule);
+            var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
+            if (existingUserFlight == null)
+            {
+                return Result<UserFlightDto>.Success(null);
+            }
 
-        await _userFlightRepository.DeleteAsync(id, cancellationToken);
-        return true;
+            var flight = await _flightRepository.GetByIdAsync(schedule.FlightId, cancellationToken);
+            if (flight is null)
+            {
+                return Result<UserFlightDto>.Success(null);
+            }
+
+            await UpdateFlightScheduleAsync(flight, schedule, cancellationToken);
+
+            // Update user flight fields
+            existingUserFlight.FlightClass = userFlight.FlightClass;
+            existingUserFlight.SeatNumber = userFlight.SeatNumber;
+            existingUserFlight.Notes = userFlight.Notes;
+            existingUserFlight.DidFly = userFlight.DidFly;
+            var updatedUserFlight = await _userFlightRepository.UpdateAsync(existingUserFlight, cancellationToken);
+
+            // Reload with navs
+            var reloaded = await _userFlightRepository.GetByIdAsync(updatedUserFlight.Id, cancellationToken);
+            var dto = await MapToDtoAsync(reloaded!, cancellationToken);
+
+            return Result<UserFlightDto>.Success(dto);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<UserFlightDto>.Failure(
+                ex.Message,
+                "userflight.update_schedule.failed");
+        }
     }
 
-    public async Task<UserFlightStatsDto> GetUserFlightStatsAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<Result<bool>> DeleteUserFlightAsync(int id, CancellationToken cancellationToken = default)
     {
-        var userFlights = await _userFlightRepository.GetUserFlightsAsync(userId, cancellationToken);
-        var flownFlights = userFlights.Where(uf => uf.DidFly).ToList();
+        try
+        {
+            var existingUserFlight = await _userFlightRepository.GetByIdAsync(id, cancellationToken);
+            if (existingUserFlight == null)
+            {
+                return Result<bool>.Success(false);
+            }
+
+            await _userFlightRepository.DeleteAsync(id, cancellationToken);
+            return Result<bool>.Success(true);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<bool>.Failure(
+                ex.Message,
+                "userflight.delete.failed");
+        }
+    }
+
+    public async Task<Result<UserFlightStatsDto>> GetUserFlightStatsAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var userFlights = await _userFlightRepository.GetUserFlightsAsync(userId, cancellationToken);
+            var flownFlights = userFlights.Where(uf => uf.DidFly).ToList();
 
         var stats = new UserFlightStatsDto
         {
@@ -213,12 +333,39 @@ public class UserFlightService : IUserFlightService
                 .ToList()
         };
 
-        return stats;
+            return Result<UserFlightStatsDto>.Success(stats);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<UserFlightStatsDto>.Failure(
+                ex.Message,
+                "userflight.stats.load_failed");
+        }
     }
 
-    public async Task<bool> HasUserFlownFlightAsync(int userId, int flightId, CancellationToken cancellationToken = default)
+    public async Task<Result<bool>> HasUserFlownFlightAsync(int userId, int flightId, CancellationToken cancellationToken = default)
     {
-        return await _userFlightRepository.HasUserFlownFlightAsync(userId, flightId, cancellationToken);
+        try
+        {
+            var hasFlown = await _userFlightRepository
+                .HasUserFlownFlightAsync(userId, flightId, cancellationToken);
+
+            return Result<bool>.Success(hasFlown);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<bool>.Failure(
+                ex.Message,
+                "userflight.has_flown.check_failed");
+        }
     }
 
     private int GetFlightTimeInMinutes(UserFlight userFlight)

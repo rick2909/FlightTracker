@@ -185,7 +185,12 @@ public class UserFlightServiceTests
 
         var service = CreateService(repo.Object);
 
-        var stats = await service.GetUserFlightStatsAsync(42);
+        var statsResult = await service.GetUserFlightStatsAsync(42);
+
+        Assert.True(statsResult.IsSuccess);
+        Assert.NotNull(statsResult.Value);
+
+        var stats = statsResult.Value!;
 
         Assert.Equal(42, stats.UserId);
         Assert.Equal(2, stats.TotalFlights);
@@ -208,7 +213,12 @@ public class UserFlightServiceTests
 
         var service = CreateService(repo.Object);
 
-        var stats = await service.GetUserFlightStatsAsync(7);
+        var statsResult = await service.GetUserFlightStatsAsync(7);
+
+        Assert.True(statsResult.IsSuccess);
+        Assert.NotNull(statsResult.Value);
+
+        var stats = statsResult.Value!;
 
         Assert.Equal(0, stats.TotalFlights);
         Assert.Equal(0, stats.UniqueAirports);
@@ -240,7 +250,12 @@ public class UserFlightServiceTests
 
         var service = CreateService(repo.Object);
 
-        var stats = await service.GetUserFlightStatsAsync(9);
+        var statsResult = await service.GetUserFlightStatsAsync(9);
+
+        Assert.True(statsResult.IsSuccess);
+        Assert.NotNull(statsResult.Value);
+
+        var stats = statsResult.Value!;
 
         Assert.Equal(2, stats.TotalFlights);
         Assert.Equal(0, stats.UniqueAirports);

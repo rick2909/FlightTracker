@@ -34,7 +34,19 @@ public class UserFlightsController(
         {
             return challengeResult!;
         }
-        var flights = await userFlightService.GetUserFlightsAsync(effectiveUserId, cancellationToken);
+        var flightsResult = await userFlightService.GetUserFlightsAsync(
+            effectiveUserId,
+            cancellationToken);
+
+        if (flightsResult.IsFailure || flightsResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to load flights",
+                detail: flightsResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var flights = flightsResult.Value;
         ViewData["RequestedUserId"] = userId;
 
         flights = ApplyFilters(flights, q, @class, didFly, fromUtc, toUtc);
@@ -51,8 +63,18 @@ public class UserFlightsController(
     [HttpGet("/UserFlights/Details/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken = default)
     {
-        var dto = await userFlightService.GetByIdAsync(id, cancellationToken);
-        if (dto == null)
+        var dtoResult = await userFlightService.GetByIdAsync(id, cancellationToken);
+        if (dtoResult.IsFailure)
+        {
+            return Problem(
+                title: "Unable to load flight",
+                detail: dtoResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var dto = dtoResult.Value;
+
+        if (dto is null)
         {
             return NotFound();
         }
@@ -62,8 +84,18 @@ public class UserFlightsController(
     [HttpGet("/UserFlights/Edit/{id:int}")]
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken = default)
     {
-        var dto = await userFlightService.GetByIdAsync(id, cancellationToken);
-        if (dto == null)
+        var dtoResult = await userFlightService.GetByIdAsync(id, cancellationToken);
+        if (dtoResult.IsFailure)
+        {
+            return Problem(
+                title: "Unable to load flight",
+                detail: dtoResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var dto = dtoResult.Value;
+
+        if (dto is null)
         {
             return NotFound();
         }
@@ -78,8 +110,17 @@ public class UserFlightsController(
         if (!ModelState.IsValid)
         {
             // Reload current values for display when validation fails
-            var current = await userFlightService.GetByIdAsync(id, cancellationToken);
-            if (current == null)
+            var currentResult = await userFlightService.GetByIdAsync(id, cancellationToken);
+            if (currentResult.IsFailure)
+            {
+                return Problem(
+                    title: "Unable to load flight",
+                    detail: currentResult.ErrorMessage,
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
+
+            var current = currentResult.Value;
+            if (current is null)
             {
                 return NotFound();
             }
@@ -92,12 +133,21 @@ public class UserFlightsController(
             var userFlightDto = mapper.Map<UpdateUserFlightDto>(form);
             var scheduleDto = mapper.Map<FlightScheduleUpdateDto>(form);
 
-            var updated = await userFlightService.UpdateUserFlightAndScheduleAsync(
+            var updatedResult = await userFlightService.UpdateUserFlightAndScheduleAsync(
                 id,
                 userFlightDto,
                 scheduleDto,
                 cancellationToken);
-            if (updated == null)
+
+            if (updatedResult.IsFailure)
+            {
+                return Problem(
+                    title: "Unable to update flight",
+                    detail: updatedResult.ErrorMessage,
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
+
+            if (updatedResult.Value is null)
             {
                 return NotFound();
             }
@@ -124,8 +174,20 @@ public class UserFlightsController(
     [HttpGet("/UserFlights/{id:int}/LoadFromApi")]
     public async Task<IActionResult> LoadFromApi(int id, CancellationToken cancellationToken = default)
     {
-        var dto = await userFlightService.GetByIdAsync(id, cancellationToken);
-        if (dto == null)
+        var dtoResult = await userFlightService.GetByIdAsync(id, cancellationToken);
+        if (dtoResult.IsFailure)
+        {
+            return StatusCode(500, new
+            {
+                status = "error",
+                message = dtoResult.ErrorMessage
+                    ?? "Failed to load user flight."
+            });
+        }
+
+        var dto = dtoResult.Value;
+
+        if (dto is null)
         {
             return NotFound(new { status = "not_found", message = "User flight not found." });
         }
