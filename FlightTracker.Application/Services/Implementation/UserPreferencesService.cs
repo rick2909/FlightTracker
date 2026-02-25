@@ -13,13 +13,16 @@ public class UserPreferencesService : IUserPreferencesService
 {
     private readonly IUserPreferencesRepository _repository;
     private readonly IMapper _mapper;
+    private readonly IClock _clock;
 
     public UserPreferencesService(
         IUserPreferencesRepository repository,
-        IMapper mapper)
+        IMapper mapper,
+        IClock clock)
     {
         _repository = repository;
         _mapper = mapper;
+        _clock = clock;
     }
 
     public async Task<UserPreferencesDto> GetOrCreateAsync(
@@ -37,8 +40,8 @@ public class UserPreferencesService : IUserPreferencesService
         var newPreferences = new UserPreferences
         {
             UserId = userId,
-            CreatedAtUtc = DateTime.UtcNow,
-            UpdatedAtUtc = DateTime.UtcNow
+            CreatedAtUtc = _clock.UtcNow,
+            UpdatedAtUtc = _clock.UtcNow
         };
 
         var created = await _repository.CreateAsync(newPreferences, cancellationToken);
@@ -57,8 +60,8 @@ public class UserPreferencesService : IUserPreferencesService
             // Create if doesn't exist
             var newPreferences = _mapper.Map<UserPreferences>(preferences);
             newPreferences.UserId = userId;
-            newPreferences.CreatedAtUtc = DateTime.UtcNow;
-            newPreferences.UpdatedAtUtc = DateTime.UtcNow;
+            newPreferences.CreatedAtUtc = _clock.UtcNow;
+            newPreferences.UpdatedAtUtc = _clock.UtcNow;
             
             var created = await _repository.CreateAsync(newPreferences, cancellationToken);
             return _mapper.Map<UserPreferencesDto>(created);
@@ -75,7 +78,7 @@ public class UserPreferencesService : IUserPreferencesService
         existing.ShowCountries = preferences.ShowCountries;
         existing.ShowMapRoutes = preferences.ShowMapRoutes;
         existing.EnableActivityFeed = preferences.EnableActivityFeed;
-        existing.UpdatedAtUtc = DateTime.UtcNow;
+        existing.UpdatedAtUtc = _clock.UtcNow;
 
         var updated = await _repository.UpdateAsync(existing, cancellationToken);
         return _mapper.Map<UserPreferencesDto>(updated);

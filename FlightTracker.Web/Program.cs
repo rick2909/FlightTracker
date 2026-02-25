@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Radzen;
 using FlightTracker.Application.Mapping;
 using FlightTracker.Infrastructure.External;
+using FlightTracker.Infrastructure.Time;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using System.Security.Claims;
@@ -46,6 +47,7 @@ builder.Services.AddScoped<IAirlineRepository, AirlineRepository>();
 builder.Services.AddScoped<IUserPreferencesRepository, UserPreferencesRepository>();
 
 // Register application services
+builder.Services.AddSingleton<IClock, UtcClock>();
 builder.Services.AddScoped<IAirportService, AirportService>();
 builder.Services.AddScoped<IFlightService, FlightService>();
 builder.Services.AddScoped<IUserFlightService, UserFlightService>();

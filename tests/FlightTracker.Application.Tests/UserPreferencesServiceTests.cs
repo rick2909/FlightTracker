@@ -5,6 +5,7 @@ using AutoMapper;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Repositories.Interfaces;
 using FlightTracker.Application.Services.Implementation;
+using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
 using FlightTracker.Domain.Enums;
 using Moq;
@@ -41,7 +42,8 @@ public class UserPreferencesServiceTests
             .ReturnsAsync(existing);
 
         var mapper = CreateMapper();
-        var service = new UserPreferencesService(repository.Object, mapper.Object);
+        var clock = CreateClock(new DateTime(2030, 1, 1, 12, 0, 0, DateTimeKind.Utc));
+        var service = new UserPreferencesService(repository.Object, mapper.Object, clock.Object);
 
         var result = await service.GetOrCreateAsync(42);
 
@@ -64,7 +66,7 @@ public class UserPreferencesServiceTests
     [Fact]
     public async Task GetOrCreateAsync_CreatesDefaults_WhenMissing()
     {
-        var before = DateTime.UtcNow;
+        var now = new DateTime(2030, 2, 1, 10, 30, 0, DateTimeKind.Utc);
         UserPreferences? createdInput = null;
 
         var repository = new Mock<IUserPreferencesRepository>();
@@ -81,10 +83,10 @@ public class UserPreferencesServiceTests
             });
 
         var mapper = CreateMapper();
-        var service = new UserPreferencesService(repository.Object, mapper.Object);
+        var clock = CreateClock(now);
+        var service = new UserPreferencesService(repository.Object, mapper.Object, clock.Object);
 
         var result = await service.GetOrCreateAsync(7);
-        var after = DateTime.UtcNow;
 
         Assert.NotNull(createdInput);
         Assert.Equal(7, createdInput!.UserId);
@@ -98,8 +100,8 @@ public class UserPreferencesServiceTests
         Assert.True(createdInput.ShowCountries);
         Assert.True(createdInput.ShowMapRoutes);
         Assert.False(createdInput.EnableActivityFeed);
-        Assert.InRange(createdInput.CreatedAtUtc, before, after);
-        Assert.InRange(createdInput.UpdatedAtUtc, before, after);
+        Assert.Equal(now, createdInput.CreatedAtUtc);
+        Assert.Equal(now, createdInput.UpdatedAtUtc);
 
         Assert.Equal(77, result.Id);
         Assert.Equal(7, result.UserId);
@@ -159,7 +161,8 @@ public class UserPreferencesServiceTests
             });
 
         var mapper = CreateMapper();
-        var service = new UserPreferencesService(repository.Object, mapper.Object);
+        var clock = CreateClock(new DateTime(2030, 3, 10, 9, 0, 0, DateTimeKind.Utc));
+        var service = new UserPreferencesService(repository.Object, mapper.Object, clock.Object);
 
         var result = await service.UpdateAsync(9, update);
 
@@ -220,7 +223,9 @@ public class UserPreferencesServiceTests
             });
 
         var mapper = CreateMapper();
-        var service = new UserPreferencesService(repository.Object, mapper.Object);
+        var now = new DateTime(2030, 4, 5, 15, 45, 0, DateTimeKind.Utc);
+        var clock = CreateClock(now);
+        var service = new UserPreferencesService(repository.Object, mapper.Object, clock.Object);
 
         var result = await service.UpdateAsync(99, input);
 
@@ -236,6 +241,8 @@ public class UserPreferencesServiceTests
         Assert.False(created.ShowCountries);
         Assert.True(created.ShowMapRoutes);
         Assert.True(created.EnableActivityFeed);
+        Assert.Equal(now, created.CreatedAtUtc);
+        Assert.Equal(now, created.UpdatedAtUtc);
 
         Assert.Equal(500, result.Id);
         Assert.Equal(99, result.UserId);
@@ -255,6 +262,13 @@ public class UserPreferencesServiceTests
             .Returns((UserPreferencesDto source) => ToEntity(source));
 
         return mapper;
+    }
+
+    private static Mock<IClock> CreateClock(DateTime utcNow)
+    {
+        var clock = new Mock<IClock>();
+        clock.SetupGet(c => c.UtcNow).Returns(utcNow);
+        return clock;
     }
 
     private static UserPreferencesDto ToDto(UserPreferences source)

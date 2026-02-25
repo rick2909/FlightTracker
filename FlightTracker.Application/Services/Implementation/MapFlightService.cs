@@ -10,17 +10,19 @@ namespace FlightTracker.Application.Services.Implementation;
 public class MapFlightService : IMapFlightService
 {
     private readonly IUserFlightRepository _userFlightRepository;
+    private readonly IClock _clock;
 
-    public MapFlightService(IUserFlightRepository userFlightRepository)
+    public MapFlightService(IUserFlightRepository userFlightRepository, IClock clock)
     {
         _userFlightRepository = userFlightRepository;
+        _clock = clock;
     }
 
     public async Task<IReadOnlyCollection<MapFlightDto>> GetUserMapFlightsAsync(int userId, int maxPast = 20, int maxUpcoming = 10, CancellationToken cancellationToken = default)
     {
         var userFlights = await _userFlightRepository.GetUserFlightsAsync(userId, cancellationToken);
 
-        var now = DateTime.UtcNow;
+        var now = _clock.UtcNow;
         var projected = userFlights
             .Where(uf => uf.Flight != null && uf.Flight.DepartureAirport != null && uf.Flight.ArrivalAirport != null)
             .Select(uf => new MapFlightDto

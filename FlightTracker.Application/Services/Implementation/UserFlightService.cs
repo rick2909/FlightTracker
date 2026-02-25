@@ -26,6 +26,7 @@ public class UserFlightService : IUserFlightService
     private readonly IAircraftLookupClient _aircraftLookupClient;
     private readonly IAirportEnrichmentService _airportEnrichmentService;
     private readonly IMapper _mapper;
+    private readonly IClock _clock;
 
     public UserFlightService(
         IUserFlightRepository userFlightRepository,
@@ -37,7 +38,8 @@ public class UserFlightService : IUserFlightService
         IAircraftRepository aircraftRepository,
         IAircraftLookupClient aircraftLookupClient,
         IAirportEnrichmentService airportEnrichmentService,
-        IMapper mapper)
+        IMapper mapper,
+        IClock clock)
     {
         _userFlightRepository = userFlightRepository;
         _flightRepository = flightRepository;
@@ -49,6 +51,7 @@ public class UserFlightService : IUserFlightService
         _aircraftLookupClient = aircraftLookupClient;
         _airportEnrichmentService = airportEnrichmentService;
         _mapper = mapper;
+        _clock = clock;
     }
 
     public async Task<IEnumerable<UserFlightDto>> GetUserFlightsAsync(int userId, CancellationToken cancellationToken = default)
@@ -104,7 +107,7 @@ public class UserFlightService : IUserFlightService
             SeatNumber = createDto.SeatNumber,
             Notes = createDto.Notes,
             DidFly = createDto.DidFly,
-            BookedOnUtc = DateTime.UtcNow
+            BookedOnUtc = _clock.UtcNow
         };
 
         var savedUserFlight = await _userFlightRepository.AddAsync(userFlight, cancellationToken);
