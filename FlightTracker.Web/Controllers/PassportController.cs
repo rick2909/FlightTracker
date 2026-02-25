@@ -183,7 +183,19 @@ public class PassportController : Controller
 
         var passportData = passportDataResult.Value;
         var airlineStats = airlineStatsResult.Value;
-        var userFlights = await _flightService.GetUserFlightsAsync(userId.Value, cancellationToken);
+        var userFlightsResult = await _flightService.GetUserFlightsAsync(
+            userId.Value,
+            cancellationToken);
+
+        if (userFlightsResult.IsFailure || userFlightsResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to load user flights",
+                detail: userFlightsResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var userFlights = userFlightsResult.Value;
 
         userFlights = ApplyFilters(userFlights, q, @class, didFly, fromUtc, toUtc);
         var pageItems = Paginate(userFlights, ref page, ref pageSize, out var totalCount, out var totalPages);

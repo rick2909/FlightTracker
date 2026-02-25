@@ -300,7 +300,19 @@ public class SettingsController : Controller
             return challengeResult!;
         }
 
-        var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
+        var flightsResult = await _userFlightService.GetUserFlightsAsync(
+            userId,
+            cancellationToken);
+
+        if (flightsResult.IsFailure || flightsResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to export flights",
+                detail: flightsResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var flights = flightsResult.Value;
 
         var sb = new StringBuilder();
         // Hint Excel about the separator to avoid locale issues (e.g., semicolon locales)
@@ -347,7 +359,19 @@ public class SettingsController : Controller
         {
             return Challenge();
         }
-        var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
+        var flightsResult = await _userFlightService.GetUserFlightsAsync(
+            userId,
+            cancellationToken);
+
+        if (flightsResult.IsFailure || flightsResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to export data",
+                detail: flightsResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var flights = flightsResult.Value;
 
         // Collect preferences from cookies (client-side persistence in this demo)
         var theme = Request.Cookies["ft_theme"] ?? "system";
@@ -412,11 +436,27 @@ public class SettingsController : Controller
             return challengeResult!;
         }
         // Delete user flights first
-        var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
+        var flightsResult = await _userFlightService.GetUserFlightsAsync(
+            userId,
+            cancellationToken);
+
+        if (flightsResult.IsFailure || flightsResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to delete profile",
+                detail: flightsResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var flights = flightsResult.Value;
         var deletedFlights = 0;
         foreach (var f in flights)
         {
-            if (await _userFlightService.DeleteUserFlightAsync(f.Id, cancellationToken))
+            var deleteResult = await _userFlightService.DeleteUserFlightAsync(
+                f.Id,
+                cancellationToken);
+
+            if (deleteResult.IsSuccess && deleteResult.Value)
             {
                 deletedFlights++;
             }

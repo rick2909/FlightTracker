@@ -37,10 +37,27 @@ IMapFlightService mapFlightService) : Controller
             }
 
             // Get user flight statistics
-            var stats = await _userFlightService.GetUserFlightStatsAsync(userId);
+            var statsResult = await _userFlightService.GetUserFlightStatsAsync(userId);
+
+            if (statsResult.IsFailure || statsResult.Value is null)
+            {
+                throw new InvalidOperationException(
+                    statsResult.ErrorMessage
+                    ?? "Unable to load user flight statistics.");
+            }
+
+            var stats = statsResult.Value;
 
             // Get recent user flights (last 5)
-            var recentFlights = (await _userFlightService.GetUserFlightsAsync(userId))
+            var recentFlightsResult = await _userFlightService.GetUserFlightsAsync(userId);
+            if (recentFlightsResult.IsFailure || recentFlightsResult.Value is null)
+            {
+                throw new InvalidOperationException(
+                    recentFlightsResult.ErrorMessage
+                    ?? "Unable to load recent flights.");
+            }
+
+            var recentFlights = recentFlightsResult.Value
                 .Take(5)
                 .ToList();
 
@@ -90,11 +107,27 @@ IMapFlightService mapFlightService) : Controller
                 return challengeResult!;
             }
 
-            var stats = await _userFlightService.GetUserFlightStatsAsync(userId);
+            var statsResult = await _userFlightService.GetUserFlightStatsAsync(userId);
+            if (statsResult.IsFailure || statsResult.Value is null)
+            {
+                throw new InvalidOperationException(
+                    statsResult.ErrorMessage
+                    ?? "Unable to load user flight statistics.");
+            }
+
+            var stats = statsResult.Value;
             var mapFlights = await _mapFlightService.GetUserMapFlightsAsync(userId, maxPast: 500, maxUpcoming: 50);
 
             // Aggregate flights per year from user's flights
-            var allFlights = await _userFlightService.GetUserFlightsAsync(userId);
+            var allFlightsResult = await _userFlightService.GetUserFlightsAsync(userId);
+            if (allFlightsResult.IsFailure || allFlightsResult.Value is null)
+            {
+                throw new InvalidOperationException(
+                    allFlightsResult.ErrorMessage
+                    ?? "Unable to load user flights.");
+            }
+
+            var allFlights = allFlightsResult.Value;
             var perYear = allFlights
                 .GroupBy(f => f.DepartureTimeUtc.Year)
                 .OrderBy(g => g.Key)
@@ -164,7 +197,15 @@ IMapFlightService mapFlightService) : Controller
 
     private async Task<FlightTracker.Web.Models.ViewModels.FlightStateViewModel> BuildCurrentStateAsync(int userId)
     {
-        var flights = (await _userFlightService.GetUserFlightsAsync(userId)).OrderBy(f => f.DepartureTimeUtc).ToList();
+        var flightsResult = await _userFlightService.GetUserFlightsAsync(userId);
+        if (flightsResult.IsFailure || flightsResult.Value is null)
+        {
+            throw new InvalidOperationException(
+                flightsResult.ErrorMessage
+                ?? "Unable to load user flights.");
+        }
+
+        var flights = flightsResult.Value.OrderBy(f => f.DepartureTimeUtc).ToList();
         var now = DateTime.UtcNow;
         // Define next upcoming; if none, use most recent past
         var next = flights.FirstOrDefault(f => f.DepartureTimeUtc >= now);
