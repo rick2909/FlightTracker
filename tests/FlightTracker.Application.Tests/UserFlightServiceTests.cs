@@ -103,6 +103,9 @@ public class UserFlightServiceTests
         airportService
             .Setup(s => s.GetAirportByCodeAsync("LAX", It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<Airport>.Success(new Airport { Id = 2, IataCode = "LAX" }));
+        airportService
+            .Setup(s => s.GetTimeZoneIdByAirportCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<string?>.Success(null));
 
         var metadata = new Mock<IFlightMetadataProvisionService>();
         metadata
@@ -249,11 +252,12 @@ public class UserFlightServiceTests
     {
         var clock = new Mock<IClock>();
         clock.SetupGet(c => c.UtcNow).Returns(new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        var airportService = CreateDefaultAirportServiceMock();
 
         return new UserFlightService(
             userFlightRepository,
             new Mock<IFlightRepository>().Object,
-            new Mock<IAirportService>().Object,
+            airportService.Object,
             new Mock<IFlightService>().Object,
             new Mock<IFlightMetadataProvisionService>().Object,
             new Mock<IAirlineRepository>().Object,
@@ -281,10 +285,13 @@ public class UserFlightServiceTests
             clock = defaultClock.Object;
         }
 
+        var resolvedAirportService = airportService
+            ?? CreateDefaultAirportServiceMock().Object;
+
         return new UserFlightService(
             userFlightRepository,
             flightRepository,
-            airportService ?? new Mock<IAirportService>().Object,
+            resolvedAirportService,
             flightService,
             metadataProvisionService ?? new Mock<IFlightMetadataProvisionService>().Object,
             new Mock<IAirlineRepository>().Object,
@@ -293,6 +300,19 @@ public class UserFlightServiceTests
             new Mock<IAirportEnrichmentService>().Object,
             mapper,
             clock);
+    }
+
+    private static Mock<IAirportService> CreateDefaultAirportServiceMock()
+    {
+        var airportService = new Mock<IAirportService>();
+        airportService
+            .Setup(s => s.GetAirportByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Airport>.Success(null));
+        airportService
+            .Setup(s => s.GetTimeZoneIdByAirportCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<string?>.Success(null));
+
+        return airportService;
     }
 
     private static IMapper CreateMapper()
