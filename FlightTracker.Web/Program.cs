@@ -50,6 +50,7 @@ builder.Services.AddScoped<IAirportService, AirportService>();
 builder.Services.AddScoped<IFlightService, FlightService>();
 builder.Services.AddScoped<IUserFlightService, UserFlightService>();
 builder.Services.AddScoped<IMapFlightService, MapFlightService>();
+builder.Services.AddScoped<IFlightStatsService, FlightStatsService>();
 builder.Services.AddScoped<IPassportService, PassportService>();
 builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
 builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
