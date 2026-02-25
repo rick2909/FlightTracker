@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Repositories.Interfaces;
@@ -11,6 +12,93 @@ namespace FlightTracker.Application.Tests.Services;
 
 public class AirportServiceTests
 {
+    [Fact]
+    public async Task GetAirportByCodeAsync_ReturnsWrappedAirport_WhenFound()
+    {
+        var airport = new Airport { Id = 11, IataCode = "AMS" };
+        var repo = new Mock<IAirportRepository>();
+        repo.Setup(r => r.GetByCodeAsync("AMS", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(airport);
+
+        var service = new AirportService(repo.Object, new Mock<ITimeApiService>().Object);
+
+        var result = await service.GetAirportByCodeAsync("AMS");
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(11, result.Value!.Id);
+    }
+
+    [Fact]
+    public async Task GetAllAirportsAsync_ReturnsWrappedList()
+    {
+        var airports = new List<Airport>
+        {
+            new() { Id = 1, IataCode = "JFK" },
+            new() { Id = 2, IataCode = "LAX" }
+        };
+
+        var repo = new Mock<IAirportRepository>();
+        repo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(airports);
+
+        var service = new AirportService(repo.Object, new Mock<ITimeApiService>().Object);
+
+        var result = await service.GetAllAirportsAsync();
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(2, result.Value!.Count);
+    }
+
+    [Fact]
+    public async Task AddAirportAsync_ReturnsWrappedCreatedAirport()
+    {
+        var toAdd = new Airport { Name = "Schiphol", IataCode = "AMS" };
+        var created = new Airport { Id = 15, Name = "Schiphol", IataCode = "AMS" };
+
+        var repo = new Mock<IAirportRepository>();
+        repo.Setup(r => r.AddAsync(toAdd, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(created);
+
+        var service = new AirportService(repo.Object, new Mock<ITimeApiService>().Object);
+
+        var result = await service.AddAirportAsync(toAdd);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(15, result.Value!.Id);
+    }
+
+    [Fact]
+    public async Task UpdateAirportAsync_ReturnsSuccessWrapper()
+    {
+        var airport = new Airport { Id = 10, IataCode = "CDG" };
+        var repo = new Mock<IAirportRepository>();
+        repo.Setup(r => r.UpdateAsync(airport, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var service = new AirportService(repo.Object, new Mock<ITimeApiService>().Object);
+
+        var result = await service.UpdateAirportAsync(airport);
+
+        Assert.True(result.IsSuccess);
+    }
+
+    [Fact]
+    public async Task DeleteAirportAsync_ReturnsSuccessWrapper()
+    {
+        var repo = new Mock<IAirportRepository>();
+        repo.Setup(r => r.DeleteAsync(7, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var service = new AirportService(repo.Object, new Mock<ITimeApiService>().Object);
+
+        var result = await service.DeleteAirportAsync(7);
+
+        Assert.True(result.IsSuccess);
+    }
+
     [Fact]
     public async Task GetTimeZoneIdByAirportCodeAsync_ReturnsNull_WhenAirportMissing()
     {
