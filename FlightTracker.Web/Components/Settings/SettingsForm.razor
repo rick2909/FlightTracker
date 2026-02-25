@@ -6,6 +6,7 @@
 @inject IJSRuntime JS
 @inject IAntiforgery Antiforgery
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@inject ILogger<SettingsForm> Logger
 
 @code {
     private class ProfileModel
@@ -279,7 +280,8 @@
         }
         catch (Exception ex)
         {
-            return (false, new List<string> { $"Unexpected error: {ex.Message}" }, null);
+            Logger.LogError(ex, "Unexpected error submitting settings form to {Url}", url);
+            return (false, new List<string> { "An unexpected error occurred. Please try again." }, null);
         }
     }
 
