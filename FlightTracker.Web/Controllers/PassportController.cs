@@ -74,7 +74,19 @@ public class PassportController : Controller
             return NotFound();
         }
 
-        var data = await _passportService.GetPassportDataAsync(userId!.Value, cancellationToken);
+        var dataResult = await _passportService.GetPassportDataAsync(
+            userId!.Value,
+            cancellationToken);
+
+        if (dataResult.IsFailure || dataResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to load passport data",
+                detail: dataResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var data = dataResult.Value;
 
         var model = new PassportViewModel
         {
@@ -145,8 +157,32 @@ public class PassportController : Controller
         string? avatarUrl = null;
 
 
-        var passportData = await _passportService.GetPassportDataAsync(userId.Value, cancellationToken);
-        var airlineStats = await _passportService.GetPassportDetailsAsync(userId.Value, cancellationToken);
+        var passportDataResult = await _passportService.GetPassportDataAsync(
+            userId.Value,
+            cancellationToken);
+
+        if (passportDataResult.IsFailure || passportDataResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to load passport data",
+                detail: passportDataResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var airlineStatsResult = await _passportService.GetPassportDetailsAsync(
+            userId.Value,
+            cancellationToken);
+
+        if (airlineStatsResult.IsFailure || airlineStatsResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to load passport details",
+                detail: airlineStatsResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var passportData = passportDataResult.Value;
+        var airlineStats = airlineStatsResult.Value;
         var userFlights = await _flightService.GetUserFlightsAsync(userId.Value, cancellationToken);
 
         userFlights = ApplyFilters(userFlights, q, @class, didFly, fromUtc, toUtc);
