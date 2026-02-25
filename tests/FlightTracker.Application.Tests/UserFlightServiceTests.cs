@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Repositories.Interfaces;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Implementation;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
@@ -98,10 +99,10 @@ public class UserFlightServiceTests
         var airportService = new Mock<IAirportService>();
         airportService
             .Setup(s => s.GetAirportByCodeAsync("JFK", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Airport { Id = 1, IataCode = "JFK" });
+            .ReturnsAsync(Result<Airport>.Success(new Airport { Id = 1, IataCode = "JFK" }));
         airportService
             .Setup(s => s.GetAirportByCodeAsync("LAX", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Airport { Id = 2, IataCode = "LAX" });
+            .ReturnsAsync(Result<Airport>.Success(new Airport { Id = 2, IataCode = "LAX" }));
 
         var metadata = new Mock<IFlightMetadataProvisionService>();
         metadata

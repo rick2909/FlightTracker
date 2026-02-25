@@ -506,7 +506,10 @@
     private async Task<string?> GetTimeZoneIdAsync(string? airportCode)
     {
         if (string.IsNullOrWhiteSpace(airportCode)) return null;
-        return await AirportService.GetTimeZoneIdByAirportCodeAsync(airportCode.Trim());
+        var result = await AirportService.GetTimeZoneIdByAirportCodeAsync(
+            airportCode.Trim());
+
+        return result.IsSuccess ? result.Value : null;
     }
 
     private static DateTime? EnsureArrivalAfterDepartureLocal(DateTime? departureLocal, DateTime? arrivalLocal)

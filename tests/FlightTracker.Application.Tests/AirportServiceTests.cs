@@ -23,7 +23,8 @@ public class AirportServiceTests
 
         var result = await service.GetTimeZoneIdByAirportCodeAsync("XXX");
 
-        Assert.Null(result);
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value);
         timeApi.Verify(t => t.GetTimeZoneIdAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<CancellationToken>()), Times.Never);
         repo.Verify(r => r.UpdateAsync(It.IsAny<Airport>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -49,7 +50,8 @@ public class AirportServiceTests
 
         var result = await service.GetTimeZoneIdByAirportCodeAsync("ORD");
 
-        Assert.Null(result);
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value);
         timeApi.Verify(t => t.GetTimeZoneIdAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<CancellationToken>()), Times.Never);
         repo.Verify(r => r.UpdateAsync(It.IsAny<Airport>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -76,7 +78,8 @@ public class AirportServiceTests
 
         var result = await service.GetTimeZoneIdByAirportCodeAsync("JFK");
 
-        Assert.Equal("America/New_York", result);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("America/New_York", result.Value);
         timeApi.Verify(t => t.GetTimeZoneIdAsync(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<CancellationToken>()), Times.Never);
         repo.Verify(r => r.UpdateAsync(It.IsAny<Airport>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -105,7 +108,8 @@ public class AirportServiceTests
 
         var result = await service.GetTimeZoneIdByAirportCodeAsync("LAX");
 
-        Assert.Equal("America/Los_Angeles", result);
+        Assert.True(result.IsSuccess);
+        Assert.Equal("America/Los_Angeles", result.Value);
         repo.Verify(r => r.UpdateAsync(It.Is<Airport>(a => a.TimeZoneId == "America/Los_Angeles"), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -133,7 +137,8 @@ public class AirportServiceTests
 
         var result = await service.GetTimeZoneIdByAirportCodeAsync("SFO");
 
-        Assert.Null(result);
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value);
         repo.Verify(r => r.UpdateAsync(It.IsAny<Airport>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

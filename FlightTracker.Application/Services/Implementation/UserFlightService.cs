@@ -241,10 +241,14 @@ public class UserFlightService : IUserFlightService
         var depCode = userFlight.Flight?.DepartureAirport?.IataCode ?? userFlight.Flight?.DepartureAirport?.IcaoCode;
         var arrCode = userFlight.Flight?.ArrivalAirport?.IataCode ?? userFlight.Flight?.ArrivalAirport?.IcaoCode;
         string? depTz = depCode is { Length: > 0 }
-            ? await _airportService.GetTimeZoneIdByAirportCodeAsync(depCode, cancellationToken)
+            ? (await _airportService
+                .GetTimeZoneIdByAirportCodeAsync(depCode, cancellationToken))
+                .Value
             : null;
         string? arrTz = arrCode is { Length: > 0 }
-            ? await _airportService.GetTimeZoneIdByAirportCodeAsync(arrCode, cancellationToken)
+            ? (await _airportService
+                .GetTimeZoneIdByAirportCodeAsync(arrCode, cancellationToken))
+                .Value
             : null;
 
         return _mapper.Map<UserFlightDto>(userFlight, opt =>
@@ -395,7 +399,19 @@ public class UserFlightService : IUserFlightService
 
     private async Task<int> ResolveAirportIdOrThrowAsync(string code, CancellationToken cancellationToken)
     {
-        var airport = await _airportService.GetAirportByCodeAsync(code, cancellationToken);
+        var airportResult = await _airportService.GetAirportByCodeAsync(
+            code,
+            cancellationToken);
+
+        if (airportResult.IsFailure)
+        {
+            throw new InvalidOperationException(
+                airportResult.ErrorMessage
+                ?? "Failed to resolve airport.");
+        }
+
+        var airport = airportResult.Value;
+
         if (airport is null)
         {
             // Try to enrich airport from external API if not found

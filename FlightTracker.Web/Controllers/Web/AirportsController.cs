@@ -40,7 +40,19 @@ public class AirportsController(ILogger<AirportsController> logger,
                 return Json(Array.Empty<object>());
             }
 
-            var airports = await _airportService.GetAllAirportsAsync(HttpContext.RequestAborted);
+            var airportsResult = await _airportService.GetAllAirportsAsync(
+                HttpContext.RequestAborted);
+
+            if (airportsResult.IsFailure || airportsResult.Value is null)
+            {
+                return StatusCode(500, new
+                {
+                    error = airportsResult.ErrorMessage
+                        ?? "Failed to load airports"
+                });
+            }
+
+            var airports = airportsResult.Value;
 
             // Filter by bounds when provided and coordinates exist
             bool crossesAntimeridian = east < west;
@@ -106,7 +118,19 @@ public class AirportsController(ILogger<AirportsController> logger,
     {
         try
         {
-            var airports = await _airportService.GetAllAirportsAsync(HttpContext.RequestAborted);
+            var airportsResult = await _airportService.GetAllAirportsAsync(
+                HttpContext.RequestAborted);
+
+            if (airportsResult.IsFailure || airportsResult.Value is null)
+            {
+                return StatusCode(500, new
+                {
+                    error = airportsResult.ErrorMessage
+                        ?? "Failed to load airports"
+                });
+            }
+
+            var airports = airportsResult.Value;
             var airport = airports.FirstOrDefault(a => a.Id == id);
             if (airport is null)
             {
