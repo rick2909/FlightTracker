@@ -13,7 +13,6 @@ using FlightTracker.Application.Mapping;
 using FlightTracker.Infrastructure.External;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication;
@@ -44,6 +43,7 @@ builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 builder.Services.AddScoped<IUserFlightRepository, UserFlightRepository>();
 builder.Services.AddScoped<IAircraftRepository, AircraftRepository>();
 builder.Services.AddScoped<IAirlineRepository, AirlineRepository>();
+builder.Services.AddScoped<IUserPreferencesRepository, UserPreferencesRepository>();
 
 // Register application services
 builder.Services.AddScoped<IAirportService, AirportService>();
@@ -52,6 +52,7 @@ builder.Services.AddScoped<IUserFlightService, UserFlightService>();
 builder.Services.AddScoped<IMapFlightService, MapFlightService>();
 builder.Services.AddScoped<IPassportService, PassportService>();
 builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
+builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
 builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
 {
     c.Timeout = TimeSpan.FromSeconds(3);
@@ -66,7 +67,7 @@ builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
         )
 );
 builder.Services.AddScoped<IFlightLookupService, FlightLookupService>();
-builder.Services.AddHttpClient<IAirportLiveService, FlightTracker.Infrastructure.External.AviationstackService>(c =>
+builder.Services.AddHttpClient<IAirportLiveService, AviationstackService>(c =>
 {
     c.Timeout = TimeSpan.FromSeconds(6);
 })
@@ -145,8 +146,8 @@ builder.Services
     .AddSignInManager();
 
 builder.Services
-    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+    .AddAuthentication(IdentityConstants.ApplicationScheme)
+    .AddCookie(IdentityConstants.ApplicationScheme, options =>
     {
         options.LoginPath = "/login";
         options.LogoutPath = "/logout";
@@ -234,10 +235,10 @@ if (app.Environment.IsDevelopment())
             new("display_name", settings.DevDisplayName ?? string.Empty)
         };
 
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var identity = new ClaimsIdentity(claims, IdentityConstants.ApplicationScheme);
         var principal = new ClaimsPrincipal(identity);
 
-        await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+        await httpContext.SignInAsync(IdentityConstants.ApplicationScheme, principal);
 
         var returnUrl = httpContext.Request.Query["ReturnUrl"].ToString();
         if (!string.IsNullOrWhiteSpace(returnUrl)

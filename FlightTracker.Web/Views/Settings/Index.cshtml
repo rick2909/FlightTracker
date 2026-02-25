@@ -5,9 +5,20 @@
 
 <component type="typeof(FlightTracker.Web.Components.Settings.SettingsForm)"
            render-mode="Server"
+           param-FullName="@Model.FullName"
            param-UserName="@Model.UserName"
            param-Email="@Model.Email"
            param-ProfileVisibility="@Model.ProfileVisibility"
-           param-Theme="@Model.Theme" />
+           param-Theme="@Model.Theme"
+           param-DistanceUnit="@Model.Preferences.DistanceUnit"
+           param-TemperatureUnit="@Model.Preferences.TemperatureUnit"
+           param-TimeFormat="@Model.Preferences.TimeFormat"
+           param-DateFormat="@Model.Preferences.DateFormat"
+           param-ProfileVisibilityLevel="@Model.Preferences.ProfileVisibilityLevel"
+           param-ShowTotalMiles="@Model.Preferences.ShowTotalMiles"
+           param-ShowAirlines="@Model.Preferences.ShowAirlines"
+           param-ShowCountries="@Model.Preferences.ShowCountries"
+           param-ShowMapRoutes="@Model.Preferences.ShowMapRoutes"
+           param-EnableActivityFeed="@Model.Preferences.EnableActivityFeed" />
 
 <script src="~/js/form-helper.js" asp-append-version="true"></script>

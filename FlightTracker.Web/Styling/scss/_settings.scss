@@ -1,5 +1,8 @@
+@use 'variables' as *;
+
 .settings-form {
   max-width: 32rem; // ~512px
+  margin: 0 auto;
   padding: 0.5rem 0.75rem;
 
   &__row {
@@ -24,5 +27,52 @@
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+  }
+
+  &__two-col {
+    display: grid;
+    gap: 1rem;
+    margin: 0.75rem 0 1rem;
+  }
+
+  &__panel {
+    padding: 0.75rem;
+    border: 1px solid var(--rz-border-color, #e5e5e5);
+    border-radius: 0.5rem;
+    background: var(--rz-base-background-color, #fff);
+  }
+
+  &__section-title {
+    margin: 0 0 0.75rem;
+    color: var(--rz-text-color);
+    font-size: 1rem;
+  }
+}
+
+.settings-tabs {
+  .rz-tabview-panels {
+    display: flex;
+    justify-content: center;
+  }
+
+  .rz-tabview-panel {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+}
+
+@media (min-width: $bp-md) {
+  .settings-form {
+    max-width: 72rem;
+    width: 60%;
+
+    &__two-col {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .preferences {
+    width: 75%;
   }
 }

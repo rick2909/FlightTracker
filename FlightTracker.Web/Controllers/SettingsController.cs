@@ -7,6 +7,9 @@ using System.Text;
 using System.Text.Json;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using System.Text.RegularExpressions;
+using AutoMapper;
+using FlightTracker.Application.Dtos;
 
 namespace FlightTracker.Web.Controllers;
 
@@ -15,12 +18,26 @@ namespace FlightTracker.Web.Controllers;
 public class SettingsController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly IUserFlightService _userFlightService;
+    private readonly IUsernameValidationService _usernameValidationService;
+    private readonly IUserPreferencesService _userPreferencesService;
+    private readonly IMapper _mapper;
 
-    public SettingsController(UserManager<ApplicationUser> userManager, IUserFlightService userFlightService)
+    public SettingsController(
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        IUserFlightService userFlightService,
+        IUsernameValidationService usernameValidationService,
+        IUserPreferencesService userPreferencesService,
+        IMapper mapper)
     {
         _userManager = userManager;
+        _signInManager = signInManager;
         _userFlightService = userFlightService;
+        _usernameValidationService = usernameValidationService;
+        _userPreferencesService = userPreferencesService;
+        _mapper = mapper;
     }
 
     [HttpGet]
@@ -37,13 +54,31 @@ public class SettingsController : Controller
             return Challenge();
         }
 
+        var preferences = await _userPreferencesService.GetOrCreateAsync(userId, default);
+
         var vm = new SettingsViewModel
         {
+            FullName = user.FullName ?? string.Empty,
             UserName = user.UserName ?? string.Empty,
             Email = user.Email ?? string.Empty,
             ProfileVisibility = Request.Cookies["ft_profile_visibility"] ?? "private",
             Theme = Request.Cookies["ft_theme"] ?? "system"
         };
+        
+        // Set display & units from database
+        vm.Preferences.DistanceUnit = preferences.DistanceUnit;
+        vm.Preferences.TemperatureUnit = preferences.TemperatureUnit;
+        vm.Preferences.TimeFormat = preferences.TimeFormat;
+        vm.Preferences.DateFormat = preferences.DateFormat;
+        
+        // Set privacy & sharing from database
+        vm.Preferences.ProfileVisibilityLevel = preferences.ProfileVisibility;
+        vm.Preferences.ShowTotalMiles = preferences.ShowTotalMiles;
+        vm.Preferences.ShowAirlines = preferences.ShowAirlines;
+        vm.Preferences.ShowCountries = preferences.ShowCountries;
+        vm.Preferences.ShowMapRoutes = preferences.ShowMapRoutes;
+        vm.Preferences.EnableActivityFeed = preferences.EnableActivityFeed;
+        
         ViewData["Title"] = "Settings";
         return View(vm);
     }
@@ -54,8 +89,8 @@ public class SettingsController : Controller
     {
         if (!ModelState.IsValid)
         {
-            ViewData["Title"] = "Settings";
-            return View("Index", model);
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, errors });
         }
 
         if (!TryGetCurrentUserId(out var userId, out var challengeResult))
@@ -69,12 +104,46 @@ public class SettingsController : Controller
             return Challenge();
         }
 
-        if (!string.Equals(user.UserName, model.UserName, StringComparison.Ordinal))
+        if (!string.Equals(user.FullName, model.FullName, StringComparison.Ordinal))
         {
-            var setName = await _userManager.SetUserNameAsync(user, model.UserName);
+            user.FullName = model.FullName;
+            // Update display_name claim
+            var displayNameClaim = (await _userManager.GetClaimsAsync(user)).FirstOrDefault(c => c.Type == "display_name");
+            if (displayNameClaim != null)
+            {
+                var removeClaim = await _userManager.RemoveClaimAsync(user, displayNameClaim);
+                if (!removeClaim.Succeeded)
+                {
+                    var errors = removeClaim.Errors.Select(e => e.Description).ToList();
+                    return Json(new { success = false, errors });
+                }
+            }
+
+            var addClaim = await _userManager.AddClaimAsync(
+                user,
+                new Claim("display_name", model.FullName));
+            if (!addClaim.Succeeded)
+            {
+                var errors = addClaim.Errors.Select(e => e.Description).ToList();
+                return Json(new { success = false, errors });
+            }
+        }
+
+        var trimmedUserName = model.UserName.Trim();
+        if (!string.Equals(user.UserName, trimmedUserName, StringComparison.Ordinal))
+        {
+            // Validate username against business rules
+            var usernameValidation = await _usernameValidationService.ValidateAsync(trimmedUserName);
+            if (!usernameValidation.IsValid)
+            {
+                return Json(new { success = false, errors = new[] { usernameValidation.ErrorMessage ?? "Invalid username." } });
+            }
+
+            var setName = await _userManager.SetUserNameAsync(user, trimmedUserName);
             if (!setName.Succeeded)
             {
-                foreach (var e in setName.Errors) ModelState.AddModelError("UserName", e.Description);
+                var errors = setName.Errors.Select(e => e.Description).ToList();
+                return Json(new { success = false, errors });
             }
         }
 
@@ -83,24 +152,28 @@ public class SettingsController : Controller
             var setEmail = await _userManager.SetEmailAsync(user, model.Email);
             if (!setEmail.Succeeded)
             {
-                foreach (var e in setEmail.Errors) ModelState.AddModelError("Email", e.Description);
+                var errors = setEmail.Errors.Select(e => e.Description).ToList();
+                return Json(new { success = false, errors });
             }
             else
             {
                 // If you require confirmation, you'd generate token & send email. For now mark confirmed to keep demo simple.
                 user.EmailConfirmed = true;
-                await _userManager.UpdateAsync(user);
             }
         }
 
-        if (!ModelState.IsValid)
+        var updateUser = await _userManager.UpdateAsync(user);
+        if (!updateUser.Succeeded)
         {
-            ViewData["Title"] = "Settings";
-            return View("Index", model);
+            var errors = updateUser.Errors.Select(e => e.Description).ToList();
+            return Json(new { success = false, errors });
         }
 
+        // Refresh sign-in to update cookie with new claims
+        await _signInManager.RefreshSignInAsync(user);
+
         TempData["Status"] = "Profile updated";
-        return RedirectToAction(nameof(Index));
+        return Json(new { success = true, displayName = user.FullName });
     }
 
     [HttpPost]
@@ -109,36 +182,67 @@ public class SettingsController : Controller
     {
         if (!ModelState.IsValid)
         {
-            return await ReturnSettingsWithErrors();
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, errors });
         }
         if (!TryGetCurrentUserId(out var userId, out var challengeResult))
         {
             return challengeResult!;
         }
+
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user == null)
         {
             return Challenge();
         }
 
+        // Validate password against regex requirements
+        var passwordRegexValidations = new(Regex pattern, string errorMessage)[]
+        {
+            (new Regex(@"[A-Z]"), "Password must contain at least one uppercase letter."),
+            (new Regex(@"[a-z]"), "Password must contain at least one lowercase letter."),
+            (new Regex(@"\d"), "Password must contain at least one digit."),
+            (new Regex(@"[^A-Za-z0-9]"), "Password must contain at least one non-alphanumeric character.")
+        };
+
+        foreach (var (pattern, errorMessage) in passwordRegexValidations)
+        {
+            if (!pattern.IsMatch(model.NewPassword))
+            {
+                ModelState.AddModelError(nameof(ChangePasswordViewModel.NewPassword), errorMessage);
+            }
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, errors });
+        }
+
         var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
         if (!result.Succeeded)
         {
-            foreach (var e in result.Errors) ModelState.AddModelError(string.Empty, e.Description);
-            return await ReturnSettingsWithErrors();
+            var errors = result.Errors.Select(e => e.Description).ToList();
+            return Json(new { success = false, errors });
         }
+        
         TempData["Status"] = "Password changed";
-        return RedirectToAction(nameof(Index));
+        return Json(new { success = true });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult UpdatePreferences([FromForm] PreferencesViewModel model, [FromServices] IWebHostEnvironment env)
+    public async Task<IActionResult> UpdatePreferences([FromForm] PreferencesViewModel model, [FromServices] IWebHostEnvironment env, CancellationToken cancellationToken = default)
     {
         if (!ModelState.IsValid)
         {
-            TempData["Status"] = "Preferences not saved";
-            return RedirectToAction(nameof(Index));
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return Json(new { success = false, errors });
+        }
+
+        if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+        {
+            return challengeResult!;
         }
 
         // Persist simple preferences in cookies (1 year)
@@ -153,8 +257,14 @@ public class SettingsController : Controller
         if (!string.IsNullOrWhiteSpace(model.Theme)) Response.Cookies.Append("ft_theme", model.Theme, opts);
         if (!string.IsNullOrWhiteSpace(model.ProfileVisibility)) Response.Cookies.Append("ft_profile_visibility", model.ProfileVisibility, opts);
 
+        // Persist display & units preferences to database
+        var preferencesDto = _mapper.Map<UserPreferencesDto>(model);
+        preferencesDto.UserId = userId;
+        
+        await _userPreferencesService.UpdateAsync(userId, preferencesDto, cancellationToken);
+
         TempData["Status"] = "Preferences saved";
-        return RedirectToAction(nameof(Index));
+        return Json(new { success = true });
     }
 
     private async Task<IActionResult> ReturnSettingsWithErrors()
@@ -171,6 +281,7 @@ public class SettingsController : Controller
 
         var vm = new SettingsViewModel
         {
+            FullName = user.FullName ?? string.Empty,
             UserName = user.UserName ?? string.Empty,
             Email = user.Email ?? string.Empty,
             ProfileVisibility = Request.Cookies["ft_profile_visibility"] ?? "private",

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using FlightTracker.Domain.Enums;
 
 namespace FlightTracker.Web.Models.ViewModels;
 
@@ -6,7 +7,12 @@ public class SettingsViewModel
 {
     // Profile
     [Required]
+    [Display(Name = "Full Name")]
     [StringLength(64, MinimumLength = 3)]
+    public string FullName { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(32, MinimumLength = 3)]
     public string UserName { get; set; } = string.Empty;
 
     [Required]
@@ -20,9 +26,7 @@ public class SettingsViewModel
     [RegularExpression("^(light|dark|system)$")]
     public string Theme { get; set; } = "system";
 
-    // Nested forms
-    public ChangePasswordViewModel ChangePassword { get; set; } = new();
-    public PreferencesViewModel Preferences => new() { ProfileVisibility = ProfileVisibility, Theme = Theme };
+    public PreferencesViewModel Preferences { get; set; } = new();
 }
 
 public class ChangePasswordViewModel
@@ -49,4 +53,26 @@ public class PreferencesViewModel
 
     [RegularExpression("^(light|dark|system)$")]
     public string Theme { get; set; } = "system";
+
+    // Display & Units
+    public DistanceUnit DistanceUnit { get; set; } = DistanceUnit.Miles;
+
+    public TemperatureUnit TemperatureUnit { get; set; } = TemperatureUnit.Celsius;
+
+    public TimeFormat TimeFormat { get; set; } = TimeFormat.TwentyFourHour;
+
+    public DateFormat DateFormat { get; set; } = DateFormat.YearMonthDay;
+    
+    // Privacy & Sharing
+    public ProfileVisibilityLevel ProfileVisibilityLevel { get; set; } = ProfileVisibilityLevel.Private;
+    
+    public bool ShowTotalMiles { get; set; } = true;
+    
+    public bool ShowAirlines { get; set; } = true;
+    
+    public bool ShowCountries { get; set; } = true;
+    
+    public bool ShowMapRoutes { get; set; } = true;
+    
+    public bool EnableActivityFeed { get; set; } = false;
 }

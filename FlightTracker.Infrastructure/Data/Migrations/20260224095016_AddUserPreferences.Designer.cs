@@ -3,6 +3,7 @@ using System;
 using FlightTracker.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FlightTracker.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(FlightTrackerDbContext))]
-    partial class FlightTrackerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260224095016_AddUserPreferences")]
+    partial class AddUserPreferences
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.2");
@@ -293,25 +296,6 @@ namespace FlightTracker.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("EnableActivityFeed")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ProfileVisibility")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("ShowAirlines")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("ShowCountries")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("ShowMapRoutes")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("ShowTotalMiles")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("TemperatureUnit")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -590,15 +574,6 @@ namespace FlightTracker.Infrastructure.Data.Migrations
                     b.Navigation("Flight");
                 });
 
-            modelBuilder.Entity("FlightTracker.Domain.Entities.UserPreferences", b =>
-                {
-                    b.HasOne("FlightTracker.Infrastructure.Data.ApplicationUser", null)
-                        .WithOne("Preferences")
-                        .HasForeignKey("FlightTracker.Domain.Entities.UserPreferences", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<int>", null)
@@ -676,8 +651,6 @@ namespace FlightTracker.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("FlightTracker.Infrastructure.Data.ApplicationUser", b =>
                 {
-                    b.Navigation("Preferences");
-
                     b.Navigation("UserFlights");
                 });
 #pragma warning restore 612, 618

@@ -1,6 +1,7 @@
 using AutoMapper;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Web.Models;
+using FlightTracker.Web.Models.ViewModels;
 
 namespace FlightTracker.Web.Mapping;
 
@@ -29,5 +30,9 @@ public class WebMappingProfile : Profile
                 opt => opt.MapFrom(src => src.DepartureAirportCode ?? string.Empty))
             .ForMember(dest => dest.ArrivalAirportCode,
                 opt => opt.MapFrom(src => src.ArrivalAirportCode ?? string.Empty));
+
+        CreateMap<PreferencesViewModel, UserPreferencesDto>()
+            .ForMember(dest => dest.ProfileVisibility,
+                opt => opt.MapFrom(src => src.ProfileVisibilityLevel));
     }
 }
