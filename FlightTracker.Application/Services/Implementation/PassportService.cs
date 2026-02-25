@@ -21,17 +21,20 @@ public class PassportService : IPassportService
     private readonly IFlightRepository _flightRepository;
     private readonly IMapFlightService _mapFlightService;
     private readonly IDistanceCalculator _distanceCalculator;
+    private readonly IFlightStatsService _flightStatsService;
 
     public PassportService(
         IUserFlightRepository userFlightRepository,
         IFlightRepository flightRepository,
         IMapFlightService mapFlightService,
-        IDistanceCalculator distanceCalculator)
+        IDistanceCalculator distanceCalculator,
+        IFlightStatsService flightStatsService)
     {
         _userFlightRepository = userFlightRepository;
         _flightRepository = flightRepository;
         _mapFlightService = mapFlightService;
         _distanceCalculator = distanceCalculator;
+        _flightStatsService = flightStatsService;
     }
 
     public async Task<PassportDataDto> GetPassportDataAsync(int userId, CancellationToken cancellationToken = default)
@@ -170,48 +173,8 @@ public class PassportService : IPassportService
 
     public async Task<PassportDetailsDto> GetPassportDetailsAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var flights = (await _userFlightRepository.GetUserFlightsAsync(userId, cancellationToken)).ToList();
-
-        // Consider only actually flown flights
-        var flown = flights.Where(uf => uf.DidFly && uf.Flight != null).ToList();
-
-        // Group by airline
-        var airlineStats = flown
-            .Select(uf => uf.Flight!.OperatingAirline)
-            .Where(a => a != null)
-            .GroupBy(a =>
-                $"{a!.Name?.Trim().ToUpperInvariant() ?? ""}|{a.IataCode?.Trim().ToUpperInvariant() ?? ""}|{a.IcaoCode?.Trim().ToUpperInvariant() ?? ""}"
-            )
-            .Select(g =>
-            {
-                var first = g.First()!;
-                var keyParts = g.Key.Split('|');
-                return new AirlineStatsDto
-                {
-                    AirlineName = keyParts[0],
-                    AirlineIata = string.IsNullOrEmpty(keyParts[1]) ? null : keyParts[1],
-                    AirlineIcao = string.IsNullOrEmpty(keyParts[2]) ? null : keyParts[2],
-                    Count = g.Count()
-                };
-            })
-            .OrderByDescending(x => x.Count)
-            .ThenBy(x => x.AirlineName)
-            .ToList();
-
-        // Group by aircraft type/model (prefer Model then ICAO type)
-        var aircraftTypeStats = flown
-            .Select(uf => uf.Flight!.Aircraft)
-            .Where(a => a != null)
-            .Select(a => !string.IsNullOrWhiteSpace(a!.Model) ? a.Model! : (a.IcaoTypeCode ?? string.Empty))
-            .Where(s => !string.IsNullOrWhiteSpace(s))
-            .GroupBy(s => s!, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
-
-        return new PassportDetailsDto
-        {
-            AirlineStats = airlineStats,
-            AircraftTypeStats = aircraftTypeStats
-        };
+        return await _flightStatsService
+            .GetPassportDetailsAsync(userId, cancellationToken);
     }
 
     private string? ToIso2(string? country)
