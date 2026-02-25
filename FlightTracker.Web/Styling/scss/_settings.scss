@@ -2,6 +2,7 @@
 
 .settings-form {
   max-width: 32rem; // ~512px
+  margin: 0 auto;
   padding: 0.5rem 0.75rem;
 
   &__row {
@@ -48,12 +49,30 @@
   }
 }
 
+.settings-tabs {
+  .rz-tabview-panels {
+    display: flex;
+    justify-content: center;
+  }
+
+  .rz-tabview-panel {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+}
+
 @media (min-width: $bp-md) {
   .settings-form {
-    max-width: 72rem; // ~1152px
+    max-width: 72rem;
+    width: 60%;
 
     &__two-col {
       grid-template-columns: 1fr 1fr;
     }
+  }
+
+  .preferences {
+    width: 75%;
   }
 }
