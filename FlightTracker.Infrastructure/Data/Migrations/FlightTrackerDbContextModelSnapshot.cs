@@ -590,6 +590,15 @@ namespace FlightTracker.Infrastructure.Data.Migrations
                     b.Navigation("Flight");
                 });
 
+            modelBuilder.Entity("FlightTracker.Domain.Entities.UserPreferences", b =>
+                {
+                    b.HasOne("FlightTracker.Infrastructure.Data.ApplicationUser", null)
+                        .WithOne("Preferences")
+                        .HasForeignKey("FlightTracker.Domain.Entities.UserPreferences", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<int>", null)
@@ -667,6 +676,8 @@ namespace FlightTracker.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("FlightTracker.Infrastructure.Data.ApplicationUser", b =>
                 {
+                    b.Navigation("Preferences");
+
                     b.Navigation("UserFlights");
                 });
 #pragma warning restore 612, 618
