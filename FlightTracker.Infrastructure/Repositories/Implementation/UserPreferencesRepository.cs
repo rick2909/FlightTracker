@@ -3,7 +3,7 @@ using FlightTracker.Domain.Entities;
 using FlightTracker.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace FlightTracker.Infrastructure.Repositories;
+namespace FlightTracker.Infrastructure.Repositories.Implementation;
 
 /// <summary>
 /// Repository for user preferences.

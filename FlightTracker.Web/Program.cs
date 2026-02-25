@@ -4,7 +4,6 @@ using FlightTracker.Application.Services.Interfaces.Analytics;
 using FlightTracker.Application.Services.Implementation.Analytics;
 using FlightTracker.Application.Repositories.Interfaces;
 using FlightTracker.Infrastructure.Repositories.Implementation;
-using FlightTracker.Infrastructure.Repositories;
 using FlightTracker.Infrastructure.Data;
 using FlightTracker.Web.Models.Auth;
 using Microsoft.EntityFrameworkCore;
