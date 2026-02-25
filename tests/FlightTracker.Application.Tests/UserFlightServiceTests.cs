@@ -246,6 +246,9 @@ public class UserFlightServiceTests
 
     private static UserFlightService CreateService(IUserFlightRepository userFlightRepository)
     {
+        var clock = new Mock<IClock>();
+        clock.SetupGet(c => c.UtcNow).Returns(new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+
         return new UserFlightService(
             userFlightRepository,
             new Mock<IFlightRepository>().Object,
@@ -256,7 +259,8 @@ public class UserFlightServiceTests
             new Mock<IAircraftRepository>().Object,
             new Mock<IAircraftLookupClient>().Object,
             new Mock<IAirportEnrichmentService>().Object,
-            new Mock<IMapper>().Object);
+            new Mock<IMapper>().Object,
+            clock.Object);
     }
 
     private static UserFlightService CreateService(
@@ -265,8 +269,17 @@ public class UserFlightServiceTests
         IFlightService flightService,
         IMapper mapper,
         IAirportService? airportService = null,
-        IFlightMetadataProvisionService? metadataProvisionService = null)
+        IFlightMetadataProvisionService? metadataProvisionService = null,
+        IClock? clock = null)
     {
+        if (clock is null)
+        {
+            var defaultClock = new Mock<IClock>();
+            defaultClock.SetupGet(c => c.UtcNow)
+                .Returns(new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+            clock = defaultClock.Object;
+        }
+
         return new UserFlightService(
             userFlightRepository,
             flightRepository,
@@ -277,7 +290,8 @@ public class UserFlightServiceTests
             new Mock<IAircraftRepository>().Object,
             new Mock<IAircraftLookupClient>().Object,
             new Mock<IAirportEnrichmentService>().Object,
-            mapper);
+            mapper,
+            clock);
     }
 
     private static IMapper CreateMapper()
