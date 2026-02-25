@@ -10,6 +10,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - (Deferred) suffix = Later phase
 
 ---
+
 ## 1. Core Architecture & Alignment
 
 - [x] Establish solution + core projects (Domain, Application, Infrastructure)
@@ -27,7 +28,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Add ProfileVisibilityLevel enum for privacy settings
 - [ ] Add value object (e.g., AirportCode) to reduce string duplication (optional)
 - [ ] Add domain exceptions (e.g., FlightNotFoundException)
-- [ ] Introduce IClock abstraction reference boundary (interface only, implementation outward)
+- [x] Introduce IClock abstraction reference boundary (interface in Application, implementation in Infrastructure)
 - [ ] Aircraft / TrackPoint / Passport stats aggregates (Deferred)
 
 ## 3. Application Layer
@@ -38,7 +39,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Create DTOs: FlightDto, FlightDetailDto, AirportDto
 - [x] Create/Update DTO variants (UserFlight Update, Flight schedule update)
 - [x] Mapping profiles (AutoMapper) Domain <-> DTOs
-- [ ] Add Result wrapper (e.g., Result&lt;T&gt;, PaginatedResult&lt;T&gt;)
+- [x] Add Result wrapper (e.g., Result&lt;T&gt;, PaginatedResult&lt;T&gt;)
 - [x] Add validation (FluentValidation) for create/update DTOs (CreateUserFlightDto, UpdateUserFlightDto, FlightScheduleUpdateDto)
 - [ ] Add cancellation token propagation tests
 - [x] Define external provider abstraction: IFlightDataProvider (live flight & track retrieval)
@@ -46,13 +47,13 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Add AirportOverviewService (merges DB + live provider results with de-duplication)
 - [x] Add IUserPreferencesService + UserPreferencesService for user settings management
 - [x] Add UserPreferencesDto with display, unit, and privacy fields
-- [ ] Define IFlightStatsService + DTOs for passport/stats (TotalFlights, TotalHours, MonthlyCounts)
-- [ ] Add aggregation DTOs for Passport details: AirlineStatsDto { AirlineName, AirlineIata, Count }, AircraftTypeStatsDto { TypeCode, Count }
-- [ ] Implement IFlightStatsService (group-by airline and aircraft type for a user)
-- [ ] Extend PassportDataDto or add PassportDetailsDto to include AirlineStats and AircraftTypeStats (used by Passport details view)
+- [x] Define IFlightStatsService for passport detail aggregations
+- [x] Add aggregation DTOs for Passport details: AirlineStatsDto and PassportDetailsDto (with aircraft type counts)
+- [x] Implement IFlightStatsService (group-by airline and aircraft type for a user)
+- [x] Extend passport details payload to include AirlineStats and AircraftTypeStats (used by Passport details view)
 - [ ] Pagination & filtering strategy abstraction (FlightQueryOptions) (Deferred)
- - [x] Add IPassportService + PassportService (aggregate stats + routes)
- - [x] Add PassportDataDto (single payload for Passport page)
+  - [x] Add IPassportService + PassportService (aggregate stats + routes)
+    - [x] Add PassportDataDto (single payload for Passport page)
 
 ## 4. Infrastructure Layer
 
@@ -67,7 +68,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [ ] External API client scaffolds: OpenSkyClient (implements IFlightDataProvider) (Deferred)
 - [ ] Add caching layer (MemoryCache) decorator for IFlightDataProvider
 - [ ] Add background hosted service for periodic flight refresh (pull + persist)
-- [ ] Introduce IClock implementation (UtcClock)
+- [x] Introduce IClock implementation (UtcClock)
 - [x] Add configuration binding (appsettings) for external API keys / endpoints (Aviationstack:ApiKey)
 - [ ] Logging strategy: structured logs for repository & provider operations
 - [ ] Redis / distributed cache integration (Deferred)
@@ -99,23 +100,23 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Settings page (profile, password, display & units preferences, privacy & sharing, CSV/JSON export)
 - [x] Wire Airports UI to AirportOverviewService with optional Aviationstack live data
 - [ ] NEW: Passport details view (more in-depth stats inside Passport)
-	- [x] Route: `/Passport/{id?}` gains a "Details" tab/section (or `/Passport/{id?}/Details` action)
-	- [x] Two ApexCharts pie charts
-		- [x] Airlines flown (click to filter list)
-		- [x] Aircraft types flown (click to filter list)
-	- [x] Filtered lists beneath charts (respect selected airline/type)
-	- [x] Data source: IFlightStatsService with AirlineStatsDto & AircraftTypeStatsDto via PassportDetailsDto/PassportDataDto
-	- [ ] Accessibility: chart labels, table summaries, keyboard navigation
-	- [ ] Performance: AsNoTracking queries; scoped to current user; defer pagination initially
+  - [x] Route: `/Passport/{id?}` gains a "Details" tab/section (or `/Passport/{id?}/Details` action)
+  - [x] Two ApexCharts pie charts
+    - [x] Airlines flown (click to filter list)
+    - [x] Aircraft types flown (click to filter list)
+  - [x] Filtered lists beneath charts (respect selected airline/type)
+  - [x] Data source: IFlightStatsService with AirlineStatsDto & AircraftTypeStatsDto via PassportDetailsDto/PassportDataDto
+  - [ ] Accessibility: chart labels, table summaries, keyboard navigation
+  - [ ] Performance: AsNoTracking queries; scoped to current user; defer pagination initially
 - [x] Passport / Stats dashboard (charts + summary cards)
-		- [x] Summary cards bound to DB data via IPassportService
-		- [x] Flights Per Year chart (ApexCharts)
-		- [x] Pie chart: Airlines flown (ApexCharts)
-		- [x] Pie chart: Aircraft types flown (ApexCharts)
-	- [x] *Charts wiring (ApexCharts) and interactions*  
-			Note: Scripts included; finalize dataset + rendering hooks
+  - [x] Summary cards bound to DB data via IPassportService
+  - [x] Flights Per Year chart (ApexCharts)
+  - [x] Pie chart: Airlines flown (ApexCharts)
+  - [x] Pie chart: Aircraft types flown (ApexCharts)
+  - [x] *Charts wiring (ApexCharts) and interactions*  
+            Note: Scripts included; finalize dataset + rendering hooks
 - [x] State-based flight views (Pre-flight, At airport, Post-flight) UI workflow
-- [ ] Auth UI (login/register) once API auth ready
+- [x] Auth UI (login/register) once API auth ready
 - [ ] Light/Dark theme toggle + Material design tokens
 - [ ] Offline caching (PWA capability) (Deferred)
 
@@ -140,20 +141,20 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 ## 9. Passport / Stats Feature
 
 - [x] Define stats aggregation queries (total hours, routes, aircraft types placeholder)
-- [ ] Implement IFlightStatsService
+- [x] Implement IFlightStatsService
 - [ ] Add background job or on-demand recompute strategy
 - [ ] Expose API endpoint /stats/user/{id}
 - [ ] Provide chart-friendly DTOs (MonthlyFlightCounts etc.)
 - [ ] Integrate charts in UI (ApexCharts) once Web project exists
- - [x] Implement IPassportService returning PassportDataDto (aggregates + routes)
- - [x] Wire Web to DB (replace mock): `PassportController` maps PassportDataDto => PassportViewModel
- - [x] Routing: support `/passport/{id?}` with fallback to current user or redirect when unauthenticated
- - [ ] Add privacy/sharing option for viewing someone else’s passport (Deferred)
- - [ ] Normalize country codes to ISO-3166-1 alpha-2 for flag rendering
+- [x] Implement IPassportService returning PassportDataDto (aggregates + routes)
+- [x] Wire Web to DB (replace mock): `PassportController` maps PassportDataDto => PassportViewModel
+- [x] Routing: support `/passport/{id?}` with fallback to current user or redirect when unauthenticated
+- [ ] Add privacy/sharing option for viewing someone else’s passport (Deferred)
+- [ ] Normalize country codes to ISO-3166-1 alpha-2 for flag rendering
 
 ## 10. Testing Strategy
 
-- [ ] Add test projects: Domain.Tests, Application.Tests, Infrastructure.Tests
+- [x] Add test projects: Domain.Tests, Application.Tests, Infrastructure.Tests
 - [ ] Domain unit tests (Flight scheduling, status transitions once added)
 - [ ] Application service tests (mock repositories/providers)
 - [ ] Infrastructure integration tests (SQLite in-memory enforcing FKs)
@@ -187,49 +188,49 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 - [x] Settings page baseline (profile, password, theme, visibility)
 - [x] **Display & Units Preferences**
-	- [x] Add DistanceUnit, TemperatureUnit, TimeFormat, DateFormat enums
-	- [x] Create UserPreferences entity with database storage
-	- [x] Implement repository and service layers
-	- [x] Add UI controls in Settings → Preferences tab
-	- [x] Migrate from cookie-based to database storage
-	- [ ] Create helper services/formatters to use preferences throughout app
-	- [ ] Update Passport page to display distances in user's preferred unit
-	- [ ] Apply date/time formatting preferences in flight details
+  - [x] Add DistanceUnit, TemperatureUnit, TimeFormat, DateFormat enums
+  - [x] Create UserPreferences entity with database storage
+  - [x] Implement repository and service layers
+  - [x] Add UI controls in Settings → Preferences tab
+  - [x] Migrate from cookie-based to database storage
+  - [ ] Create helper services/formatters to use preferences throughout app
+  - [ ] Update Passport page to display distances in user's preferred unit
+  - [ ] Apply date/time formatting preferences in flight details
 - [ ] **Privacy & Sharing Settings**
-	- [x] Enhance ProfileVisibility with granular levels (Public/Private)
-	- [x] Add StatsVisibility flags (show/hide total miles, airlines, countries)
-	- [x] Add MapVisibility toggle (show/hide routes on public profile)
-	- [x] Add ActivityFeed preference (enable/disable flight sharing)
-	- [x] Create ProfileVisibilityLevel enum
-	- [x] Add privacy fields to UserPreferences entity and database
-	- [x] Update UI with toggle switches in Settings → Preferences tab
-	- [ ] Implement access control logic for public profile views
-	- [ ] Apply privacy settings when rendering Passport page
+  - [x] Enhance ProfileVisibility with granular levels (Public/Private)
+  - [x] Add StatsVisibility flags (show/hide total miles, airlines, countries)
+  - [x] Add MapVisibility toggle (show/hide routes on public profile)
+  - [x] Add ActivityFeed preference (enable/disable flight sharing)
+  - [x] Create ProfileVisibilityLevel enum
+  - [x] Add privacy fields to UserPreferences entity and database
+  - [x] Update UI with toggle switches in Settings → Preferences tab
+  - [ ] Implement access control logic for public profile views
+  - [ ] Apply privacy settings when rendering Passport page
 - [ ] **Notification Preferences** (Deferred)
-	- [ ] Email notifications toggle
-	- [ ] Flight update alerts preference
-	- [ ] Weekly digest opt-in
-	- [ ] Browser push notification settings
+  - [ ] Email notifications toggle
+  - [ ] Flight update alerts preference
+  - [ ] Weekly digest opt-in
+  - [ ] Browser push notification settings
 - [ ] **Data & API Integration Settings** (Deferred)
-	- [ ] User-provided API keys (OpenSky, FR24, Aviationstack)
-	- [ ] Auto-sync toggle for external enrichment
-	- [ ] Data refresh frequency selector
-	- [ ] API usage/quota display
+  - [ ] User-provided API keys (OpenSky, FR24, Aviationstack)
+  - [ ] Auto-sync toggle for external enrichment
+  - [ ] Data refresh frequency selector
+  - [ ] API usage/quota display
 - [ ] **Passport Customization** (Deferred)
-	- [ ] Avatar/profile photo upload
-	- [ ] Home airport preference
-	- [ ] Favorite airline pin
-	- [ ] Travel goals (yearly flight/distance targets)
-	- [ ] Badge visibility toggles
+  - [ ] Avatar/profile photo upload
+  - [ ] Home airport preference
+  - [ ] Favorite airline pin
+  - [ ] Travel goals (yearly flight/distance targets)
+  - [ ] Badge visibility toggles
 - [ ] **Map Preferences** (Deferred)
-	- [ ] Map style selector (Light/Dark/Satellite/Terrain)
-	- [ ] Default zoom level
-	- [ ] Route display options (all/recent X flights)
-	- [ ] Clustering toggle
+  - [ ] Map style selector (Light/Dark/Satellite/Terrain)
+  - [ ] Default zoom level
+  - [ ] Route display options (all/recent X flights)
+  - [ ] Clustering toggle
 - [ ] **Import/Export Enhancements** (Deferred)
-	- [ ] Auto-backup frequency (Daily/Weekly/Monthly)
-	- [ ] PDF export with charts
-	- [ ] Import from other flight trackers (standardized format)
+  - [ ] Auto-backup frequency (Daily/Weekly/Monthly)
+  - [ ] PDF export with charts
+  - [ ] Import from other flight trackers (standardized format)
 
 ## 14. Developer Experience
 
@@ -264,10 +265,10 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 ## Immediate Next Suggested Focus
 
-1. Wrap up Flight details/edit (done): unified update use case, validators, Web wired.
-2. Optional: Add Result wrapper for APIs; improve error surface in Presentation.
-3. Prepare Passport details spec (not implementation): define IFlightStatsService contract + AirlineStatsDto/AircraftTypeStatsDto and outline Passport UI (Details tab + charts and filtered lists).
-4. Provider hardening: ensure config key set via appsettings; keep Polly retry/backoff and consider a simple enable/disable flag for live providers.
-5. Add unit tests plan for forthcoming IFlightStatsService (grouping correctness, empty dataset, large dataset) and for AirportOverviewService merge logic.
+1. Optional: Add Result wrapper for APIs; improve error surface in Presentation.
+2. Provider hardening: ensure config key set via appsettings; keep Polly retry/backoff and consider a simple enable/disable flag for live providers.
+3. Expand Application tests: add broader cancellation-token propagation coverage and additional stats aggregation scenarios.
+4. Implement preference-aware formatting helpers and apply them in Passport/Flight details (distance + date/time).
+5. Start API project scaffolding (`FlightTracker.Api`) with baseline DI + controllers.
 
 Keep this file updated; prune completed groups to maintain clarity.
