@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Identity;
 using FlightTracker.Domain.Entities;
-using System.Collections.Generic;
 
 namespace FlightTracker.Infrastructure.Data;
 
@@ -18,4 +17,6 @@ public class ApplicationUser : IdentityUser<int>
     /// Navigation property for user's flight experiences.
     /// </summary>
     public ICollection<UserFlight> UserFlights { get; set; } = new List<UserFlight>();
+
+    public UserPreferences? Preferences { get; set; }
 }

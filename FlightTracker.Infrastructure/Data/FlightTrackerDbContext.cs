@@ -142,6 +142,11 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
             entity.Property(p => p.ProfileVisibility).HasConversion<string>().IsRequired();
 
             // One-to-one relationship with ApplicationUser
+            entity.HasOne<ApplicationUser>()
+                .WithOne(u => u.Preferences)
+                  .HasForeignKey<UserPreferences>(p => p.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
             entity.HasIndex(p => p.UserId).IsUnique();
         });
     }
