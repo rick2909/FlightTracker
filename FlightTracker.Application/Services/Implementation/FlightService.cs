@@ -7,20 +7,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace FlightTracker.Application.Services.Implementation;
 
 /// <summary>
 /// Service implementation for flight-related business operations.
 /// </summary>
-public class FlightService : IFlightService
+public class FlightService(IFlightRepository flightRepository, ILogger<FlightService> logger) : IFlightService
 {
-    private readonly IFlightRepository _flightRepository;
-
-    public FlightService(IFlightRepository flightRepository)
-    {
-        _flightRepository = flightRepository;
-    }
+    private readonly IFlightRepository _flightRepository = flightRepository;
+    private readonly ILogger<FlightService> _logger = logger;
 
     public async Task<Result<Flight>> GetFlightByIdAsync(int id, CancellationToken cancellationToken = default)
     {
@@ -38,8 +35,9 @@ public class FlightService : IFlightService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error loading flight with ID {FlightId}", id);
             return Result<Flight>.Failure(
-                ex.Message,
+            "Unable to load the requested flight.",
                 "flight.by_id.load_failed");
         }
     }
@@ -67,8 +65,9 @@ public class FlightService : IFlightService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error loading upcoming flights from {FromUtc} with window {Window}", fromUtc, window);
             return Result<IReadOnlyList<Flight>>.Failure(
-                ex.Message,
+            "Unable to load upcoming flights.",
                 "flight.upcoming.load_failed");
         }
     }
@@ -89,8 +88,9 @@ public class FlightService : IFlightService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error adding flight with number {FlightNumber}", flight.FlightNumber);
             return Result<Flight>.Failure(
-                ex.Message,
+            "Unable to add the flight.",
                 "flight.add.failed");
         }
     }
@@ -108,8 +108,9 @@ public class FlightService : IFlightService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error updating flight with ID {FlightId}", flight.Id);
             return Result.Failure(
-                ex.Message,
+            "Unable to update the flight.",
                 "flight.update.failed");
         }
     }
@@ -127,8 +128,9 @@ public class FlightService : IFlightService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Error deleting flight with ID {FlightId}", id);
             return Result.Failure(
-                ex.Message,
+                "Unable to delete the flight.",
                 "flight.delete.failed");
         }
     }
