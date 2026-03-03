@@ -24,8 +24,12 @@ public class AirportOverviewServiceTests
 
         var result = await service.GetFlightsAsync(" ", null, live: false, limit: 10);
 
-        Assert.Empty(result.Departing);
-        Assert.Empty(result.Arriving);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        var value = result.Value!;
+
+        Assert.Empty(value.Departing);
+        Assert.Empty(value.Arriving);
         repo.Verify(r => r.SearchByRouteAsync(It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<DateOnly?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -51,8 +55,12 @@ public class AirportOverviewServiceTests
 
         var result = await service.GetFlightsAsync("JFK", null, live: false, limit: 0);
 
-        Assert.Equal(100, result.Departing.Count());
-        Assert.Equal(100, result.Arriving.Count());
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        var value = result.Value!;
+
+        Assert.Equal(100, value.Departing.Count());
+        Assert.Equal(100, value.Arriving.Count());
     }
 
     [Fact]
@@ -84,9 +92,13 @@ public class AirportOverviewServiceTests
 
         var result = await service.GetFlightsAsync("JFK", "arriving", live: true, limit: 10);
 
-        Assert.Empty(result.Departing);
-        Assert.Single(result.Arriving);
-        Assert.Equal("FT77", result.Arriving.First().FlightNumber);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        var value = result.Value!;
+
+        Assert.Empty(value.Departing);
+        Assert.Single(value.Arriving);
+        Assert.Equal("FT77", value.Arriving.First().FlightNumber);
     }
 
     [Fact]
@@ -134,7 +146,11 @@ public class AirportOverviewServiceTests
 
         var result = await service.GetFlightsAsync("JFK", "departing", live: true, limit: 10);
 
-        var items = result.Departing.ToList();
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        var value = result.Value!;
+
+        var items = value.Departing.ToList();
         Assert.Single(items);
         Assert.Equal(20, items[0].Id);
     }
@@ -166,8 +182,12 @@ public class AirportOverviewServiceTests
 
         var result = await service.GetFlightsAsync("JFK", "departing", live: false, limit: 2);
 
-        Assert.Empty(result.Arriving);
-        var items = result.Departing.ToList();
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        var value = result.Value!;
+
+        Assert.Empty(value.Arriving);
+        var items = value.Departing.ToList();
         Assert.Equal(2, items.Count);
         Assert.Equal("FT2", items[0].FlightNumber);
         Assert.Equal("FT3", items[1].FlightNumber);
@@ -218,7 +238,11 @@ public class AirportOverviewServiceTests
 
         var result = await service.GetFlightsAsync("JFK", "departing", live: true, limit: 10);
 
-        var items = result.Departing.ToList();
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        var value = result.Value!;
+
+        var items = value.Departing.ToList();
         Assert.Single(items);
         Assert.Equal("FT9", items[0].FlightNumber);
         Assert.Equal("JFK", items[0].DepartureCode);

@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Application.Results;
 
 namespace FlightTracker.Application.Services.Interfaces;
 
@@ -16,7 +17,7 @@ public interface IAirportOverviewService
     /// live: when true, include live datasets and merge with DB.
     /// limit: maximum number per list.
     /// </summary>
-    Task<AirportFlightsResultDto> GetFlightsAsync(
+    Task<Result<AirportFlightsResultDto>> GetFlightsAsync(
         string code,
         string? dir,
         bool live,
