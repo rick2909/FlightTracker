@@ -56,9 +56,16 @@ namespace FlightTracker.Web.Controllers
 
             // Validate username against business rules
             var usernameValidation = await _usernameValidationService.ValidateAsync(model.UserName.Trim(), cancellationToken);
-            if (!usernameValidation.IsValid)
+            if (usernameValidation.IsFailure || usernameValidation.Value is null)
             {
-                ModelState.AddModelError(nameof(RegisterViewModel.UserName), usernameValidation.ErrorMessage ?? "Invalid username.");
+                ModelState.AddModelError(nameof(RegisterViewModel.UserName), usernameValidation.ErrorMessage ?? "Username validation failed.");
+                SetDevViewBag();
+                return View(model);
+            }
+
+            if (!usernameValidation.Value.IsValid)
+            {
+                ModelState.AddModelError(nameof(RegisterViewModel.UserName), usernameValidation.Value.ErrorMessage ?? "Invalid username.");
                 SetDevViewBag();
                 return View(model);
             }

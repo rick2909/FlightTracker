@@ -143,9 +143,14 @@ public class SettingsController : Controller
         {
             // Validate username against business rules
             var usernameValidation = await _usernameValidationService.ValidateAsync(trimmedUserName);
-            if (!usernameValidation.IsValid)
+            if (usernameValidation.IsFailure || usernameValidation.Value is null)
             {
-                return Json(new { success = false, errors = new[] { usernameValidation.ErrorMessage ?? "Invalid username." } });
+                return Json(new { success = false, errors = new[] { usernameValidation.ErrorMessage ?? "Username validation failed." } });
+            }
+
+            if (!usernameValidation.Value.IsValid)
+            {
+                return Json(new { success = false, errors = new[] { usernameValidation.Value.ErrorMessage ?? "Invalid username." } });
             }
 
             var setName = await _userManager.SetUserNameAsync(user, trimmedUserName);

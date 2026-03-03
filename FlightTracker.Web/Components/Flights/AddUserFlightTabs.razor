@@ -315,16 +315,25 @@
         if (numberSearchDate.HasValue)
         {
             var dateOnly = DateOnly.FromDateTime(numberSearchDate.Value.Date);
-            results = await Lookup.SearchByFlightNumberAsync(numberSearchNumber!, dateOnly);
+            var resultsWrapper = await Lookup.SearchByFlightNumberAsync(numberSearchNumber!, dateOnly);
+            results = resultsWrapper.IsSuccess
+                ? resultsWrapper.Value ?? Array.Empty<Flight>()
+                : Array.Empty<Flight>();
             if (results.Count == 0)
             {
                 numberNoDateMatches = true;
-                results = await Lookup.SearchByFlightNumberAsync(numberSearchNumber!, null);
+                var fallbackWrapper = await Lookup.SearchByFlightNumberAsync(numberSearchNumber!, null);
+                results = fallbackWrapper.IsSuccess
+                    ? fallbackWrapper.Value ?? Array.Empty<Flight>()
+                    : Array.Empty<Flight>();
             }
         }
         else
         {
-            results = await Lookup.SearchByFlightNumberAsync(numberSearchNumber!, null);
+            var resultsWrapper = await Lookup.SearchByFlightNumberAsync(numberSearchNumber!, null);
+            results = resultsWrapper.IsSuccess
+                ? resultsWrapper.Value ?? Array.Empty<Flight>()
+                : Array.Empty<Flight>();
         }
         numberResults = results.ToList();
     }
@@ -338,16 +347,25 @@
         if (routeDate.HasValue)
         {
             var dateOnly = DateOnly.FromDateTime(routeDate.Value.Date);
-            results = await Lookup.SearchByRouteAsync(routeDep, routeArr, dateOnly);
+            var resultsWrapper = await Lookup.SearchByRouteAsync(routeDep, routeArr, dateOnly);
+            results = resultsWrapper.IsSuccess
+                ? resultsWrapper.Value ?? Array.Empty<Flight>()
+                : Array.Empty<Flight>();
             if (results.Count == 0)
             {
                 routeNoDateMatches = true;
-                results = await Lookup.SearchByRouteAsync(routeDep, routeArr, null);
+                var fallbackWrapper = await Lookup.SearchByRouteAsync(routeDep, routeArr, null);
+                results = fallbackWrapper.IsSuccess
+                    ? fallbackWrapper.Value ?? Array.Empty<Flight>()
+                    : Array.Empty<Flight>();
             }
         }
         else
         {
-            results = await Lookup.SearchByRouteAsync(routeDep, routeArr, null);
+            var resultsWrapper = await Lookup.SearchByRouteAsync(routeDep, routeArr, null);
+            results = resultsWrapper.IsSuccess
+                ? resultsWrapper.Value ?? Array.Empty<Flight>()
+                : Array.Empty<Flight>();
         }
         routeResults = results.ToList();
     }

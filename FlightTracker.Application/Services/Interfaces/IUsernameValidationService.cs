@@ -1,3 +1,5 @@
+using FlightTracker.Application.Results;
+
 namespace FlightTracker.Application.Services.Interfaces;
 
 /// <summary>
@@ -11,7 +13,7 @@ public interface IUsernameValidationService
     /// <param name="username">The username to validate.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Validation result with error messages if invalid.</returns>
-    Task<UsernameValidationResult> ValidateAsync(string username, CancellationToken cancellationToken = default);
+    Task<Result<UsernameValidationResult>> ValidateAsync(string username, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
