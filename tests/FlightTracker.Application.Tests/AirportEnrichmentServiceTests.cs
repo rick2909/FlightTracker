@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Repositories.Interfaces;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Implementation;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
@@ -63,9 +64,11 @@ public class AirportEnrichmentServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(1, result.Id);
-        Assert.Equal("EHAM", result.IcaoCode);
-        Assert.Equal("AMS", result.IataCode);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(1, result.Value!.Id);
+        Assert.Equal("EHAM", result.Value.IcaoCode);
+        Assert.Equal("AMS", result.Value.IataCode);
 
         // Verify external API was not called
         mockLookupClient.Verify(
@@ -111,7 +114,7 @@ public class AirportEnrichmentServiceTests
         var mockLookupClient = new Mock<IAirportLookupClient>();
         mockLookupClient
             .Setup(c => c.GetAirportAsync(icaoCode, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(enrichmentDto);
+            .ReturnsAsync(Result<AirportEnrichmentDto>.Success(enrichmentDto));
 
         var mockMapper = new Mock<IMapper>();
         mockMapper
@@ -150,10 +153,11 @@ public class AirportEnrichmentServiceTests
         var result = await service.EnrichAirportAsync(icaoCode);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(42, result.Id);
-        Assert.Equal("KJFK", result.IcaoCode);
-        Assert.Equal("JFK", result.IataCode);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(42, result.Value!.Id);
+        Assert.Equal("KJFK", result.Value.IcaoCode);
+        Assert.Equal("JFK", result.Value.IataCode);
 
         // Verify external API was called
         mockLookupClient.Verify(
@@ -220,7 +224,7 @@ public class AirportEnrichmentServiceTests
         var mockLookupClient = new Mock<IAirportLookupClient>();
         mockLookupClient
             .Setup(c => c.GetAirportAsync(icaoCode, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AirportEnrichmentDto?)null);
+            .ReturnsAsync(Result<AirportEnrichmentDto>.Success(null));
 
         var mockMapper = new Mock<IMapper>();
 
@@ -233,7 +237,8 @@ public class AirportEnrichmentServiceTests
         var result = await service.EnrichAirportAsync(icaoCode);
 
         // Assert
-        Assert.Null(result);
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value);
 
         // Verify external API was called
         mockLookupClient.Verify(
@@ -261,7 +266,7 @@ public class AirportEnrichmentServiceTests
         var mockLookupClient = new Mock<IAirportLookupClient>();
         mockLookupClient
             .Setup(c => c.GetAirportAsync(normalizedCode, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((AirportEnrichmentDto?)null);
+            .ReturnsAsync(Result<AirportEnrichmentDto>.Success(null));
 
         var mockMapper = new Mock<IMapper>();
 
@@ -316,7 +321,7 @@ public class AirportEnrichmentServiceTests
         var mockLookupClient = new Mock<IAirportLookupClient>();
         mockLookupClient
             .Setup(c => c.GetAirportAsync(icaoCode, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(enrichmentDto);
+            .ReturnsAsync(Result<AirportEnrichmentDto>.Success(enrichmentDto));
 
         var mockMapper = new Mock<IMapper>();
         mockMapper
@@ -352,9 +357,10 @@ public class AirportEnrichmentServiceTests
         var result = await service.EnrichAirportAsync(icaoCode);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(99, result.Id);
-        Assert.Equal("TEST", result.IcaoCode);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(99, result.Value!.Id);
+        Assert.Equal("TEST", result.Value.IcaoCode);
 
         // Verify airport was still created despite missing optional fields
         mockRepository.Verify(
@@ -378,7 +384,7 @@ public class AirportEnrichmentServiceTests
         var mockLookupClient = new Mock<IAirportLookupClient>();
         mockLookupClient
             .Setup(c => c.GetAirportAsync(icaoCode, token))
-            .ReturnsAsync((AirportEnrichmentDto?)null);
+            .ReturnsAsync(Result<AirportEnrichmentDto>.Success(null));
 
         var mockMapper = new Mock<IMapper>();
 

@@ -82,21 +82,38 @@ public class AirportOverviewService(
 
         await Task.WhenAll(dbDepTask, dbArrTask, liveDepTask, liveArrTask);
 
+        if (liveDepTask.Result.IsFailure)
+        {
+            return Result<AirportFlightsResultDto>.Failure(
+                liveDepTask.Result.ErrorMessage ?? "Failed to load live departures.",
+                liveDepTask.Result.ErrorCode ?? "airport_live.departures.load_failed");
+        }
+
+        if (liveArrTask.Result.IsFailure)
+        {
+            return Result<AirportFlightsResultDto>.Failure(
+                liveArrTask.Result.ErrorMessage ?? "Failed to load live arrivals.",
+                liveArrTask.Result.ErrorCode ?? "airport_live.arrivals.load_failed");
+        }
+
+        var liveDepartures = liveDepTask.Result.Value ?? Array.Empty<LiveFlightDto>();
+        var liveArrivals = liveArrTask.Result.Value ?? Array.Empty<LiveFlightDto>();
+
         if (string.Equals(dir, "departing", StringComparison.OrdinalIgnoreCase))
         {
-            var departing = BuildMerged(dbDepTask.Result, liveDepTask.Result, limit);
+            var departing = BuildMerged(dbDepTask.Result, liveDepartures, limit);
             return Result<AirportFlightsResultDto>.Success(
                 new AirportFlightsResultDto { Departing = departing });
         }
         if (string.Equals(dir, "arriving", StringComparison.OrdinalIgnoreCase))
         {
-            var arriving = BuildMerged(dbArrTask.Result, liveArrTask.Result, limit);
+            var arriving = BuildMerged(dbArrTask.Result, liveArrivals, limit);
             return Result<AirportFlightsResultDto>.Success(
                 new AirportFlightsResultDto { Arriving = arriving });
         }
 
-        var mergedDeparting = BuildMerged(dbDepTask.Result, liveDepTask.Result, limit);
-        var mergedArriving = BuildMerged(dbArrTask.Result, liveArrTask.Result, limit);
+        var mergedDeparting = BuildMerged(dbDepTask.Result, liveDepartures, limit);
+        var mergedArriving = BuildMerged(dbArrTask.Result, liveArrivals, limit);
         return Result<AirportFlightsResultDto>.Success(
             new AirportFlightsResultDto
             {

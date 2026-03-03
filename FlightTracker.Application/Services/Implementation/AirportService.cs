@@ -139,14 +139,20 @@ public class AirportService : IAirportService
             {
                 try
                 {
-                    airport.TimeZoneId = await _timeApiService.GetTimeZoneIdAsync(
+                    var timeZoneResult = await _timeApiService.GetTimeZoneIdAsync(
                         lat,
                         lon,
                         cancellationToken);
 
-                    await _airportRepository.UpdateAsync(
-                        airport,
-                        cancellationToken);
+                    if (timeZoneResult.IsSuccess &&
+                        !string.IsNullOrWhiteSpace(timeZoneResult.Value))
+                    {
+                        airport.TimeZoneId = timeZoneResult.Value;
+
+                        await _airportRepository.UpdateAsync(
+                            airport,
+                            cancellationToken);
+                    }
                 }
                 catch (OperationCanceledException)
                 {

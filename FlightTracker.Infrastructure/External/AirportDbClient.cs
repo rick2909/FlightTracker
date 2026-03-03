@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Application.Results;
 using Microsoft.Extensions.Configuration;
 
 namespace FlightTracker.Infrastructure.External;
@@ -22,16 +23,16 @@ public sealed class AirportDbClient(HttpClient http, IConfiguration configuratio
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public async Task<AirportEnrichmentDto?> GetAirportAsync(
+    public async Task<Result<AirportEnrichmentDto>> GetAirportAsync(
         string icaoCode,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(icaoCode))
-            return null;
+            return Result<AirportEnrichmentDto>.Success(null);
 
         var apiToken = configuration["ApiKeys:AirportDB"];
         if (string.IsNullOrWhiteSpace(apiToken))
-            return null; // API token not configured; skip enrichment
+            return Result<AirportEnrichmentDto>.Success(null);
 
         var url =
             $"https://airportdb.io/api/v1/airport/{Uri.EscapeDataString(icaoCode)}?apiToken={Uri.EscapeDataString(apiToken)}";
@@ -40,7 +41,7 @@ public sealed class AirportDbClient(HttpClient http, IConfiguration configuratio
         {
             using var res = await http.GetAsync(url, cancellationToken);
             if (!res.IsSuccessStatusCode)
-                return null;
+                return Result<AirportEnrichmentDto>.Success(null);
 
             await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
             var airport = await JsonSerializer.DeserializeAsync<AirportDbResponse>(
@@ -49,9 +50,9 @@ public sealed class AirportDbClient(HttpClient http, IConfiguration configuratio
                 cancellationToken);
 
             if (airport is null)
-                return null;
+                return Result<AirportEnrichmentDto>.Success(null);
 
-            return new AirportEnrichmentDto(
+            return Result<AirportEnrichmentDto>.Success(new AirportEnrichmentDto(
                 IataCode: airport.IataCode,
                 IcaoCode: airport.IcaoCode,
                 Name: airport.Name,
@@ -62,19 +63,23 @@ public sealed class AirportDbClient(HttpClient http, IConfiguration configuratio
                 Longitude: airport.LongitudeDeg,
                 ElevationFeet: airport.ElevationFt,
                 AirportType: airport.Type
-            );
+            ));
         }
         catch (OperationCanceledException)
         {
             throw;
         }
-        catch (HttpRequestException)
+        catch (HttpRequestException ex)
         {
-            throw new HttpRequestException("Error occurred while calling AirportDB API.");
+            return Result<AirportEnrichmentDto>.Failure(
+                ex.Message,
+                "airportdb.http_error");
         }
-        catch
+        catch (Exception ex)
         {
-            throw new Exception("Unexpected error occurred while calling AirportDB API.");
+            return Result<AirportEnrichmentDto>.Failure(
+                ex.Message,
+                "airportdb.unexpected_error");
         }
     }
 

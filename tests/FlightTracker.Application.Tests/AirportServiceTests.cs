@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Repositories.Interfaces;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Implementation;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
@@ -190,7 +191,7 @@ public class AirportServiceTests
 
         var timeApi = new Mock<ITimeApiService>();
         timeApi.Setup(t => t.GetTimeZoneIdAsync(airport.Latitude.Value, airport.Longitude.Value, It.IsAny<CancellationToken>()))
-            .ReturnsAsync("America/Los_Angeles");
+            .ReturnsAsync(Result<string?>.Success("America/Los_Angeles"));
 
         var service = new AirportService(repo.Object, timeApi.Object);
 
@@ -219,7 +220,7 @@ public class AirportServiceTests
 
         var timeApi = new Mock<ITimeApiService>();
         timeApi.Setup(t => t.GetTimeZoneIdAsync(airport.Latitude.Value, airport.Longitude.Value, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new System.Exception("boom"));
+            .ReturnsAsync(Result<string?>.Failure("boom"));
 
         var service = new AirportService(repo.Object, timeApi.Object);
 

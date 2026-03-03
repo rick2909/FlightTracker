@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Repositories.Interfaces;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Implementation;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
@@ -84,9 +85,9 @@ public class AirportOverviewServiceTests
 
         var live = new Mock<IAirportLiveService>();
         live.Setup(l => l.GetDeparturesAsync("JFK", It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<LiveFlightDto>());
+            .ReturnsAsync(Result<IReadOnlyList<LiveFlightDto>>.Success(new List<LiveFlightDto>()));
         live.Setup(l => l.GetArrivalsAsync("JFK", It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(liveArriving);
+            .ReturnsAsync(Result<IReadOnlyList<LiveFlightDto>>.Success(liveArriving));
 
         var service = new AirportOverviewService(repo.Object, live.Object);
 
@@ -138,9 +139,9 @@ public class AirportOverviewServiceTests
 
         var live = new Mock<IAirportLiveService>();
         live.Setup(l => l.GetDeparturesAsync("JFK", It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(liveDeparting);
+            .ReturnsAsync(Result<IReadOnlyList<LiveFlightDto>>.Success(liveDeparting));
         live.Setup(l => l.GetArrivalsAsync("JFK", It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<LiveFlightDto>());
+            .ReturnsAsync(Result<IReadOnlyList<LiveFlightDto>>.Success(new List<LiveFlightDto>()));
 
         var service = new AirportOverviewService(repo.Object, live.Object);
 
@@ -230,9 +231,9 @@ public class AirportOverviewServiceTests
 
         var live = new Mock<IAirportLiveService>();
         live.Setup(l => l.GetDeparturesAsync("JFK", It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(liveDeparting);
+            .ReturnsAsync(Result<IReadOnlyList<LiveFlightDto>>.Success(liveDeparting));
         live.Setup(l => l.GetArrivalsAsync("JFK", It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<LiveFlightDto>());
+            .ReturnsAsync(Result<IReadOnlyList<LiveFlightDto>>.Success(new List<LiveFlightDto>()));
 
         var service = new AirportOverviewService(repo.Object, live.Object);
 
