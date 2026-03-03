@@ -152,7 +152,20 @@ public class PassportService : IPassportService
                 .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
 
             // Map routes (reuse existing service, include upcoming too)
-            var routes = (await _mapFlightService.GetUserMapFlightsAsync(userId, maxPast: 1000, maxUpcoming: 1000, cancellationToken)).ToList();
+            var routesResult = await _mapFlightService.GetUserMapFlightsAsync(
+                userId,
+                maxPast: 1000,
+                maxUpcoming: 1000,
+                cancellationToken);
+
+            if (routesResult.IsFailure || routesResult.Value is null)
+            {
+                return Result<PassportDataDto>.Failure(
+                    routesResult.ErrorMessage ?? "Unable to load routes.",
+                    routesResult.ErrorCode ?? "passport.routes.load_failed");
+            }
+
+            var routes = routesResult.Value.ToList();
 
             var dto = new PassportDataDto
             {
@@ -191,10 +204,17 @@ public class PassportService : IPassportService
     {
         try
         {
-            var details = await _flightStatsService
+            var detailsResult = await _flightStatsService
                 .GetPassportDetailsAsync(userId, cancellationToken);
 
-            return Result<PassportDetailsDto>.Success(details);
+            if (detailsResult.IsFailure)
+            {
+                return Result<PassportDetailsDto>.Failure(
+                    detailsResult.ErrorMessage ?? "Unable to load passport details.",
+                    detailsResult.ErrorCode ?? "passport.details.load_failed");
+            }
+
+            return Result<PassportDetailsDto>.Success(detailsResult.Value);
         }
         catch (OperationCanceledException)
         {
