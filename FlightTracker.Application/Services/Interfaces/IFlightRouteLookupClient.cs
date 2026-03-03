@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using FlightTracker.Application.Results;
 
 namespace FlightTracker.Application.Services.Interfaces;
 
@@ -9,7 +10,7 @@ namespace FlightTracker.Application.Services.Interfaces;
 /// </summary>
 public interface IFlightRouteLookupClient
 {
-    Task<FlightRouteLookupResult?> GetFlightRouteAsync(string callsign, CancellationToken cancellationToken = default);
+    Task<Result<FlightRouteLookupResult>> GetFlightRouteAsync(string callsign, CancellationToken cancellationToken = default);
 }
 
 public sealed record FlightRouteLookupResult(

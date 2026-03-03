@@ -26,8 +26,10 @@ public sealed class FlightMetadataProvisionService : IFlightMetadataProvisionSer
     {
         if (string.IsNullOrWhiteSpace(callsign)) return;
 
-        var route = await _lookupClient.GetFlightRouteAsync(callsign.Trim(), cancellationToken);
-        if (route is null) return;
+        var routeResult = await _lookupClient.GetFlightRouteAsync(callsign.Trim(), cancellationToken);
+        if (routeResult.IsFailure || routeResult.Value is null) return;
+
+        var route = routeResult.Value;
 
         // Airline
         if (route.Airline is { } al)

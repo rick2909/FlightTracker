@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Repositories.Interfaces;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Implementation;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
@@ -28,7 +29,8 @@ public class FlightLookupServiceTests
 
         var result = await service.ResolveFlightAsync("  ft300 ", date);
 
-        Assert.Same(flight, result);
+        Assert.True(result.IsSuccess);
+        Assert.Same(flight, result.Value);
         repo.Verify(r => r.GetByFlightNumberAndDateAsync(normalized, date, It.IsAny<CancellationToken>()), Times.Once);
         provider.Verify(p => p.GetFlightByNumberAsync(It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -50,7 +52,8 @@ public class FlightLookupServiceTests
 
         var result = await service.ResolveFlightAsync(flightNumber, date);
 
-        Assert.Same(flight, result);
+        Assert.True(result.IsSuccess);
+        Assert.Same(flight, result.Value);
         provider.Verify(p => p.GetFlightByNumberAsync(It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -67,12 +70,13 @@ public class FlightLookupServiceTests
 
         var provider = new Mock<IFlightDataProvider>();
         provider.Setup(p => p.GetFlightByNumberAsync(flightNumber, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(providerFlight);
+            .ReturnsAsync(Result<Flight>.Success(providerFlight));
 
         var service = new FlightLookupService(repo.Object, provider.Object);
 
         var result = await service.ResolveFlightAsync(flightNumber, date);
-        Assert.Same(providerFlight, result);
+        Assert.True(result.IsSuccess);
+        Assert.Same(providerFlight, result.Value);
         provider.Verify(p => p.GetFlightByNumberAsync(flightNumber, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -85,7 +89,8 @@ public class FlightLookupServiceTests
 
         var result = await service.ResolveFlightAsync(" ", new DateOnly(2025, 01, 01));
 
-        Assert.Null(result);
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value);
         repo.Verify(r => r.GetByFlightNumberAndDateAsync(It.IsAny<string>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Never);
         provider.Verify(p => p.GetFlightByNumberAsync(It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Never);
     }

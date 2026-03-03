@@ -194,7 +194,22 @@ public class UserFlightsController(
 
         // Try lookup based on flight number and departure date
         var date = DateOnly.FromDateTime(dto.DepartureTimeUtc);
-        var candidate = await flightLookupService.ResolveFlightAsync(dto.FlightNumber, date, cancellationToken);
+        var candidateResult = await flightLookupService.ResolveFlightAsync(
+            dto.FlightNumber,
+            date,
+            cancellationToken);
+
+        if (candidateResult.IsFailure)
+        {
+            return StatusCode(500, new
+            {
+                status = "error",
+                message = candidateResult.ErrorMessage
+                    ?? "Failed to resolve flight lookup."
+            });
+        }
+
+        var candidate = candidateResult.Value;
 
         if (candidate is null)
             return NotFound(new { status = "not_found", message = "No flight found via lookup." });
@@ -261,7 +276,22 @@ public class UserFlightsController(
             return BadRequest(new { error = $"maxResults must be between {MinResults} and {MaxResults}." });
         }
 
-        var result = await aircraftPhotoService.GetAircraftPhotosAsync(modeSCode, registration, maxResults, cancellationToken);
+        var resultWrapper = await aircraftPhotoService.GetAircraftPhotosAsync(
+            modeSCode,
+            registration,
+            maxResults,
+            cancellationToken);
+
+        if (resultWrapper.IsFailure)
+        {
+            return StatusCode(500, new
+            {
+                error = resultWrapper.ErrorMessage
+                    ?? "Unable to fetch aircraft photos"
+            });
+        }
+
+        var result = resultWrapper.Value;
         if (result == null)
         {
             return NotFound(new { error = "No photos found" });

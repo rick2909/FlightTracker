@@ -584,7 +584,15 @@ public class UserFlightService : IUserFlightService
             // Try to enrich airport from external API if not found
             try
             {
-                var enrichedAirport = await _airportEnrichmentService.EnrichAirportAsync(code, cancellationToken);
+                var enrichedAirportResult = await _airportEnrichmentService.EnrichAirportAsync(code, cancellationToken);
+                if (enrichedAirportResult.IsFailure)
+                {
+                    throw new InvalidOperationException(
+                        enrichedAirportResult.ErrorMessage
+                        ?? "Failed to enrich airport.");
+                }
+
+                var enrichedAirport = enrichedAirportResult.Value;
                 if (enrichedAirport is not null)
                 {
                     return enrichedAirport.Id;
@@ -643,7 +651,14 @@ public class UserFlightService : IUserFlightService
         AircraftEnrichmentDto? adsbData = null;
         try
         {
-            adsbData = await _aircraftLookupClient.GetAircraftAsync(normalized, cancellationToken);
+            var adsbDataResult = await _aircraftLookupClient.GetAircraftAsync(
+                normalized,
+                cancellationToken);
+
+            if (!adsbDataResult.IsFailure)
+            {
+                adsbData = adsbDataResult.Value;
+            }
         }
         catch (HttpRequestException)
         {

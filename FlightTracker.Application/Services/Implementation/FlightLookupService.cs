@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Repositories.Interfaces;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
 
@@ -9,26 +10,77 @@ namespace FlightTracker.Application.Services.Implementation;
 
 public class FlightLookupService(IFlightRepository flights, IFlightDataProvider provider) : IFlightLookupService
 {
-    public async Task<Flight?> ResolveFlightAsync(string flightNumber, DateOnly date, CancellationToken cancellationToken = default)
+    public async Task<Result<Flight>> ResolveFlightAsync(string flightNumber, DateOnly date, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(flightNumber)) return null;
-        // First: check local DB
-        var local = await flights.GetByFlightNumberAndDateAsync(flightNumber.Trim().ToUpperInvariant(), date, cancellationToken);
-        if (local != null) return local;
+        try
+        {
+            if (string.IsNullOrWhiteSpace(flightNumber))
+            {
+                return Result<Flight>.Success(null);
+            }
+            var normalized = flightNumber.Trim().ToUpperInvariant();
+            var local = await flights.GetByFlightNumberAndDateAsync(normalized, date, cancellationToken);
+            if (local != null)
+            {
+                return Result<Flight>.Success(local);
+            }
 
-        // Fallback: External provider by number; bias to same-day departures
-        var startOfDayUtc = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-        var candidate = await provider.GetFlightByNumberAsync(flightNumber.Trim().ToUpperInvariant(), startOfDayUtc, cancellationToken);
-        return candidate;
+            var startOfDayUtc = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var candidateResult = await provider.GetFlightByNumberAsync(
+                normalized,
+                startOfDayUtc,
+                cancellationToken);
+
+            if (candidateResult.IsFailure)
+            {
+                return Result<Flight>.Failure(
+                    candidateResult.ErrorMessage ?? "External provider lookup failed.",
+                    candidateResult.ErrorCode ?? "flight_lookup.provider_failed");
+            }
+
+            return Result<Flight>.Success(candidateResult.Value);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<Flight>.Failure(ex.Message, "flight_lookup.resolve.failed");
+        }
     }
 
-    public Task<IReadOnlyList<Flight>> SearchByFlightNumberAsync(string flightNumber, DateOnly? date = null, CancellationToken cancellationToken = default)
+    public async Task<Result<IReadOnlyList<Flight>>> SearchByFlightNumberAsync(string flightNumber, DateOnly? date = null, CancellationToken cancellationToken = default)
     {
-        return flights.SearchByFlightNumberAsync(flightNumber, date, cancellationToken);
+        try
+        {
+            var result = await flights.SearchByFlightNumberAsync(flightNumber, date, cancellationToken);
+            return Result<IReadOnlyList<Flight>>.Success(result);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<IReadOnlyList<Flight>>.Failure(ex.Message, "flight_lookup.search_by_number.failed");
+        }
     }
 
-    public Task<IReadOnlyList<Flight>> SearchByRouteAsync(string? departure, string? arrival, DateOnly? date = null, CancellationToken cancellationToken = default)
+    public async Task<Result<IReadOnlyList<Flight>>> SearchByRouteAsync(string? departure, string? arrival, DateOnly? date = null, CancellationToken cancellationToken = default)
     {
-        return flights.SearchByRouteAsync(departure, arrival, date, cancellationToken);
+        try
+        {
+            var result = await flights.SearchByRouteAsync(departure, arrival, date, cancellationToken);
+            return Result<IReadOnlyList<Flight>>.Success(result);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<IReadOnlyList<Flight>>.Failure(ex.Message, "flight_lookup.search_by_route.failed");
+        }
     }
 }

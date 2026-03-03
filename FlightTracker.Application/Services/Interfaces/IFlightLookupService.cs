@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using FlightTracker.Application.Results;
 using FlightTracker.Domain.Entities;
 
 namespace FlightTracker.Application.Services.Interfaces;
@@ -11,16 +12,16 @@ namespace FlightTracker.Application.Services.Interfaces;
 /// </summary>
 public interface IFlightLookupService
 {
-    Task<Flight?> ResolveFlightAsync(string flightNumber, DateOnly date,
+    Task<Result<Flight>> ResolveFlightAsync(string flightNumber, DateOnly date,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns matching flights by flight number (partial/contains match); optional date narrows to that day.
     /// </summary>
-    Task<IReadOnlyList<Flight>> SearchByFlightNumberAsync(string flightNumber, DateOnly? date = null, CancellationToken cancellationToken = default);
+    Task<Result<IReadOnlyList<Flight>>> SearchByFlightNumberAsync(string flightNumber, DateOnly? date = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns matching flights by route (departure/arrival airport code or city); optional date narrows to that day.
     /// </summary>
-    Task<IReadOnlyList<Flight>> SearchByRouteAsync(string? departure, string? arrival, DateOnly? date = null, CancellationToken cancellationToken = default);
+    Task<Result<IReadOnlyList<Flight>>> SearchByRouteAsync(string? departure, string? arrival, DateOnly? date = null, CancellationToken cancellationToken = default);
 }
