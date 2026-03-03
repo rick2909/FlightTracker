@@ -77,27 +77,29 @@ public class AirportOverviewService(
     {
         var dbDepTask = _flightRepository.SearchByRouteAsync(code, null, null, ct);
         var dbArrTask = _flightRepository.SearchByRouteAsync(null, code, null, ct);
-        var liveDepTask = _airportLiveService.GetDeparturesAsync(code, limit, ct);
-        var liveArrTask = _airportLiveService.GetArrivalsAsync(code, limit, ct);
+        IReadOnlyList<LiveFlightDto> liveDepartures;
+        IReadOnlyList<LiveFlightDto> liveArrivals;
 
-        await Task.WhenAll(dbDepTask, dbArrTask, liveDepTask, liveArrTask);
+        try
+        {
+            var liveDepTask = _airportLiveService.GetDeparturesAsync(code, limit, ct);
+            var liveArrTask = _airportLiveService.GetArrivalsAsync(code, limit, ct);
 
-        if (liveDepTask.Result.IsFailure)
+            await Task.WhenAll(dbDepTask, dbArrTask, liveDepTask, liveArrTask);
+
+            liveDepartures = liveDepTask.Result;
+            liveArrivals = liveArrTask.Result;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
         {
             return Result<AirportFlightsResultDto>.Failure(
-                liveDepTask.Result.ErrorMessage ?? "Failed to load live departures.",
-                liveDepTask.Result.ErrorCode ?? "airport_live.departures.load_failed");
+                ex.Message,
+                "airport_live.load_failed");
         }
-
-        if (liveArrTask.Result.IsFailure)
-        {
-            return Result<AirportFlightsResultDto>.Failure(
-                liveArrTask.Result.ErrorMessage ?? "Failed to load live arrivals.",
-                liveArrTask.Result.ErrorCode ?? "airport_live.arrivals.load_failed");
-        }
-
-        var liveDepartures = liveDepTask.Result.Value ?? Array.Empty<LiveFlightDto>();
-        var liveArrivals = liveArrTask.Result.Value ?? Array.Empty<LiveFlightDto>();
 
         if (string.Equals(dir, "departing", StringComparison.OrdinalIgnoreCase))
         {
