@@ -18,49 +18,38 @@ public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient, IA
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public async Task<Result<AircraftEnrichmentDto>> GetAircraftAsync(string registrationOrModeS, CancellationToken cancellationToken = default)
+    public async Task<AircraftEnrichmentDto?> GetAircraftAsync(string registrationOrModeS, CancellationToken cancellationToken = default)
     {
-        try
+        if (string.IsNullOrWhiteSpace(registrationOrModeS))
         {
-            if (string.IsNullOrWhiteSpace(registrationOrModeS))
-            {
-                return Result<AircraftEnrichmentDto>.Success(null);
-            }
-
-            var url = $"https://api.adsbdb.com/v0/aircraft/{Uri.EscapeDataString(registrationOrModeS)}";
-            using var res = await http.GetAsync(url, cancellationToken);
-            if (!res.IsSuccessStatusCode)
-            {
-                return Result<AircraftEnrichmentDto>.Success(null);
-            }
-
-            await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
-            var root = await JsonSerializer.DeserializeAsync<AircraftRoot>(stream, JsonOptions, cancellationToken);
-            var ac = root?.Response?.Aircraft;
-            if (ac is null)
-            {
-                return Result<AircraftEnrichmentDto>.Success(null);
-            }
-
-            return Result<AircraftEnrichmentDto>.Success(new AircraftEnrichmentDto(
-                Registration: ac.Registration,
-                Type: ac.Type,
-                IcaoType: ac.IcaoType,
-                Manufacturer: ac.Manufacturer,
-                ModeS: ac.ModeS,
-                RegisteredOwner: ac.RegisteredOwner,
-                RegisteredOwnerCountryIso: ac.RegisteredOwnerCountryIsoName,
-                RegisteredOwnerCountry: ac.RegisteredOwnerCountryName
-            ));
+            return null;
         }
-        catch (OperationCanceledException)
+
+        var url = $"https://api.adsbdb.com/v0/aircraft/{Uri.EscapeDataString(registrationOrModeS)}";
+        using var res = await http.GetAsync(url, cancellationToken);
+        if (!res.IsSuccessStatusCode)
         {
-            throw;
+            return null;
         }
-        catch (Exception ex)
+
+        await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
+        var root = await JsonSerializer.DeserializeAsync<AircraftRoot>(stream, JsonOptions, cancellationToken);
+        var ac = root?.Response?.Aircraft;
+        if (ac is null)
         {
-            return Result<AircraftEnrichmentDto>.Failure(ex.Message, "adsb.aircraft.lookup_failed");
+            return null;
         }
+
+        return new AircraftEnrichmentDto(
+            Registration: ac.Registration,
+            Type: ac.Type,
+            IcaoType: ac.IcaoType,
+            Manufacturer: ac.Manufacturer,
+            ModeS: ac.ModeS,
+            RegisteredOwner: ac.RegisteredOwner,
+            RegisteredOwnerCountryIso: ac.RegisteredOwnerCountryIsoName,
+            RegisteredOwnerCountry: ac.RegisteredOwnerCountryName
+        );
     }
 
     public async Task<Result<FlightRouteLookupResult>> GetFlightRouteAsync(string callsign, CancellationToken cancellationToken = default)

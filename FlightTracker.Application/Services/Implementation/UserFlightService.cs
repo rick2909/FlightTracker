@@ -651,14 +651,9 @@ public class UserFlightService : IUserFlightService
         AircraftEnrichmentDto? adsbData = null;
         try
         {
-            var adsbDataResult = await _aircraftLookupClient.GetAircraftAsync(
+            adsbData = await _aircraftLookupClient.GetAircraftAsync(
                 normalized,
                 cancellationToken);
-
-            if (!adsbDataResult.IsFailure)
-            {
-                adsbData = adsbDataResult.Value;
-            }
         }
         catch (HttpRequestException)
         {
