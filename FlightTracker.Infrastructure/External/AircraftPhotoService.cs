@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Interfaces;
 
 namespace FlightTracker.Infrastructure.External;
@@ -31,7 +32,7 @@ public class AircraftPhotoService : IAircraftPhotoService
         _http = http;
     }
 
-    public async Task<AircraftPhotoResultDto?> GetAircraftPhotosAsync(
+    public async Task<Result<AircraftPhotoResultDto>> GetAircraftPhotosAsync(
         string? modeSCode,
         string? registration,
         int maxResults = 1,
@@ -39,13 +40,13 @@ public class AircraftPhotoService : IAircraftPhotoService
     {
         if (string.IsNullOrWhiteSpace(modeSCode) && string.IsNullOrWhiteSpace(registration))
         {
-            return null;
+            return Result<AircraftPhotoResultDto>.Success(null);
         }
 
         var url = BuildUrl(modeSCode, registration, maxResults);
         if (string.IsNullOrWhiteSpace(url))
         {
-            return null;
+            return Result<AircraftPhotoResultDto>.Success(null);
         }
 
         try
@@ -55,12 +56,12 @@ public class AircraftPhotoService : IAircraftPhotoService
 
             if (!resp.IsSuccessStatusCode)
             {
-                return new AircraftPhotoResultDto
+                return Result<AircraftPhotoResultDto>.Success(new AircraftPhotoResultDto
                 {
                     Status = (int)resp.StatusCode,
                     Count = 0,
                     Error = $"HTTP {(int)resp.StatusCode}: {resp.ReasonPhrase}"
-                };
+                });
             }
 
             await using var stream = await resp.Content.ReadAsStreamAsync(cancellationToken);
@@ -69,43 +70,41 @@ public class AircraftPhotoService : IAircraftPhotoService
                 s_Json,
                 cancellationToken);
 
-            return result ?? new AircraftPhotoResultDto { Status = 500, Error = "Failed to deserialize response" };
+            return Result<AircraftPhotoResultDto>.Success(
+                result ?? new AircraftPhotoResultDto { Status = 500, Error = "Failed to deserialize response" });
         }
         catch (HttpRequestException ex)
         {
-            return new AircraftPhotoResultDto
+            return Result<AircraftPhotoResultDto>.Success(new AircraftPhotoResultDto
             {
                 Status = 0,
                 Count = 0,
                 Error = $"Request failed: {ex.Message}"
-            };
+            });
         }
         catch (JsonException ex)
         {
-            return new AircraftPhotoResultDto
+            return Result<AircraftPhotoResultDto>.Success(new AircraftPhotoResultDto
             {
                 Status = 500,
                 Count = 0,
                 Error = $"JSON deserialization failed: {ex.Message}"
-            };
+            });
         }
         catch (OperationCanceledException)
         {
-            return new AircraftPhotoResultDto
+            return Result<AircraftPhotoResultDto>.Success(new AircraftPhotoResultDto
             {
                 Status = 0,
                 Count = 0,
                 Error = "Request canceled"
-            };
+            });
         }
         catch (Exception ex)
         {
-            return new AircraftPhotoResultDto
-            {
-                Status = 500,
-                Count = 0,
-                Error = $"Unexpected error: {ex.Message}"
-            };
+            return Result<AircraftPhotoResultDto>.Failure(
+                ex.Message,
+                "aircraft_photo.fetch.failed");
         }
     }
 

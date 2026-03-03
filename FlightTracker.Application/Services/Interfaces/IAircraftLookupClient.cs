@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Application.Results;
 
 namespace FlightTracker.Application.Services.Interfaces;
 
@@ -15,5 +16,5 @@ public interface IAircraftLookupClient
     /// <param name="registrationOrModeS">Aircraft registration (e.g., "N123AA") or Mode S code (hex)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Aircraft enrichment data with full details, or null if not found</returns>
-    Task<AircraftEnrichmentDto?> GetAircraftAsync(string registrationOrModeS, CancellationToken cancellationToken = default);
+    Task<Result<AircraftEnrichmentDto>> GetAircraftAsync(string registrationOrModeS, CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,5 @@
 using FlightTracker.Application.Dtos;
+using FlightTracker.Application.Results;
 
 namespace FlightTracker.Application.Services.Interfaces;
 
@@ -16,7 +17,7 @@ public interface IAircraftPhotoService
     /// <param name="maxResults">Maximum number of results (default 1)</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Result containing aircraft photos or error</returns>
-    Task<AircraftPhotoResultDto?> GetAircraftPhotosAsync(
+    Task<Result<AircraftPhotoResultDto>> GetAircraftPhotosAsync(
         string? modeSCode,
         string? registration,
         int maxResults = 1,
