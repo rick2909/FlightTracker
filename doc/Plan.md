@@ -247,6 +247,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [ ] Update architecture diagram (layers & dependencies)
 - [ ] Document provider abstraction (OpenSky -> interface mapping)
 - [ ] DTO mapping guide (Domain <-> DTO)
+- [x] Add repository/result return-contract policy (`doc/Repository-Result-Policy.md`)
 - [ ] Background jobs design note
 - [ ] Flight state machine (Pre-flight → At airport → In-flight → Landed → Archived)
 - [ ] Sequence diagram for live tracking broadcast (Deferred)
