@@ -62,7 +62,15 @@ IMapFlightService mapFlightService) : Controller
                 .ToList();
 
             // Create view model
-            var mapFlights = await _mapFlightService.GetUserMapFlightsAsync(userId);
+            var mapFlightsResult = await _mapFlightService.GetUserMapFlightsAsync(userId);
+            if (mapFlightsResult.IsFailure || mapFlightsResult.Value is null)
+            {
+                throw new InvalidOperationException(
+                    mapFlightsResult.ErrorMessage
+                    ?? "Unable to load map flights.");
+            }
+
+            var mapFlights = mapFlightsResult.Value;
             var viewModel = new DashboardViewModel
             {
                 Stats = stats,
@@ -116,7 +124,19 @@ IMapFlightService mapFlightService) : Controller
             }
 
             var stats = statsResult.Value;
-            var mapFlights = await _mapFlightService.GetUserMapFlightsAsync(userId, maxPast: 500, maxUpcoming: 50);
+            var mapFlightsResult = await _mapFlightService.GetUserMapFlightsAsync(
+                userId,
+                maxPast: 500,
+                maxUpcoming: 50);
+
+            if (mapFlightsResult.IsFailure || mapFlightsResult.Value is null)
+            {
+                throw new InvalidOperationException(
+                    mapFlightsResult.ErrorMessage
+                    ?? "Unable to load map flights.");
+            }
+
+            var mapFlights = mapFlightsResult.Value;
 
             // Aggregate flights per year from user's flights
             var allFlightsResult = await _userFlightService.GetUserFlightsAsync(userId);
@@ -178,7 +198,19 @@ IMapFlightService mapFlightService) : Controller
             }
             else
             {
-                mapFlights = await _mapFlightService.GetUserMapFlightsAsync(userId, maxPast: 10, maxUpcoming: 5);
+                var mapFlightsResult = await _mapFlightService.GetUserMapFlightsAsync(
+                    userId,
+                    maxPast: 10,
+                    maxUpcoming: 5);
+
+                if (mapFlightsResult.IsFailure || mapFlightsResult.Value is null)
+                {
+                    throw new InvalidOperationException(
+                        mapFlightsResult.ErrorMessage
+                        ?? "Unable to load map flights.");
+                }
+
+                mapFlights = mapFlightsResult.Value;
             }
             var vm = new FlightTracker.Web.Models.ViewModels.FlightStatusPageViewModel
             {
@@ -260,8 +292,17 @@ IMapFlightService mapFlightService) : Controller
         // Provide single-route for status map zoom if available from map service (includes coordinates)
         try
         {
-            var allRoutes = await _mapFlightService.GetUserMapFlightsAsync(userId, maxPast: 1000, maxUpcoming: 1000);
-            var match = allRoutes.FirstOrDefault(r => r.FlightId == chosen.FlightId);
+            var allRoutesResult = await _mapFlightService.GetUserMapFlightsAsync(
+                userId,
+                maxPast: 1000,
+                maxUpcoming: 1000);
+
+            if (allRoutesResult.IsFailure || allRoutesResult.Value is null)
+            {
+                return state;
+            }
+
+            var match = allRoutesResult.Value.FirstOrDefault(r => r.FlightId == chosen.FlightId);
             if (match is not null)
             {
                 state.Route = match;

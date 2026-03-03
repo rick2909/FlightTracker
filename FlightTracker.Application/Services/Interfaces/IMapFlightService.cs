@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Application.Results;
 
 namespace FlightTracker.Application.Services.Interfaces;
 
@@ -10,5 +11,5 @@ namespace FlightTracker.Application.Services.Interfaces;
 /// </summary>
 public interface IMapFlightService
 {
-    Task<IReadOnlyCollection<MapFlightDto>> GetUserMapFlightsAsync(int userId, int maxPast = 20, int maxUpcoming = 10, CancellationToken cancellationToken = default);
+    Task<Result<IReadOnlyCollection<MapFlightDto>>> GetUserMapFlightsAsync(int userId, int maxPast = 20, int maxUpcoming = 10, CancellationToken cancellationToken = default);
 }
