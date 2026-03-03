@@ -118,6 +118,7 @@ public class UserPreferencesServiceTests
     public async Task UpdateAsync_UpdatesExisting_AndPersistsAllFields()
     {
         var initialUpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var updatedAfterSave = initialUpdatedAt.AddMinutes(5);
         var existing = new UserPreferences
         {
             Id = 15,
@@ -161,6 +162,7 @@ public class UserPreferencesServiceTests
             .Setup(r => r.UpdateAsync(It.IsAny<UserPreferences>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserPreferences preferences, CancellationToken _) =>
             {
+                preferences.UpdatedAtUtc = updatedAfterSave;
                 persisted = preferences;
                 return preferences;
             });
@@ -187,7 +189,8 @@ public class UserPreferencesServiceTests
         Assert.False(persisted.ShowCountries);
         Assert.False(persisted.ShowMapRoutes);
         Assert.True(persisted.EnableActivityFeed);
-        Assert.Equal(initialUpdatedAt, persisted.UpdatedAtUtc);
+        Assert.NotEqual(initialUpdatedAt, persisted.UpdatedAtUtc);
+        Assert.Equal(updatedAfterSave, persisted.UpdatedAtUtc);
 
         Assert.Equal(15, value.Id);
         Assert.Equal(9, value.UserId);
