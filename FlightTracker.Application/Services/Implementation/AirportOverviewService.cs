@@ -1,6 +1,7 @@
 using System.Globalization;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Repositories.Interfaces;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
 
@@ -13,64 +14,114 @@ public class AirportOverviewService(
     private readonly IFlightRepository _flightRepository = flightRepository;
     private readonly IAirportLiveService _airportLiveService = airportLiveService;
 
-    public async Task<AirportFlightsResultDto> GetFlightsAsync(string code, string? dir, bool live, int limit, CancellationToken cancellationToken = default)
+    public async Task<Result<AirportFlightsResultDto>> GetFlightsAsync(string code, string? dir, bool live, int limit, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(code))
+        try
         {
-            return new AirportFlightsResultDto();
-        }
+            if (string.IsNullOrWhiteSpace(code))
+            {
+                return Result<AirportFlightsResultDto>.Success(
+                    new AirportFlightsResultDto());
+            }
 
-        if (limit <= 0) limit = 100;
+            if (limit <= 0) limit = 100;
 
-        if (live)
-        {
-            return await BuildMergedLiveAsync(code, dir, limit, cancellationToken);
-        }
+            if (live)
+            {
+                return await BuildMergedLiveAsync(
+                    code,
+                    dir,
+                    limit,
+                    cancellationToken);
+            }
 
         // DB-only
-        var allDeparting = await _flightRepository.SearchByRouteAsync(code, null, null, cancellationToken);
-        var allArriving = await _flightRepository.SearchByRouteAsync(null, code, null, cancellationToken);
+            var allDeparting = await _flightRepository.SearchByRouteAsync(code, null, null, cancellationToken);
+            var allArriving = await _flightRepository.SearchByRouteAsync(null, code, null, cancellationToken);
 
-        IEnumerable<AirportFlightListItemDto> departing = allDeparting
-            .OrderByDescending(f => f.DepartureTimeUtc)
-            .Take(limit)
-            .Select(MapDbFlight);
-        IEnumerable<AirportFlightListItemDto> arriving = allArriving
-            .OrderByDescending(f => f.DepartureTimeUtc)
-            .Take(limit)
-            .Select(MapDbFlight);
+            IEnumerable<AirportFlightListItemDto> departing = allDeparting
+                .OrderByDescending(f => f.DepartureTimeUtc)
+                .Take(limit)
+                .Select(MapDbFlight);
+            IEnumerable<AirportFlightListItemDto> arriving = allArriving
+                .OrderByDescending(f => f.DepartureTimeUtc)
+                .Take(limit)
+                .Select(MapDbFlight);
 
-        return dir?.ToLowerInvariant() switch
+            var result = dir?.ToLowerInvariant() switch
+            {
+                "departing" => new AirportFlightsResultDto { Departing = departing },
+                "arriving" => new AirportFlightsResultDto { Arriving = arriving },
+                _ => new AirportFlightsResultDto
+                {
+                    Departing = departing,
+                    Arriving = arriving
+                }
+            };
+
+            return Result<AirportFlightsResultDto>.Success(result);
+        }
+        catch (OperationCanceledException)
         {
-            "departing" => new AirportFlightsResultDto { Departing = departing },
-            "arriving" => new AirportFlightsResultDto { Arriving = arriving },
-            _ => new AirportFlightsResultDto { Departing = departing, Arriving = arriving }
-        };
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<AirportFlightsResultDto>.Failure(
+                ex.Message,
+                "airport_overview.flights.load_failed");
+        }
     }
 
-    private async Task<AirportFlightsResultDto> BuildMergedLiveAsync(string code, string? dir, int limit, CancellationToken ct)
+    private async Task<Result<AirportFlightsResultDto>> BuildMergedLiveAsync(string code, string? dir, int limit, CancellationToken ct)
     {
         var dbDepTask = _flightRepository.SearchByRouteAsync(code, null, null, ct);
         var dbArrTask = _flightRepository.SearchByRouteAsync(null, code, null, ct);
-        var liveDepTask = _airportLiveService.GetDeparturesAsync(code, limit, ct);
-        var liveArrTask = _airportLiveService.GetArrivalsAsync(code, limit, ct);
+        IReadOnlyList<LiveFlightDto> liveDepartures;
+        IReadOnlyList<LiveFlightDto> liveArrivals;
 
-        await Task.WhenAll(dbDepTask, dbArrTask, liveDepTask, liveArrTask);
+        try
+        {
+            var liveDepTask = _airportLiveService.GetDeparturesAsync(code, limit, ct);
+            var liveArrTask = _airportLiveService.GetArrivalsAsync(code, limit, ct);
+
+            await Task.WhenAll(dbDepTask, dbArrTask, liveDepTask, liveArrTask);
+
+            liveDepartures = liveDepTask.Result;
+            liveArrivals = liveArrTask.Result;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<AirportFlightsResultDto>.Failure(
+                ex.Message,
+                "airport_live.load_failed");
+        }
 
         if (string.Equals(dir, "departing", StringComparison.OrdinalIgnoreCase))
         {
-            var departing = BuildMerged(dbDepTask.Result, liveDepTask.Result, limit);
-            return new AirportFlightsResultDto { Departing = departing };
+            var departing = BuildMerged(dbDepTask.Result, liveDepartures, limit);
+            return Result<AirportFlightsResultDto>.Success(
+                new AirportFlightsResultDto { Departing = departing });
         }
         if (string.Equals(dir, "arriving", StringComparison.OrdinalIgnoreCase))
         {
-            var arriving = BuildMerged(dbArrTask.Result, liveArrTask.Result, limit);
-            return new AirportFlightsResultDto { Arriving = arriving };
+            var arriving = BuildMerged(dbArrTask.Result, liveArrivals, limit);
+            return Result<AirportFlightsResultDto>.Success(
+                new AirportFlightsResultDto { Arriving = arriving });
         }
 
-        var mergedDeparting = BuildMerged(dbDepTask.Result, liveDepTask.Result, limit);
-        var mergedArriving = BuildMerged(dbArrTask.Result, liveArrTask.Result, limit);
-        return new AirportFlightsResultDto { Departing = mergedDeparting, Arriving = mergedArriving };
+        var mergedDeparting = BuildMerged(dbDepTask.Result, liveDepartures, limit);
+        var mergedArriving = BuildMerged(dbArrTask.Result, liveArrivals, limit);
+        return Result<AirportFlightsResultDto>.Success(
+            new AirportFlightsResultDto
+            {
+                Departing = mergedDeparting,
+                Arriving = mergedArriving
+            });
     }
 
     private static IEnumerable<AirportFlightListItemDto> BuildMerged(IEnumerable<Flight> db, IEnumerable<LiveFlightDto> live, int limit)

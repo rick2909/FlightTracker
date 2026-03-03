@@ -18,6 +18,96 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
     public DbSet<Airline> Airlines => Set<Airline>();
     public DbSet<UserPreferences> UserPreferences => Set<UserPreferences>();
 
+    public override int SaveChanges()
+    {
+        ApplyAuditTimestamps();
+        return base.SaveChanges();
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        ApplyAuditTimestamps();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        ApplyAuditTimestamps();
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
+    public override Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
+    {
+        ApplyAuditTimestamps();
+        return base.SaveChangesAsync(
+            acceptAllChangesOnSuccess,
+            cancellationToken);
+    }
+
+    private void ApplyAuditTimestamps()
+    {
+        const string createdAtPropertyName = "CreatedAtUtc";
+        const string updatedAtPropertyName = "UpdatedAtUtc";
+
+        var utcNow = DateTime.UtcNow;
+        var entries = ChangeTracker.Entries();
+
+        foreach (var entry in entries)
+        {
+            if (entry.State != EntityState.Added &&
+                entry.State != EntityState.Modified)
+            {
+                continue;
+            }
+
+            var createdPropertyMetadata =
+                entry.Metadata.FindProperty(createdAtPropertyName);
+            var updatedPropertyMetadata =
+                entry.Metadata.FindProperty(updatedAtPropertyName);
+
+            if (createdPropertyMetadata == null ||
+                updatedPropertyMetadata == null)
+            {
+                continue;
+            }
+
+            if (!IsDateTimeType(createdPropertyMetadata.ClrType) ||
+                !IsDateTimeType(updatedPropertyMetadata.ClrType))
+            {
+                continue;
+            }
+
+            var createdProperty =
+                entry.Property(createdAtPropertyName);
+            var updatedProperty =
+                entry.Property(updatedAtPropertyName);
+
+            if (entry.State == EntityState.Added)
+            {
+                if (createdProperty.CurrentValue is not DateTime createdAt ||
+                    createdAt == default)
+                {
+                    createdProperty.CurrentValue = utcNow;
+                }
+
+                updatedProperty.CurrentValue = utcNow;
+                continue;
+            }
+
+            createdProperty.IsModified = false;
+            updatedProperty.CurrentValue = utcNow;
+        }
+
+        static bool IsDateTimeType(Type type)
+        {
+            return type == typeof(DateTime) ||
+                   type == typeof(DateTime?);
+        }
+    }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

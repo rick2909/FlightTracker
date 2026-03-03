@@ -94,6 +94,9 @@ Dependency Rule:
 - Respect architecture boundaries; business logic stays out of API/UI.
 - DO NOT add EF Core attributes to Domain entities.
 - Repository interfaces live in Domain (pure) or Application (choose ONE and stay consistent). CURRENT: Domain keeps entities, Application owns service interfaces; repository interfaces SHOULD reside in Application to prevent domain pollution with persistence concerns.
+- Follow `doc/Repository-Result-Policy.md` for return-contract design.
+- Repositories and low-level external clients return raw data/null/collections (no `Result` wrappers).
+- Application services own `Result` / `Result<T>` mapping, error codes, and failure translation.
 - All external dependencies accessed via interfaces (defined inward).
 - Application layer returns DTOs (never EF entities or Identity models) when crossing to Presentation.
 - UI-specific libraries (Radzen, ApexCharts) only in Presentation.

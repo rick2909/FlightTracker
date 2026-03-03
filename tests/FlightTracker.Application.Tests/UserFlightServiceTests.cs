@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Repositories.Interfaces;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Implementation;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
@@ -98,10 +99,13 @@ public class UserFlightServiceTests
         var airportService = new Mock<IAirportService>();
         airportService
             .Setup(s => s.GetAirportByCodeAsync("JFK", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Airport { Id = 1, IataCode = "JFK" });
+            .ReturnsAsync(Result<Airport>.Success(new Airport { Id = 1, IataCode = "JFK" }));
         airportService
             .Setup(s => s.GetAirportByCodeAsync("LAX", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Airport { Id = 2, IataCode = "LAX" });
+            .ReturnsAsync(Result<Airport>.Success(new Airport { Id = 2, IataCode = "LAX" }));
+        airportService
+            .Setup(s => s.GetTimeZoneIdByAirportCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<string?>.Success(null));
 
         var metadata = new Mock<IFlightMetadataProvisionService>();
         metadata
@@ -111,7 +115,7 @@ public class UserFlightServiceTests
         var flightService = new Mock<IFlightService>();
         flightService
             .Setup(s => s.AddFlightAsync(It.IsAny<Flight>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Flight { Id = 77 });
+            .ReturnsAsync(Result<Flight>.Success(new Flight { Id = 77 }));
 
         var mapper = CreateMapper();
 
@@ -181,7 +185,12 @@ public class UserFlightServiceTests
 
         var service = CreateService(repo.Object);
 
-        var stats = await service.GetUserFlightStatsAsync(42);
+        var statsResult = await service.GetUserFlightStatsAsync(42);
+
+        Assert.True(statsResult.IsSuccess);
+        Assert.NotNull(statsResult.Value);
+
+        var stats = statsResult.Value!;
 
         Assert.Equal(42, stats.UserId);
         Assert.Equal(2, stats.TotalFlights);
@@ -204,7 +213,12 @@ public class UserFlightServiceTests
 
         var service = CreateService(repo.Object);
 
-        var stats = await service.GetUserFlightStatsAsync(7);
+        var statsResult = await service.GetUserFlightStatsAsync(7);
+
+        Assert.True(statsResult.IsSuccess);
+        Assert.NotNull(statsResult.Value);
+
+        var stats = statsResult.Value!;
 
         Assert.Equal(0, stats.TotalFlights);
         Assert.Equal(0, stats.UniqueAirports);
@@ -236,7 +250,12 @@ public class UserFlightServiceTests
 
         var service = CreateService(repo.Object);
 
-        var stats = await service.GetUserFlightStatsAsync(9);
+        var statsResult = await service.GetUserFlightStatsAsync(9);
+
+        Assert.True(statsResult.IsSuccess);
+        Assert.NotNull(statsResult.Value);
+
+        var stats = statsResult.Value!;
 
         Assert.Equal(2, stats.TotalFlights);
         Assert.Equal(0, stats.UniqueAirports);
@@ -248,11 +267,12 @@ public class UserFlightServiceTests
     {
         var clock = new Mock<IClock>();
         clock.SetupGet(c => c.UtcNow).Returns(new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        var airportService = CreateDefaultAirportServiceMock();
 
         return new UserFlightService(
             userFlightRepository,
             new Mock<IFlightRepository>().Object,
-            new Mock<IAirportService>().Object,
+            airportService.Object,
             new Mock<IFlightService>().Object,
             new Mock<IFlightMetadataProvisionService>().Object,
             new Mock<IAirlineRepository>().Object,
@@ -280,10 +300,13 @@ public class UserFlightServiceTests
             clock = defaultClock.Object;
         }
 
+        var resolvedAirportService = airportService
+            ?? CreateDefaultAirportServiceMock().Object;
+
         return new UserFlightService(
             userFlightRepository,
             flightRepository,
-            airportService ?? new Mock<IAirportService>().Object,
+            resolvedAirportService,
             flightService,
             metadataProvisionService ?? new Mock<IFlightMetadataProvisionService>().Object,
             new Mock<IAirlineRepository>().Object,
@@ -292,6 +315,19 @@ public class UserFlightServiceTests
             new Mock<IAirportEnrichmentService>().Object,
             mapper,
             clock);
+    }
+
+    private static Mock<IAirportService> CreateDefaultAirportServiceMock()
+    {
+        var airportService = new Mock<IAirportService>();
+        airportService
+            .Setup(s => s.GetAirportByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Airport>.Success(null));
+        airportService
+            .Setup(s => s.GetTimeZoneIdByAirportCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<string?>.Success(null));
+
+        return airportService;
     }
 
     private static IMapper CreateMapper()

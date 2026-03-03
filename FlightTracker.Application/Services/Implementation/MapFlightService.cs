@@ -1,5 +1,6 @@
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Repositories.Interfaces;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Interfaces;
 
 namespace FlightTracker.Application.Services.Implementation;
@@ -18,39 +19,55 @@ public class MapFlightService : IMapFlightService
         _clock = clock;
     }
 
-    public async Task<IReadOnlyCollection<MapFlightDto>> GetUserMapFlightsAsync(int userId, int maxPast = 20, int maxUpcoming = 10, CancellationToken cancellationToken = default)
+    public async Task<Result<IReadOnlyCollection<MapFlightDto>>> GetUserMapFlightsAsync(int userId, int maxPast = 20, int maxUpcoming = 10, CancellationToken cancellationToken = default)
     {
-        var userFlights = await _userFlightRepository.GetUserFlightsAsync(userId, cancellationToken);
+        try
+        {
+            var userFlights = await _userFlightRepository.GetUserFlightsAsync(
+                userId,
+                cancellationToken);
 
-        var now = _clock.UtcNow;
-        var projected = userFlights
-            .Where(uf => uf.Flight != null && uf.Flight.DepartureAirport != null && uf.Flight.ArrivalAirport != null)
-            .Select(uf => new MapFlightDto
-            {
-                FlightId = uf.FlightId,
-                FlightNumber = uf.Flight!.FlightNumber,
-                DepartureTimeUtc = uf.Flight.DepartureTimeUtc,
-                ArrivalTimeUtc = uf.Flight.ArrivalTimeUtc,
-                DepartureAirportCode = uf.Flight.DepartureAirport!.IataCode ?? uf.Flight.DepartureAirport!.IcaoCode ?? string.Empty,
-                ArrivalAirportCode = uf.Flight.ArrivalAirport!.IataCode ?? uf.Flight.ArrivalAirport!.IcaoCode ?? string.Empty,
-                DepartureLat = uf.Flight.DepartureAirport.Latitude,
-                DepartureLon = uf.Flight.DepartureAirport.Longitude,
-                ArrivalLat = uf.Flight.ArrivalAirport.Latitude,
-                ArrivalLon = uf.Flight.ArrivalAirport.Longitude,
-                IsUpcoming = uf.Flight.DepartureTimeUtc >= now
-            })
-            .ToList();
+            var now = _clock.UtcNow;
+            var projected = userFlights
+                .Where(uf => uf.Flight != null && uf.Flight.DepartureAirport != null && uf.Flight.ArrivalAirport != null)
+                .Select(uf => new MapFlightDto
+                {
+                    FlightId = uf.FlightId,
+                    FlightNumber = uf.Flight!.FlightNumber,
+                    DepartureTimeUtc = uf.Flight.DepartureTimeUtc,
+                    ArrivalTimeUtc = uf.Flight.ArrivalTimeUtc,
+                    DepartureAirportCode = uf.Flight.DepartureAirport!.IataCode ?? uf.Flight.DepartureAirport!.IcaoCode ?? string.Empty,
+                    ArrivalAirportCode = uf.Flight.ArrivalAirport!.IataCode ?? uf.Flight.ArrivalAirport!.IcaoCode ?? string.Empty,
+                    DepartureLat = uf.Flight.DepartureAirport.Latitude,
+                    DepartureLon = uf.Flight.DepartureAirport.Longitude,
+                    ArrivalLat = uf.Flight.ArrivalAirport.Latitude,
+                    ArrivalLon = uf.Flight.ArrivalAirport.Longitude,
+                    IsUpcoming = uf.Flight.DepartureTimeUtc >= now
+                })
+                .ToList();
 
-        var upcoming = projected
-            .Where(f => f.IsUpcoming)
-            .OrderBy(f => f.DepartureTimeUtc)
-            .Take(maxUpcoming);
+            var upcoming = projected
+                .Where(f => f.IsUpcoming)
+                .OrderBy(f => f.DepartureTimeUtc)
+                .Take(maxUpcoming);
 
-        var past = projected
-            .Where(f => !f.IsUpcoming)
-            .OrderByDescending(f => f.DepartureTimeUtc)
-            .Take(maxPast);
+            var past = projected
+                .Where(f => !f.IsUpcoming)
+                .OrderByDescending(f => f.DepartureTimeUtc)
+                .Take(maxPast);
 
-        return past.Concat(upcoming).ToList();
+            return Result<IReadOnlyCollection<MapFlightDto>>.Success(
+                past.Concat(upcoming).ToList());
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<IReadOnlyCollection<MapFlightDto>>.Failure(
+                ex.Message,
+                "map_flights.load.failed");
+        }
     }
 }

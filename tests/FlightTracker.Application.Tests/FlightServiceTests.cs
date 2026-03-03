@@ -32,7 +32,10 @@ public class FlightServiceTests
 
         var result = await service.GetUpcomingFlightsAsync(fromUtc, TimeSpan.FromHours(4));
 
-        Assert.Collection(result,
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+
+        Assert.Collection(result.Value!,
             flight => Assert.Equal(3, flight.Id),
             flight => Assert.Equal(2, flight.Id));
     }

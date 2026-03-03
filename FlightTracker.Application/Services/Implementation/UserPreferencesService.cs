@@ -1,6 +1,7 @@
 using AutoMapper;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Repositories.Interfaces;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
 
@@ -9,78 +10,84 @@ namespace FlightTracker.Application.Services.Implementation;
 /// <summary>
 /// Service for managing user display and unit preferences.
 /// </summary>
-public class UserPreferencesService : IUserPreferencesService
+public class UserPreferencesService(
+    IUserPreferencesRepository repository,
+    IMapper mapper) : IUserPreferencesService
 {
-    private readonly IUserPreferencesRepository _repository;
-    private readonly IMapper _mapper;
-    private readonly IClock _clock;
+    private readonly IUserPreferencesRepository _repository = repository;
+    private readonly IMapper _mapper = mapper;
 
-    public UserPreferencesService(
-        IUserPreferencesRepository repository,
-        IMapper mapper,
-        IClock clock)
+    public async Task<Result<UserPreferencesDto>> GetOrCreateAsync(int userId, CancellationToken cancellationToken = default)
     {
-        _repository = repository;
-        _mapper = mapper;
-        _clock = clock;
-    }
-
-    public async Task<UserPreferencesDto> GetOrCreateAsync(
-        int userId,
-        CancellationToken cancellationToken = default)
-    {
-        var existing = await _repository.GetByUserIdAsync(userId, cancellationToken);
-        
-        if (existing != null)
+        try
         {
-            return _mapper.Map<UserPreferencesDto>(existing);
+            var existing = await _repository.GetByUserIdAsync(userId, cancellationToken);
+
+            if (existing != null)
+            {
+                return Result<UserPreferencesDto>.Success(_mapper.Map<UserPreferencesDto>(existing));
+            }
+
+            var newPreferences = new UserPreferences
+            {
+                UserId = userId
+            };
+
+            var created = await _repository.CreateAsync(
+                newPreferences,
+                cancellationToken);
+
+            return Result<UserPreferencesDto>.Success(_mapper.Map<UserPreferencesDto>(created));
         }
-
-        // Create default preferences
-        var newPreferences = new UserPreferences
+        catch (OperationCanceledException)
         {
-            UserId = userId,
-            CreatedAtUtc = _clock.UtcNow,
-            UpdatedAtUtc = _clock.UtcNow
-        };
-
-        var created = await _repository.CreateAsync(newPreferences, cancellationToken);
-        return _mapper.Map<UserPreferencesDto>(created);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<UserPreferencesDto>.Failure(
+                ex.Message,
+                "user_preferences.get_or_create.failed");
+        }
     }
 
-    public async Task<UserPreferencesDto> UpdateAsync(
+    public async Task<Result<UserPreferencesDto>> UpdateAsync(
         int userId,
         UserPreferencesDto preferences,
         CancellationToken cancellationToken = default)
     {
-        var existing = await _repository.GetByUserIdAsync(userId, cancellationToken);
-        
-        if (existing == null)
+        try
         {
-            // Create if doesn't exist
-            var newPreferences = _mapper.Map<UserPreferences>(preferences);
-            newPreferences.UserId = userId;
-            newPreferences.CreatedAtUtc = _clock.UtcNow;
-            newPreferences.UpdatedAtUtc = _clock.UtcNow;
-            
-            var created = await _repository.CreateAsync(newPreferences, cancellationToken);
-            return _mapper.Map<UserPreferencesDto>(created);
+            var existing = await _repository.GetByUserIdAsync(
+                userId,
+                cancellationToken);
+
+            if (existing == null)
+            {
+                var newPreferences = _mapper.Map<UserPreferences>(preferences);
+                newPreferences.UserId = userId;
+
+                var created = await _repository.CreateAsync(
+                    newPreferences,
+                    cancellationToken);
+
+                return Result<UserPreferencesDto>.Success(_mapper.Map<UserPreferencesDto>(created));
+            }
+
+            _mapper.Map(preferences, existing);
+
+            var updated = await _repository.UpdateAsync(existing, cancellationToken);
+            return Result<UserPreferencesDto>.Success(_mapper.Map<UserPreferencesDto>(updated));
         }
-
-        // Update existing
-        existing.DistanceUnit = preferences.DistanceUnit;
-        existing.TemperatureUnit = preferences.TemperatureUnit;
-        existing.TimeFormat = preferences.TimeFormat;
-        existing.DateFormat = preferences.DateFormat;
-        existing.ProfileVisibility = preferences.ProfileVisibility;
-        existing.ShowTotalMiles = preferences.ShowTotalMiles;
-        existing.ShowAirlines = preferences.ShowAirlines;
-        existing.ShowCountries = preferences.ShowCountries;
-        existing.ShowMapRoutes = preferences.ShowMapRoutes;
-        existing.EnableActivityFeed = preferences.EnableActivityFeed;
-        existing.UpdatedAtUtc = _clock.UtcNow;
-
-        var updated = await _repository.UpdateAsync(existing, cancellationToken);
-        return _mapper.Map<UserPreferencesDto>(updated);
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<UserPreferencesDto>.Failure(
+                ex.Message,
+                "user_preferences.update.failed");
+        }
     }
 }

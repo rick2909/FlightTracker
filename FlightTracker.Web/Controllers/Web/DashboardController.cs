@@ -37,15 +37,40 @@ IMapFlightService mapFlightService) : Controller
             }
 
             // Get user flight statistics
-            var stats = await _userFlightService.GetUserFlightStatsAsync(userId);
+            var statsResult = await _userFlightService.GetUserFlightStatsAsync(userId);
+
+            if (statsResult.IsFailure || statsResult.Value is null)
+            {
+                throw new InvalidOperationException(
+                    statsResult.ErrorMessage
+                    ?? "Unable to load user flight statistics.");
+            }
+
+            var stats = statsResult.Value;
 
             // Get recent user flights (last 5)
-            var recentFlights = (await _userFlightService.GetUserFlightsAsync(userId))
+            var recentFlightsResult = await _userFlightService.GetUserFlightsAsync(userId);
+            if (recentFlightsResult.IsFailure || recentFlightsResult.Value is null)
+            {
+                throw new InvalidOperationException(
+                    recentFlightsResult.ErrorMessage
+                    ?? "Unable to load recent flights.");
+            }
+
+            var recentFlights = recentFlightsResult.Value
                 .Take(5)
                 .ToList();
 
             // Create view model
-            var mapFlights = await _mapFlightService.GetUserMapFlightsAsync(userId);
+            var mapFlightsResult = await _mapFlightService.GetUserMapFlightsAsync(userId);
+            if (mapFlightsResult.IsFailure || mapFlightsResult.Value is null)
+            {
+                throw new InvalidOperationException(
+                    mapFlightsResult.ErrorMessage
+                    ?? "Unable to load map flights.");
+            }
+
+            var mapFlights = mapFlightsResult.Value;
             var viewModel = new DashboardViewModel
             {
                 Stats = stats,
@@ -90,11 +115,39 @@ IMapFlightService mapFlightService) : Controller
                 return challengeResult!;
             }
 
-            var stats = await _userFlightService.GetUserFlightStatsAsync(userId);
-            var mapFlights = await _mapFlightService.GetUserMapFlightsAsync(userId, maxPast: 500, maxUpcoming: 50);
+            var statsResult = await _userFlightService.GetUserFlightStatsAsync(userId);
+            if (statsResult.IsFailure || statsResult.Value is null)
+            {
+                throw new InvalidOperationException(
+                    statsResult.ErrorMessage
+                    ?? "Unable to load user flight statistics.");
+            }
+
+            var stats = statsResult.Value;
+            var mapFlightsResult = await _mapFlightService.GetUserMapFlightsAsync(
+                userId,
+                maxPast: 500,
+                maxUpcoming: 50);
+
+            if (mapFlightsResult.IsFailure || mapFlightsResult.Value is null)
+            {
+                throw new InvalidOperationException(
+                    mapFlightsResult.ErrorMessage
+                    ?? "Unable to load map flights.");
+            }
+
+            var mapFlights = mapFlightsResult.Value;
 
             // Aggregate flights per year from user's flights
-            var allFlights = await _userFlightService.GetUserFlightsAsync(userId);
+            var allFlightsResult = await _userFlightService.GetUserFlightsAsync(userId);
+            if (allFlightsResult.IsFailure || allFlightsResult.Value is null)
+            {
+                throw new InvalidOperationException(
+                    allFlightsResult.ErrorMessage
+                    ?? "Unable to load user flights.");
+            }
+
+            var allFlights = allFlightsResult.Value;
             var perYear = allFlights
                 .GroupBy(f => f.DepartureTimeUtc.Year)
                 .OrderBy(g => g.Key)
@@ -145,7 +198,19 @@ IMapFlightService mapFlightService) : Controller
             }
             else
             {
-                mapFlights = await _mapFlightService.GetUserMapFlightsAsync(userId, maxPast: 10, maxUpcoming: 5);
+                var mapFlightsResult = await _mapFlightService.GetUserMapFlightsAsync(
+                    userId,
+                    maxPast: 10,
+                    maxUpcoming: 5);
+
+                if (mapFlightsResult.IsFailure || mapFlightsResult.Value is null)
+                {
+                    throw new InvalidOperationException(
+                        mapFlightsResult.ErrorMessage
+                        ?? "Unable to load map flights.");
+                }
+
+                mapFlights = mapFlightsResult.Value;
             }
             var vm = new FlightTracker.Web.Models.ViewModels.FlightStatusPageViewModel
             {
@@ -164,7 +229,15 @@ IMapFlightService mapFlightService) : Controller
 
     private async Task<FlightTracker.Web.Models.ViewModels.FlightStateViewModel> BuildCurrentStateAsync(int userId)
     {
-        var flights = (await _userFlightService.GetUserFlightsAsync(userId)).OrderBy(f => f.DepartureTimeUtc).ToList();
+        var flightsResult = await _userFlightService.GetUserFlightsAsync(userId);
+        if (flightsResult.IsFailure || flightsResult.Value is null)
+        {
+            throw new InvalidOperationException(
+                flightsResult.ErrorMessage
+                ?? "Unable to load user flights.");
+        }
+
+        var flights = flightsResult.Value.OrderBy(f => f.DepartureTimeUtc).ToList();
         var now = DateTime.UtcNow;
         // Define next upcoming; if none, use most recent past
         var next = flights.FirstOrDefault(f => f.DepartureTimeUtc >= now);
@@ -182,7 +255,11 @@ IMapFlightService mapFlightService) : Controller
         }
 
         // Estimate gates/terminals via detail lookup if available from Flight entity
-        var flightEntity = await _flightService.GetFlightByIdAsync(chosen.FlightId);
+        var flightEntityResult = await _flightService.GetFlightByIdAsync(
+            chosen.FlightId);
+        var flightEntity = flightEntityResult.IsSuccess
+            ? flightEntityResult.Value
+            : null;
         var state = new FlightTracker.Web.Models.ViewModels.FlightStateViewModel
         {
             Flight = chosen,
@@ -215,8 +292,17 @@ IMapFlightService mapFlightService) : Controller
         // Provide single-route for status map zoom if available from map service (includes coordinates)
         try
         {
-            var allRoutes = await _mapFlightService.GetUserMapFlightsAsync(userId, maxPast: 1000, maxUpcoming: 1000);
-            var match = allRoutes.FirstOrDefault(r => r.FlightId == chosen.FlightId);
+            var allRoutesResult = await _mapFlightService.GetUserMapFlightsAsync(
+                userId,
+                maxPast: 1000,
+                maxUpcoming: 1000);
+
+            if (allRoutesResult.IsFailure || allRoutesResult.Value is null)
+            {
+                return state;
+            }
+
+            var match = allRoutesResult.Value.FirstOrDefault(r => r.FlightId == chosen.FlightId);
             if (match is not null)
             {
                 state.Route = match;

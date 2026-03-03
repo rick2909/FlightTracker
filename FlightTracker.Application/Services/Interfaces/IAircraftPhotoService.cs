@@ -15,7 +15,7 @@ public interface IAircraftPhotoService
     /// <param name="registration">Aircraft registry/tail number (e.g., "G-KKAZ")</param>
     /// <param name="maxResults">Maximum number of results (default 1)</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Result containing aircraft photos or error</returns>
+    /// <returns>Aircraft photos payload or null when unavailable</returns>
     Task<AircraftPhotoResultDto?> GetAircraftPhotosAsync(
         string? modeSCode,
         string? registration,

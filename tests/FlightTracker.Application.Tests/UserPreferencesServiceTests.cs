@@ -42,23 +42,26 @@ public class UserPreferencesServiceTests
             .ReturnsAsync(existing);
 
         var mapper = CreateMapper();
-        var clock = CreateClock(new DateTime(2030, 1, 1, 12, 0, 0, DateTimeKind.Utc));
-        var service = new UserPreferencesService(repository.Object, mapper.Object, clock.Object);
+        var service = new UserPreferencesService(repository.Object, mapper.Object);
 
         var result = await service.GetOrCreateAsync(42);
 
-        Assert.Equal(10, result.Id);
-        Assert.Equal(42, result.UserId);
-        Assert.Equal(DistanceUnit.Kilometers, result.DistanceUnit);
-        Assert.Equal(TemperatureUnit.Fahrenheit, result.TemperatureUnit);
-        Assert.Equal(TimeFormat.TwelveHour, result.TimeFormat);
-        Assert.Equal(DateFormat.MonthDayYear, result.DateFormat);
-        Assert.Equal(ProfileVisibilityLevel.Public, result.ProfileVisibility);
-        Assert.False(result.ShowTotalMiles);
-        Assert.False(result.ShowAirlines);
-        Assert.True(result.ShowCountries);
-        Assert.False(result.ShowMapRoutes);
-        Assert.True(result.EnableActivityFeed);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        var value = result.Value!;
+
+        Assert.Equal(10, value.Id);
+        Assert.Equal(42, value.UserId);
+        Assert.Equal(DistanceUnit.Kilometers, value.DistanceUnit);
+        Assert.Equal(TemperatureUnit.Fahrenheit, value.TemperatureUnit);
+        Assert.Equal(TimeFormat.TwelveHour, value.TimeFormat);
+        Assert.Equal(DateFormat.MonthDayYear, value.DateFormat);
+        Assert.Equal(ProfileVisibilityLevel.Public, value.ProfileVisibility);
+        Assert.False(value.ShowTotalMiles);
+        Assert.False(value.ShowAirlines);
+        Assert.True(value.ShowCountries);
+        Assert.False(value.ShowMapRoutes);
+        Assert.True(value.EnableActivityFeed);
 
         repository.Verify(r => r.CreateAsync(It.IsAny<UserPreferences>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -66,7 +69,6 @@ public class UserPreferencesServiceTests
     [Fact]
     public async Task GetOrCreateAsync_CreatesDefaults_WhenMissing()
     {
-        var now = new DateTime(2030, 2, 1, 10, 30, 0, DateTimeKind.Utc);
         UserPreferences? createdInput = null;
 
         var repository = new Mock<IUserPreferencesRepository>();
@@ -83,10 +85,13 @@ public class UserPreferencesServiceTests
             });
 
         var mapper = CreateMapper();
-        var clock = CreateClock(now);
-        var service = new UserPreferencesService(repository.Object, mapper.Object, clock.Object);
+        var service = new UserPreferencesService(repository.Object, mapper.Object);
 
         var result = await service.GetOrCreateAsync(7);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        var value = result.Value!;
 
         Assert.NotNull(createdInput);
         Assert.Equal(7, createdInput!.UserId);
@@ -100,11 +105,11 @@ public class UserPreferencesServiceTests
         Assert.True(createdInput.ShowCountries);
         Assert.True(createdInput.ShowMapRoutes);
         Assert.False(createdInput.EnableActivityFeed);
-        Assert.Equal(now, createdInput.CreatedAtUtc);
-        Assert.Equal(now, createdInput.UpdatedAtUtc);
+        Assert.NotEqual(default, createdInput.CreatedAtUtc);
+        Assert.NotEqual(default, createdInput.UpdatedAtUtc);
 
-        Assert.Equal(77, result.Id);
-        Assert.Equal(7, result.UserId);
+        Assert.Equal(77, value.Id);
+        Assert.Equal(7, value.UserId);
 
         repository.Verify(r => r.CreateAsync(It.IsAny<UserPreferences>(), It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -113,6 +118,7 @@ public class UserPreferencesServiceTests
     public async Task UpdateAsync_UpdatesExisting_AndPersistsAllFields()
     {
         var initialUpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var updatedAfterSave = initialUpdatedAt.AddMinutes(5);
         var existing = new UserPreferences
         {
             Id = 15,
@@ -156,15 +162,19 @@ public class UserPreferencesServiceTests
             .Setup(r => r.UpdateAsync(It.IsAny<UserPreferences>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserPreferences preferences, CancellationToken _) =>
             {
+                preferences.UpdatedAtUtc = updatedAfterSave;
                 persisted = preferences;
                 return preferences;
             });
 
         var mapper = CreateMapper();
-        var clock = CreateClock(new DateTime(2030, 3, 10, 9, 0, 0, DateTimeKind.Utc));
-        var service = new UserPreferencesService(repository.Object, mapper.Object, clock.Object);
+        var service = new UserPreferencesService(repository.Object, mapper.Object);
 
         var result = await service.UpdateAsync(9, update);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        var value = result.Value!;
 
         Assert.NotNull(persisted);
         Assert.Equal(15, persisted!.Id);
@@ -179,12 +189,13 @@ public class UserPreferencesServiceTests
         Assert.False(persisted.ShowCountries);
         Assert.False(persisted.ShowMapRoutes);
         Assert.True(persisted.EnableActivityFeed);
-        Assert.True(persisted.UpdatedAtUtc > initialUpdatedAt);
+        Assert.NotEqual(initialUpdatedAt, persisted.UpdatedAtUtc);
+        Assert.Equal(updatedAfterSave, persisted.UpdatedAtUtc);
 
-        Assert.Equal(15, result.Id);
-        Assert.Equal(9, result.UserId);
-        Assert.Equal(DistanceUnit.NauticalMiles, result.DistanceUnit);
-        Assert.True(result.EnableActivityFeed);
+        Assert.Equal(15, value.Id);
+        Assert.Equal(9, value.UserId);
+        Assert.Equal(DistanceUnit.NauticalMiles, value.DistanceUnit);
+        Assert.True(value.EnableActivityFeed);
 
         repository.Verify(r => r.UpdateAsync(It.IsAny<UserPreferences>(), It.IsAny<CancellationToken>()), Times.Once);
         repository.Verify(r => r.CreateAsync(It.IsAny<UserPreferences>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -223,11 +234,13 @@ public class UserPreferencesServiceTests
             });
 
         var mapper = CreateMapper();
-        var now = new DateTime(2030, 4, 5, 15, 45, 0, DateTimeKind.Utc);
-        var clock = CreateClock(now);
-        var service = new UserPreferencesService(repository.Object, mapper.Object, clock.Object);
+        var service = new UserPreferencesService(repository.Object, mapper.Object);
 
         var result = await service.UpdateAsync(99, input);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        var value = result.Value!;
 
         Assert.NotNull(created);
         Assert.Equal(99, created!.UserId);
@@ -241,11 +254,11 @@ public class UserPreferencesServiceTests
         Assert.False(created.ShowCountries);
         Assert.True(created.ShowMapRoutes);
         Assert.True(created.EnableActivityFeed);
-        Assert.Equal(now, created.CreatedAtUtc);
-        Assert.Equal(now, created.UpdatedAtUtc);
+        Assert.NotEqual(default, created.CreatedAtUtc);
+        Assert.NotEqual(default, created.UpdatedAtUtc);
 
-        Assert.Equal(500, result.Id);
-        Assert.Equal(99, result.UserId);
+        Assert.Equal(500, value.Id);
+        Assert.Equal(99, value.UserId);
 
         repository.Verify(r => r.CreateAsync(It.IsAny<UserPreferences>(), It.IsAny<CancellationToken>()), Times.Once);
         repository.Verify(r => r.UpdateAsync(It.IsAny<UserPreferences>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -260,15 +273,24 @@ public class UserPreferencesServiceTests
         mapper
             .Setup(m => m.Map<UserPreferences>(It.IsAny<UserPreferencesDto>()))
             .Returns((UserPreferencesDto source) => ToEntity(source));
+        mapper
+            .Setup(m => m.Map(It.IsAny<UserPreferencesDto>(), It.IsAny<UserPreferences>()))
+            .Returns((UserPreferencesDto source, UserPreferences destination) =>
+            {
+                destination.DistanceUnit = source.DistanceUnit;
+                destination.TemperatureUnit = source.TemperatureUnit;
+                destination.TimeFormat = source.TimeFormat;
+                destination.DateFormat = source.DateFormat;
+                destination.ProfileVisibility = source.ProfileVisibility;
+                destination.ShowTotalMiles = source.ShowTotalMiles;
+                destination.ShowAirlines = source.ShowAirlines;
+                destination.ShowCountries = source.ShowCountries;
+                destination.ShowMapRoutes = source.ShowMapRoutes;
+                destination.EnableActivityFeed = source.EnableActivityFeed;
+                return destination;
+            });
 
         return mapper;
-    }
-
-    private static Mock<IClock> CreateClock(DateTime utcNow)
-    {
-        var clock = new Mock<IClock>();
-        clock.SetupGet(c => c.UtcNow).Returns(utcNow);
-        return clock;
     }
 
     private static UserPreferencesDto ToDto(UserPreferences source)
@@ -296,8 +318,6 @@ public class UserPreferencesServiceTests
     {
         return new UserPreferences
         {
-            Id = source.Id,
-            UserId = source.UserId,
             DistanceUnit = source.DistanceUnit,
             TemperatureUnit = source.TemperatureUnit,
             TimeFormat = source.TimeFormat,
@@ -307,9 +327,7 @@ public class UserPreferencesServiceTests
             ShowAirlines = source.ShowAirlines,
             ShowCountries = source.ShowCountries,
             ShowMapRoutes = source.ShowMapRoutes,
-            EnableActivityFeed = source.EnableActivityFeed,
-            CreatedAtUtc = source.CreatedAtUtc,
-            UpdatedAtUtc = source.UpdatedAtUtc
+            EnableActivityFeed = source.EnableActivityFeed
         };
     }
 }

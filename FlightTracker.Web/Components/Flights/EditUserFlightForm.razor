@@ -193,7 +193,20 @@
             new("Completed", true),
             new("No Show", false)
         };
-        var dto = await UserFlightService.GetByIdAsync(UserFlightId);
+        var dtoResult = await UserFlightService.GetByIdAsync(UserFlightId);
+        if (dtoResult.IsFailure)
+        {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "Load failed",
+                Detail = dtoResult.ErrorMessage ?? "Failed to load flight.",
+                Duration = 4000
+            });
+            return;
+        }
+
+        var dto = dtoResult.Value;
         Model = dto;
         if (dto is not null)
         {
@@ -462,7 +475,34 @@
         try
         {
             // If manual edit not enabled, still allow updating user-flight fields only by passing current schedule
-            await UserFlightService.UpdateUserFlightAndScheduleAsync(UserFlightId, ufUpdate, schedule);
+            var updateResult = await UserFlightService.UpdateUserFlightAndScheduleAsync(
+                UserFlightId,
+                ufUpdate,
+                schedule);
+
+            if (updateResult.IsFailure)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "Save failed",
+                    Detail = updateResult.ErrorMessage ?? "Failed to save changes.",
+                    Duration = 4000
+                });
+                return;
+            }
+
+            if (updateResult.Value is null)
+            {
+                NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Warning,
+                    Summary = "Not found",
+                    Detail = "Flight not found.",
+                    Duration = 3000
+                });
+                return;
+            }
         }
         catch (FluentValidation.ValidationException vex)
         {

@@ -42,7 +42,18 @@
         const int demoUserId = 1;
         try
         {
-            var created = await UserFlightService.AddUserFlightAsync(demoUserId, dto);
+            var createdResult = await UserFlightService.AddUserFlightAsync(
+                demoUserId,
+                dto);
+
+            if (createdResult.IsFailure || createdResult.Value is null)
+            {
+                throw new InvalidOperationException(
+                    createdResult.ErrorMessage
+                    ?? "Unable to save flight.");
+            }
+
+            var created = createdResult.Value;
             isOpen = false;
             NotificationService.Notify(new NotificationMessage
             {

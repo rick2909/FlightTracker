@@ -1,7 +1,6 @@
 using System;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Services.Interfaces;
@@ -38,11 +37,6 @@ public class TimeApiService : ITimeApiService
             return resp?.TimeZone;
         }
         catch (OperationCanceledException)
-        {
-            // Includes HttpClient timeouts; treat as unavailable and return null
-            return null;
-        }
-        catch
         {
             return null;
         }

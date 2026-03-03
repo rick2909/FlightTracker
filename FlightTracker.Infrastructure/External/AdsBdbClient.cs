@@ -19,14 +19,25 @@ public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient, IA
 
     public async Task<AircraftEnrichmentDto?> GetAircraftAsync(string registrationOrModeS, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(registrationOrModeS)) return null;
+        if (string.IsNullOrWhiteSpace(registrationOrModeS))
+        {
+            return null;
+        }
+
         var url = $"https://api.adsbdb.com/v0/aircraft/{Uri.EscapeDataString(registrationOrModeS)}";
         using var res = await http.GetAsync(url, cancellationToken);
-        if (!res.IsSuccessStatusCode) return null;
+        if (!res.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
         await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
         var root = await JsonSerializer.DeserializeAsync<AircraftRoot>(stream, JsonOptions, cancellationToken);
         var ac = root?.Response?.Aircraft;
-        if (ac is null) return null;
+        if (ac is null)
+        {
+            return null;
+        }
 
         return new AircraftEnrichmentDto(
             Registration: ac.Registration,
@@ -42,14 +53,25 @@ public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient, IA
 
     public async Task<FlightRouteLookupResult?> GetFlightRouteAsync(string callsign, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(callsign)) return null;
+        if (string.IsNullOrWhiteSpace(callsign))
+        {
+            return null;
+        }
+
         var url = $"https://api.adsbdb.com/v0/callsign/{Uri.EscapeDataString(callsign)}";
         using var res = await http.GetAsync(url, cancellationToken);
-        if (!res.IsSuccessStatusCode) return null;
+        if (!res.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
         await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
         var root = await JsonSerializer.DeserializeAsync<Root>(stream, JsonOptions, cancellationToken);
         var fr = root?.Response?.FlightRoute;
-        if (fr is null) return null;
+        if (fr is null)
+        {
+            return null;
+        }
 
         FlightRouteAirline? al = fr.Airline is null ? null : new(
             Name: fr.Airline.Name,

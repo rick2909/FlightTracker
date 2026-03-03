@@ -98,15 +98,6 @@ public class AircraftPhotoService : IAircraftPhotoService
                 Error = "Request canceled"
             };
         }
-        catch (Exception ex)
-        {
-            return new AircraftPhotoResultDto
-            {
-                Status = 500,
-                Count = 0,
-                Error = $"Unexpected error: {ex.Message}"
-            };
-        }
     }
 
     /// <summary>

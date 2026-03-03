@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Interfaces;
 
 namespace FlightTracker.Application.Services.Implementation;
@@ -24,34 +25,34 @@ public sealed class UsernameValidationService : IUsernameValidationService
         "root",
     };
 
-    public Task<UsernameValidationResult> ValidateAsync(string username, CancellationToken cancellationToken = default)
+    public Task<Result<UsernameValidationResult>> ValidateAsync(string username, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         if (string.IsNullOrWhiteSpace(username))
         {
-            return Task.FromResult(new UsernameValidationResult(
+            return Task.FromResult(Result<UsernameValidationResult>.Success(new UsernameValidationResult(
                 false,
                 "Username is required."
-            ));
+            )));
         }
 
         if (!AllowedCharacters.IsMatch(username))
         {
-            return Task.FromResult(new UsernameValidationResult(
+            return Task.FromResult(Result<UsernameValidationResult>.Success(new UsernameValidationResult(
                 false,
                 "Username can only contain letters, numbers, underscore, hyphen, or dot."
-            ));
+            )));
         }
 
         if (ProhibitedTerms.Any(term => username.Contains(term, StringComparison.OrdinalIgnoreCase)))
         {
-            return Task.FromResult(new UsernameValidationResult(
+            return Task.FromResult(Result<UsernameValidationResult>.Success(new UsernameValidationResult(
                 false,
                 "Username contains prohibited terms."
-            ));
+            )));
         }
 
-        return Task.FromResult(new UsernameValidationResult(true, null));
+        return Task.FromResult(Result<UsernameValidationResult>.Success(new UsernameValidationResult(true, null)));
     }
 }

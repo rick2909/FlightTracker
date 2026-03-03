@@ -40,7 +40,19 @@ public class AirportsController(ILogger<AirportsController> logger,
                 return Json(Array.Empty<object>());
             }
 
-            var airports = await _airportService.GetAllAirportsAsync(HttpContext.RequestAborted);
+            var airportsResult = await _airportService.GetAllAirportsAsync(
+                HttpContext.RequestAborted);
+
+            if (airportsResult.IsFailure || airportsResult.Value is null)
+            {
+                return StatusCode(500, new
+                {
+                    error = airportsResult.ErrorMessage
+                        ?? "Failed to load airports"
+                });
+            }
+
+            var airports = airportsResult.Value;
 
             // Filter by bounds when provided and coordinates exist
             bool crossesAntimeridian = east < west;
@@ -106,7 +118,19 @@ public class AirportsController(ILogger<AirportsController> logger,
     {
         try
         {
-            var airports = await _airportService.GetAllAirportsAsync(HttpContext.RequestAborted);
+            var airportsResult = await _airportService.GetAllAirportsAsync(
+                HttpContext.RequestAborted);
+
+            if (airportsResult.IsFailure || airportsResult.Value is null)
+            {
+                return StatusCode(500, new
+                {
+                    error = airportsResult.ErrorMessage
+                        ?? "Failed to load airports"
+                });
+            }
+
+            var airports = airportsResult.Value;
             var airport = airports.FirstOrDefault(a => a.Id == id);
             if (airport is null)
             {
@@ -116,15 +140,31 @@ public class AirportsController(ILogger<AirportsController> logger,
             // Prefer IATA code for search, else ICAO, else name as fallback
             var code = airport.IataCode ?? airport.IcaoCode ?? airport.Name;
 
-            var result = await _airportOverviewService.GetFlightsAsync(code!, dir, live, 100, HttpContext.RequestAborted);
+            var result = await _airportOverviewService.GetFlightsAsync(
+                code!,
+                dir,
+                live,
+                100,
+                HttpContext.RequestAborted);
+
+            if (result.IsFailure || result.Value is null)
+            {
+                return StatusCode(500, new
+                {
+                    error = result.ErrorMessage
+                        ?? "Failed to load flights"
+                });
+            }
+
+            var flights = result.Value;
             object payload = dir?.ToLowerInvariant() switch
             {
-                "departing" => new { departing = result.Departing.Select(ShapeForClient) },
-                "arriving" => new { arriving = result.Arriving.Select(ShapeForClient) },
+                "departing" => new { departing = flights.Departing.Select(ShapeForClient) },
+                "arriving" => new { arriving = flights.Arriving.Select(ShapeForClient) },
                 _ => new
                 {
-                    departing = result.Departing.Select(ShapeForClient),
-                    arriving = result.Arriving.Select(ShapeForClient)
+                    departing = flights.Departing.Select(ShapeForClient),
+                    arriving = flights.Arriving.Select(ShapeForClient)
                 }
             };
             return Json(payload);

@@ -163,7 +163,17 @@
             lookupMessage = "Enter flight number and date first.";
             return;
         }
-    var flight = await Lookup.ResolveFlightAsync(model.FlightNumber!, DateOnly.FromDateTime(model.FlightDate!.Value.Date));
+    var flightResult = await Lookup.ResolveFlightAsync(
+        model.FlightNumber!,
+        DateOnly.FromDateTime(model.FlightDate!.Value.Date));
+
+    if (flightResult.IsFailure)
+    {
+        lookupMessage = flightResult.ErrorMessage ?? "Unable to lookup flight right now.";
+        return;
+    }
+
+    var flight = flightResult.Value;
         if (flight is null)
         {
             lookupMessage = "No matching flight found. You can create it manually.";

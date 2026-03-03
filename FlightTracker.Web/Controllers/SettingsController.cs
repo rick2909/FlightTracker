@@ -55,6 +55,15 @@ public class SettingsController : Controller
         }
 
         var preferences = await _userPreferencesService.GetOrCreateAsync(userId, default);
+        if (preferences.IsFailure || preferences.Value is null)
+        {
+            return Problem(
+                title: "Unable to load preferences",
+                detail: preferences.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var preferencesValue = preferences.Value;
 
         var vm = new SettingsViewModel
         {
@@ -66,18 +75,18 @@ public class SettingsController : Controller
         };
         
         // Set display & units from database
-        vm.Preferences.DistanceUnit = preferences.DistanceUnit;
-        vm.Preferences.TemperatureUnit = preferences.TemperatureUnit;
-        vm.Preferences.TimeFormat = preferences.TimeFormat;
-        vm.Preferences.DateFormat = preferences.DateFormat;
+        vm.Preferences.DistanceUnit = preferencesValue.DistanceUnit;
+        vm.Preferences.TemperatureUnit = preferencesValue.TemperatureUnit;
+        vm.Preferences.TimeFormat = preferencesValue.TimeFormat;
+        vm.Preferences.DateFormat = preferencesValue.DateFormat;
         
         // Set privacy & sharing from database
-        vm.Preferences.ProfileVisibilityLevel = preferences.ProfileVisibility;
-        vm.Preferences.ShowTotalMiles = preferences.ShowTotalMiles;
-        vm.Preferences.ShowAirlines = preferences.ShowAirlines;
-        vm.Preferences.ShowCountries = preferences.ShowCountries;
-        vm.Preferences.ShowMapRoutes = preferences.ShowMapRoutes;
-        vm.Preferences.EnableActivityFeed = preferences.EnableActivityFeed;
+        vm.Preferences.ProfileVisibilityLevel = preferencesValue.ProfileVisibility;
+        vm.Preferences.ShowTotalMiles = preferencesValue.ShowTotalMiles;
+        vm.Preferences.ShowAirlines = preferencesValue.ShowAirlines;
+        vm.Preferences.ShowCountries = preferencesValue.ShowCountries;
+        vm.Preferences.ShowMapRoutes = preferencesValue.ShowMapRoutes;
+        vm.Preferences.EnableActivityFeed = preferencesValue.EnableActivityFeed;
         
         ViewData["Title"] = "Settings";
         return View(vm);
@@ -134,9 +143,14 @@ public class SettingsController : Controller
         {
             // Validate username against business rules
             var usernameValidation = await _usernameValidationService.ValidateAsync(trimmedUserName);
-            if (!usernameValidation.IsValid)
+            if (usernameValidation.IsFailure || usernameValidation.Value is null)
             {
-                return Json(new { success = false, errors = new[] { usernameValidation.ErrorMessage ?? "Invalid username." } });
+                return Json(new { success = false, errors = new[] { usernameValidation.ErrorMessage ?? "Username validation failed." } });
+            }
+
+            if (!usernameValidation.Value.IsValid)
+            {
+                return Json(new { success = false, errors = new[] { usernameValidation.Value.ErrorMessage ?? "Invalid username." } });
             }
 
             var setName = await _userManager.SetUserNameAsync(user, trimmedUserName);
@@ -260,8 +274,16 @@ public class SettingsController : Controller
         // Persist display & units preferences to database
         var preferencesDto = _mapper.Map<UserPreferencesDto>(model);
         preferencesDto.UserId = userId;
-        
-        await _userPreferencesService.UpdateAsync(userId, preferencesDto, cancellationToken);
+
+        var updateResult = await _userPreferencesService.UpdateAsync(userId, preferencesDto, cancellationToken);
+
+        if (updateResult.IsFailure)
+        {
+            return Problem(
+                title: "Unable to save preferences",
+                detail: updateResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
 
         TempData["Status"] = "Preferences saved";
         return Json(new { success = true });
@@ -300,7 +322,19 @@ public class SettingsController : Controller
             return challengeResult!;
         }
 
-        var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
+        var flightsResult = await _userFlightService.GetUserFlightsAsync(
+            userId,
+            cancellationToken);
+
+        if (flightsResult.IsFailure || flightsResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to export flights",
+                detail: flightsResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var flights = flightsResult.Value;
 
         var sb = new StringBuilder();
         // Hint Excel about the separator to avoid locale issues (e.g., semicolon locales)
@@ -347,7 +381,19 @@ public class SettingsController : Controller
         {
             return Challenge();
         }
-        var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
+        var flightsResult = await _userFlightService.GetUserFlightsAsync(
+            userId,
+            cancellationToken);
+
+        if (flightsResult.IsFailure || flightsResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to export data",
+                detail: flightsResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var flights = flightsResult.Value;
 
         // Collect preferences from cookies (client-side persistence in this demo)
         var theme = Request.Cookies["ft_theme"] ?? "system";
@@ -412,11 +458,27 @@ public class SettingsController : Controller
             return challengeResult!;
         }
         // Delete user flights first
-        var flights = await _userFlightService.GetUserFlightsAsync(userId, cancellationToken);
+        var flightsResult = await _userFlightService.GetUserFlightsAsync(
+            userId,
+            cancellationToken);
+
+        if (flightsResult.IsFailure || flightsResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to delete profile",
+                detail: flightsResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var flights = flightsResult.Value;
         var deletedFlights = 0;
         foreach (var f in flights)
         {
-            if (await _userFlightService.DeleteUserFlightAsync(f.Id, cancellationToken))
+            var deleteResult = await _userFlightService.DeleteUserFlightAsync(
+                f.Id,
+                cancellationToken);
+
+            if (deleteResult.IsSuccess && deleteResult.Value)
             {
                 deletedFlights++;
             }

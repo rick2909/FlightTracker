@@ -24,15 +24,19 @@ public class FlightStatsServiceTests
 
         var result = await sut.GetPassportDetailsAsync(42);
 
-        var airline = Assert.Single(result.AirlineStats);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        var value = result.Value!;
+
+        var airline = Assert.Single(value.AirlineStats);
         Assert.Equal("CONTOSO AIR", airline.AirlineName);
         Assert.Equal("CT", airline.AirlineIata);
         Assert.Equal("COS", airline.AirlineIcao);
         Assert.Equal(2, airline.Count);
 
-        Assert.Equal(2, result.AircraftTypeStats.Count);
-        Assert.Equal(1, result.AircraftTypeStats["A320"]);
-        Assert.Equal(1, result.AircraftTypeStats["B738"]);
+        Assert.Equal(2, value.AircraftTypeStats.Count);
+        Assert.Equal(1, value.AircraftTypeStats["A320"]);
+        Assert.Equal(1, value.AircraftTypeStats["B738"]);
     }
 
     [Fact]
@@ -55,8 +59,12 @@ public class FlightStatsServiceTests
 
         var result = await sut.GetPassportDetailsAsync(7);
 
-        Assert.Empty(result.AirlineStats);
-        Assert.Empty(result.AircraftTypeStats);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        var value = result.Value!;
+
+        Assert.Empty(value.AirlineStats);
+        Assert.Empty(value.AircraftTypeStats);
     }
 
     [Fact]

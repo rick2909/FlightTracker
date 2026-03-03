@@ -1,6 +1,7 @@
 using AutoMapper;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Repositories.Interfaces;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
 
@@ -20,84 +21,191 @@ public class AircraftService : IAircraftService
         _mapper = mapper;
     }
 
-    public async Task<AircraftDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Result<AircraftDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var aircraft = await _aircraftRepository.GetByIdAsync(id, cancellationToken);
-        return aircraft == null ? null : _mapper.Map<AircraftDto>(aircraft);
-    }
-
-    public async Task<AircraftDto?> GetByRegistrationAsync(string registration, CancellationToken cancellationToken = default)
-    {
-        var aircraft = await _aircraftRepository.GetByRegistrationAsync(registration, cancellationToken);
-        return aircraft == null ? null : _mapper.Map<AircraftDto>(aircraft);
-    }
-
-    public async Task<IEnumerable<AircraftDto>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        var aircraft = await _aircraftRepository.GetAllAsync(cancellationToken);
-        return aircraft.Select(a => _mapper.Map<AircraftDto>(a));
-    }
-
-    public async Task<IEnumerable<AircraftDto>> SearchAsync(string searchTerm, CancellationToken cancellationToken = default)
-    {
-        var aircraft = await _aircraftRepository.SearchAsync(searchTerm, cancellationToken);
-        return aircraft.Select(a => _mapper.Map<AircraftDto>(a));
-    }
-
-    public async Task<AircraftDto> CreateAsync(CreateAircraftDto createDto, CancellationToken cancellationToken = default)
-    {
-        // Validate registration uniqueness
-        if (await _aircraftRepository.RegistrationExistsAsync(createDto.Registration, cancellationToken))
+        try
         {
-            throw new InvalidOperationException($"Aircraft with registration '{createDto.Registration}' already exists.");
+            var aircraft = await _aircraftRepository.GetByIdAsync(id, cancellationToken);
+            var dto = aircraft == null ? null : _mapper.Map<AircraftDto>(aircraft);
+            return Result<AircraftDto>.Success(dto);
         }
-
-        var aircraft = _mapper.Map<Aircraft>(createDto);
-
-        var savedAircraft = await _aircraftRepository.AddAsync(aircraft, cancellationToken);
-        return _mapper.Map<AircraftDto>(savedAircraft);
-    }
-
-    public async Task<AircraftDto?> UpdateAsync(int id, CreateAircraftDto updateDto, CancellationToken cancellationToken = default)
-    {
-        var existingAircraft = await _aircraftRepository.GetByIdAsync(id, cancellationToken);
-        if (existingAircraft == null)
+        catch (OperationCanceledException)
         {
-            return null;
+            throw;
         }
-
-        // Check if registration is being changed and if the new registration already exists
-        if (existingAircraft.Registration != updateDto.Registration &&
-            await _aircraftRepository.RegistrationExistsAsync(updateDto.Registration, cancellationToken))
+        catch (Exception ex)
         {
-            throw new InvalidOperationException($"Aircraft with registration '{updateDto.Registration}' already exists.");
+            return Result<AircraftDto>.Failure(ex.Message, "aircraft.by_id.load_failed");
         }
-
-        _mapper.Map(updateDto, existingAircraft);
-
-        var updatedAircraft = await _aircraftRepository.UpdateAsync(existingAircraft, cancellationToken);
-        return _mapper.Map<AircraftDto>(updatedAircraft);
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Result<AircraftDto>> GetByRegistrationAsync(string registration, CancellationToken cancellationToken = default)
     {
-        if (!await _aircraftRepository.ExistsAsync(id, cancellationToken))
+        try
         {
-            return false;
+            var aircraft = await _aircraftRepository.GetByRegistrationAsync(registration, cancellationToken);
+            var dto = aircraft == null ? null : _mapper.Map<AircraftDto>(aircraft);
+            return Result<AircraftDto>.Success(dto);
         }
-
-        await _aircraftRepository.DeleteAsync(id, cancellationToken);
-        return true;
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<AircraftDto>.Failure(ex.Message, "aircraft.by_registration.load_failed");
+        }
     }
 
-    public async Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<AircraftDto>>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _aircraftRepository.ExistsAsync(id, cancellationToken);
+        try
+        {
+            var aircraft = await _aircraftRepository.GetAllAsync(cancellationToken);
+            var result = aircraft.Select(a => _mapper.Map<AircraftDto>(a));
+            return Result<IEnumerable<AircraftDto>>.Success(result);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<IEnumerable<AircraftDto>>.Failure(ex.Message, "aircraft.list.load_failed");
+        }
     }
 
-    public async Task<bool> RegistrationExistsAsync(string registration, CancellationToken cancellationToken = default)
+    public async Task<Result<IEnumerable<AircraftDto>>> SearchAsync(string searchTerm, CancellationToken cancellationToken = default)
     {
-        return await _aircraftRepository.RegistrationExistsAsync(registration, cancellationToken);
+        try
+        {
+            var aircraft = await _aircraftRepository.SearchAsync(searchTerm, cancellationToken);
+            var result = aircraft.Select(a => _mapper.Map<AircraftDto>(a));
+            return Result<IEnumerable<AircraftDto>>.Success(result);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<IEnumerable<AircraftDto>>.Failure(ex.Message, "aircraft.search.failed");
+        }
+    }
+
+    public async Task<Result<AircraftDto>> CreateAsync(CreateAircraftDto createDto, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (await _aircraftRepository.RegistrationExistsAsync(createDto.Registration, cancellationToken))
+            {
+                return Result<AircraftDto>.Failure(
+                    $"Aircraft with registration '{createDto.Registration}' already exists.",
+                    "aircraft.registration.duplicate");
+            }
+
+            var aircraft = _mapper.Map<Aircraft>(createDto);
+
+            var savedAircraft = await _aircraftRepository.AddAsync(aircraft, cancellationToken);
+            return Result<AircraftDto>.Success(_mapper.Map<AircraftDto>(savedAircraft));
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<AircraftDto>.Failure(ex.Message, "aircraft.create.failed");
+        }
+    }
+
+    public async Task<Result<AircraftDto>> UpdateAsync(int id, CreateAircraftDto updateDto, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var existingAircraft = await _aircraftRepository.GetByIdAsync(id, cancellationToken);
+            if (existingAircraft == null)
+            {
+                return Result<AircraftDto>.Success(null);
+            }
+
+            if (existingAircraft.Registration != updateDto.Registration &&
+                await _aircraftRepository.RegistrationExistsAsync(updateDto.Registration, cancellationToken))
+            {
+                return Result<AircraftDto>.Failure(
+                    $"Aircraft with registration '{updateDto.Registration}' already exists.",
+                    "aircraft.registration.duplicate");
+            }
+
+            _mapper.Map(updateDto, existingAircraft);
+
+            var updatedAircraft = await _aircraftRepository.UpdateAsync(existingAircraft, cancellationToken);
+            return Result<AircraftDto>.Success(_mapper.Map<AircraftDto>(updatedAircraft));
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<AircraftDto>.Failure(ex.Message, "aircraft.update.failed");
+        }
+    }
+
+    public async Task<Result<bool>> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (!await _aircraftRepository.ExistsAsync(id, cancellationToken))
+            {
+                return Result<bool>.Success(false);
+            }
+
+            await _aircraftRepository.DeleteAsync(id, cancellationToken);
+            return Result<bool>.Success(true);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<bool>.Failure(ex.Message, "aircraft.delete.failed");
+        }
+    }
+
+    public async Task<Result<bool>> ExistsAsync(int id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var exists = await _aircraftRepository.ExistsAsync(id, cancellationToken);
+            return Result<bool>.Success(exists);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<bool>.Failure(ex.Message, "aircraft.exists.check_failed");
+        }
+    }
+
+    public async Task<Result<bool>> RegistrationExistsAsync(string registration, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var exists = await _aircraftRepository.RegistrationExistsAsync(registration, cancellationToken);
+            return Result<bool>.Success(exists);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<bool>.Failure(ex.Message, "aircraft.registration_exists.check_failed");
+        }
     }
 
 

@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Application.Results;
 
 namespace FlightTracker.Application.Services.Interfaces;
 
@@ -17,7 +18,7 @@ public interface IAirportEnrichmentService
     /// <param name="icaoCode">Airport ICAO code</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Airport DTO if found or created, null otherwise</returns>
-    Task<AirportDto?> EnrichAirportAsync(
+    Task<Result<AirportDto>> EnrichAirportAsync(
         string icaoCode,
         CancellationToken cancellationToken = default);
 }

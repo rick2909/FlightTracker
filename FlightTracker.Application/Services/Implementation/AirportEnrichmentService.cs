@@ -1,6 +1,7 @@
 using AutoMapper;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Repositories.Interfaces;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
 
@@ -16,7 +17,7 @@ public sealed class AirportEnrichmentService(
     IAirportRepository repository,
     IMapper mapper) : IAirportEnrichmentService
 {
-    public async Task<AirportDto?> EnrichAirportAsync(
+    public async Task<Result<AirportDto>> EnrichAirportAsync(
         string icaoCode,
         CancellationToken cancellationToken = default)
     {
@@ -34,15 +35,29 @@ public sealed class AirportEnrichmentService(
             cancellationToken);
 
         if (existing is not null)
-            return mapper.Map<AirportDto>(existing);
+            return Result<AirportDto>.Success(mapper.Map<AirportDto>(existing));
 
         // Fetch from external API
-        var enrichmentData = await lookupClient.GetAirportAsync(
-            normalizedIcao,
-            cancellationToken);
+        AirportEnrichmentDto? enrichmentData;
+        try
+        {
+            enrichmentData = await lookupClient.GetAirportAsync(
+                normalizedIcao,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<AirportDto>.Failure(
+                ex.Message,
+                "airport_enrichment.lookup_failed");
+        }
 
         if (enrichmentData is null)
-            return null;
+            return Result<AirportDto>.Success(null);
 
         // Create new airport entity from enrichment data
         var newAirport = mapper.Map<Airport>(enrichmentData);
@@ -52,6 +67,6 @@ public sealed class AirportEnrichmentService(
             newAirport,
             cancellationToken);
 
-        return mapper.Map<AirportDto>(created);
+        return Result<AirportDto>.Success(mapper.Map<AirportDto>(created));
     }
 }

@@ -1,6 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using FlightTracker.Application.Results;
+using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Application.Services.Implementation;
 using Xunit;
 
@@ -14,33 +16,43 @@ public class UsernameValidationServiceTests
 {
     private readonly UsernameValidationService _service = new();
 
+    private static UsernameValidationResult GetValidation(Result<UsernameValidationResult> result)
+    {
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        return result.Value!;
+    }
+
     #region Null/Empty/Whitespace Tests
 
     [Fact]
     public async Task ValidateAsync_ReturnsInvalid_WhenUsernameIsNull()
     {
         var result = await _service.ValidateAsync(null!);
+        var validation = GetValidation(result);
 
-        Assert.False(result.IsValid);
-        Assert.Equal("Username is required.", result.ErrorMessage);
+        Assert.False(validation.IsValid);
+        Assert.Equal("Username is required.", validation.ErrorMessage);
     }
 
     [Fact]
     public async Task ValidateAsync_ReturnsInvalid_WhenUsernameIsEmpty()
     {
         var result = await _service.ValidateAsync("");
+        var validation = GetValidation(result);
 
-        Assert.False(result.IsValid);
-        Assert.Equal("Username is required.", result.ErrorMessage);
+        Assert.False(validation.IsValid);
+        Assert.Equal("Username is required.", validation.ErrorMessage);
     }
 
     [Fact]
     public async Task ValidateAsync_ReturnsInvalid_WhenUsernameIsWhitespace()
     {
         var result = await _service.ValidateAsync("   ");
+        var validation = GetValidation(result);
 
-        Assert.False(result.IsValid);
-        Assert.Equal("Username is required.", result.ErrorMessage);
+        Assert.False(validation.IsValid);
+        Assert.Equal("Username is required.", validation.ErrorMessage);
     }
 
     #endregion
@@ -63,9 +75,10 @@ public class UsernameValidationServiceTests
     public async Task ValidateAsync_ReturnsValid_WhenUsernameContainsAllowedCharacters(string username)
     {
         var result = await _service.ValidateAsync(username);
+        var validation = GetValidation(result);
 
-        Assert.True(result.IsValid);
-        Assert.Null(result.ErrorMessage);
+        Assert.True(validation.IsValid);
+        Assert.Null(validation.ErrorMessage);
     }
 
     [Theory]
@@ -99,9 +112,10 @@ public class UsernameValidationServiceTests
     public async Task ValidateAsync_ReturnsInvalid_WhenUsernameContainsForbiddenCharacters(string username)
     {
         var result = await _service.ValidateAsync(username);
+        var validation = GetValidation(result);
 
-        Assert.False(result.IsValid);
-        Assert.Equal("Username can only contain letters, numbers, underscore, hyphen, or dot.", result.ErrorMessage);
+        Assert.False(validation.IsValid);
+        Assert.Equal("Username can only contain letters, numbers, underscore, hyphen, or dot.", validation.ErrorMessage);
     }
 
     #endregion
@@ -132,9 +146,10 @@ public class UsernameValidationServiceTests
     public async Task ValidateAsync_ReturnsInvalid_WhenUsernameContainsProhibitedTerms(string username)
     {
         var result = await _service.ValidateAsync(username);
+        var validation = GetValidation(result);
 
-        Assert.False(result.IsValid);
-        Assert.Equal("Username contains prohibited terms.", result.ErrorMessage);
+        Assert.False(validation.IsValid);
+        Assert.Equal("Username contains prohibited terms.", validation.ErrorMessage);
     }
 
     [Theory]
@@ -152,9 +167,10 @@ public class UsernameValidationServiceTests
     public async Task ValidateAsync_ReturnsInvalid_WhenUsernameContainsProhibitedTermsAsSubstring(string username)
     {
         var result = await _service.ValidateAsync(username);
+        var validation = GetValidation(result);
 
-        Assert.False(result.IsValid);
-        Assert.Equal("Username contains prohibited terms.", result.ErrorMessage);
+        Assert.False(validation.IsValid);
+        Assert.Equal("Username contains prohibited terms.", validation.ErrorMessage);
     }
 
     #endregion
@@ -186,9 +202,10 @@ public class UsernameValidationServiceTests
     public async Task ValidateAsync_ReturnsValid_ForValidComplexUsernames(string username)
     {
         var result = await _service.ValidateAsync(username);
+        var validation = GetValidation(result);
 
-        Assert.True(result.IsValid);
-        Assert.Null(result.ErrorMessage);
+        Assert.True(validation.IsValid);
+        Assert.Null(validation.ErrorMessage);
     }
 
     [Fact]
@@ -196,9 +213,10 @@ public class UsernameValidationServiceTests
     {
         var username = new string('a', 100); // 100 character username with only allowed chars
         var result = await _service.ValidateAsync(username);
+        var validation = GetValidation(result);
 
-        Assert.True(result.IsValid);
-        Assert.Null(result.ErrorMessage);
+        Assert.True(validation.IsValid);
+        Assert.Null(validation.ErrorMessage);
     }
 
     [Fact]
@@ -209,9 +227,13 @@ public class UsernameValidationServiceTests
         var result2 = await _service.ValidateAsync("USER");
         var result3 = await _service.ValidateAsync("user");
 
-        Assert.True(result1.IsValid);
-        Assert.True(result2.IsValid);
-        Assert.True(result3.IsValid);
+        var validation1 = GetValidation(result1);
+        var validation2 = GetValidation(result2);
+        var validation3 = GetValidation(result3);
+
+        Assert.True(validation1.IsValid);
+        Assert.True(validation2.IsValid);
+        Assert.True(validation3.IsValid);
     }
 
     [Theory]
@@ -222,9 +244,10 @@ public class UsernameValidationServiceTests
     public async Task ValidateAsync_ReturnsValid_ForUsernameMixingAllowedCharacters(string username)
     {
         var result = await _service.ValidateAsync(username);
+        var validation = GetValidation(result);
 
-        Assert.True(result.IsValid);
-        Assert.Null(result.ErrorMessage);
+        Assert.True(validation.IsValid);
+        Assert.Null(validation.ErrorMessage);
     }
 
     #endregion
@@ -235,18 +258,20 @@ public class UsernameValidationServiceTests
     public async Task ValidateAsync_ReturnsNullErrorMessage_WhenValid()
     {
         var result = await _service.ValidateAsync("validuser123");
+        var validation = GetValidation(result);
 
-        Assert.Null(result.ErrorMessage);
-        Assert.True(result.IsValid);
+        Assert.Null(validation.ErrorMessage);
+        Assert.True(validation.IsValid);
     }
 
     [Fact]
     public async Task ValidateAsync_ReturnsNonNullErrorMessage_WhenInvalid()
     {
         var result = await _service.ValidateAsync("user@domain");
+        var validation = GetValidation(result);
 
-        Assert.NotNull(result.ErrorMessage);
-        Assert.False(result.IsValid);
+        Assert.NotNull(validation.ErrorMessage);
+        Assert.False(validation.IsValid);
     }
 
     #endregion

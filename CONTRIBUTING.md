@@ -112,6 +112,7 @@ Usage:
 - Presentation: API controllers, UI projects (Blazor/Mobile), mapping to/from DTOs.
 - Data crosses Application → Presentation boundary only via DTOs.
 - Time, external services, and persistence accessed *only* via interfaces defined inward.
+- Follow `doc/Repository-Result-Policy.md`: repositories/low-level clients return raw data/null/collections; Application services own `Result` mapping and error codes.
 
 Violation Examples:
 - Returning `Flight` (entity) directly from API → NOT allowed.

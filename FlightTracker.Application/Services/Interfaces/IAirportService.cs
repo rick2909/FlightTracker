@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using FlightTracker.Application.Results;
 using FlightTracker.Domain.Entities;
 
 namespace FlightTracker.Application.Services.Interfaces;
@@ -10,10 +11,26 @@ namespace FlightTracker.Application.Services.Interfaces;
 /// </summary>
 public interface IAirportService
 {
-    Task<Airport?> GetAirportByCodeAsync(string code, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<Airport>> GetAllAirportsAsync(CancellationToken cancellationToken = default);
-    Task<Airport> AddAirportAsync(Airport airport, CancellationToken cancellationToken = default);
-    Task UpdateAirportAsync(Airport airport, CancellationToken cancellationToken = default);
-    Task DeleteAirportAsync(int id, CancellationToken cancellationToken = default);
-    Task<string?> GetTimeZoneIdByAirportCodeAsync(string airportCode, CancellationToken cancellationToken = default);
+    Task<Result<Airport>> GetAirportByCodeAsync(
+        string code,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<IReadOnlyList<Airport>>> GetAllAirportsAsync(
+        CancellationToken cancellationToken = default);
+
+    Task<Result<Airport>> AddAirportAsync(
+        Airport airport,
+        CancellationToken cancellationToken = default);
+
+    Task<Result> UpdateAirportAsync(
+        Airport airport,
+        CancellationToken cancellationToken = default);
+
+    Task<Result> DeleteAirportAsync(
+        int id,
+        CancellationToken cancellationToken = default);
+
+    Task<Result<string?>> GetTimeZoneIdByAirportCodeAsync(
+        string airportCode,
+        CancellationToken cancellationToken = default);
 }

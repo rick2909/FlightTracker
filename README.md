@@ -33,6 +33,9 @@ See `.github/copilot-instructions.md` for full rules.
 - DTO boundary between Application -> Presentation (no leaking EF/Identity models).
 - External providers (OpenSky, FR24, Aviationstack) hidden behind interfaces.
 - Logging & persistence in Infrastructure only.
+- Repositories and low-level external clients return raw data/null/collections; Application services map outcomes to `Result`/`Result<T>`.
+
+See `doc/Repository-Result-Policy.md` for the authoritative return-contract policy.
 
 ## Technology (Current / Planned)
 | Concern | Tech |
@@ -153,6 +156,7 @@ See `CONTRIBUTING.md` for full process and pitfalls.
 - Repositories currently located in Infrastructure (Interfaces + Implementation) — scheduled to move interfaces inward per plan.
 - Seed data is idempotent; do not embed production credentials or PII.
 - Avoid premature generic repositories; prefer focused ones per aggregate root.
+- Return contracts follow `doc/Repository-Result-Policy.md` (raw repository/client contracts, Result mapping in Application services).
 
 ## Planned Entities (Beyond MVP)
 - Aircraft (registration, type, model)
