@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Application.Results;
 
 namespace FlightTracker.Infrastructure.External;
 
@@ -17,39 +18,74 @@ public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient, IA
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public async Task<AircraftEnrichmentDto?> GetAircraftAsync(string registrationOrModeS, CancellationToken cancellationToken = default)
+    public async Task<Result<AircraftEnrichmentDto>> GetAircraftAsync(string registrationOrModeS, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(registrationOrModeS)) return null;
-        var url = $"https://api.adsbdb.com/v0/aircraft/{Uri.EscapeDataString(registrationOrModeS)}";
-        using var res = await http.GetAsync(url, cancellationToken);
-        if (!res.IsSuccessStatusCode) return null;
-        await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
-        var root = await JsonSerializer.DeserializeAsync<AircraftRoot>(stream, JsonOptions, cancellationToken);
-        var ac = root?.Response?.Aircraft;
-        if (ac is null) return null;
+        try
+        {
+            if (string.IsNullOrWhiteSpace(registrationOrModeS))
+            {
+                return Result<AircraftEnrichmentDto>.Success(null);
+            }
 
-        return new AircraftEnrichmentDto(
-            Registration: ac.Registration,
-            Type: ac.Type,
-            IcaoType: ac.IcaoType,
-            Manufacturer: ac.Manufacturer,
-            ModeS: ac.ModeS,
-            RegisteredOwner: ac.RegisteredOwner,
-            RegisteredOwnerCountryIso: ac.RegisteredOwnerCountryIsoName,
-            RegisteredOwnerCountry: ac.RegisteredOwnerCountryName
-        );
+            var url = $"https://api.adsbdb.com/v0/aircraft/{Uri.EscapeDataString(registrationOrModeS)}";
+            using var res = await http.GetAsync(url, cancellationToken);
+            if (!res.IsSuccessStatusCode)
+            {
+                return Result<AircraftEnrichmentDto>.Success(null);
+            }
+
+            await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
+            var root = await JsonSerializer.DeserializeAsync<AircraftRoot>(stream, JsonOptions, cancellationToken);
+            var ac = root?.Response?.Aircraft;
+            if (ac is null)
+            {
+                return Result<AircraftEnrichmentDto>.Success(null);
+            }
+
+            return Result<AircraftEnrichmentDto>.Success(new AircraftEnrichmentDto(
+                Registration: ac.Registration,
+                Type: ac.Type,
+                IcaoType: ac.IcaoType,
+                Manufacturer: ac.Manufacturer,
+                ModeS: ac.ModeS,
+                RegisteredOwner: ac.RegisteredOwner,
+                RegisteredOwnerCountryIso: ac.RegisteredOwnerCountryIsoName,
+                RegisteredOwnerCountry: ac.RegisteredOwnerCountryName
+            ));
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<AircraftEnrichmentDto>.Failure(ex.Message, "adsb.aircraft.lookup_failed");
+        }
     }
 
-    public async Task<FlightRouteLookupResult?> GetFlightRouteAsync(string callsign, CancellationToken cancellationToken = default)
+    public async Task<Result<FlightRouteLookupResult>> GetFlightRouteAsync(string callsign, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(callsign)) return null;
-        var url = $"https://api.adsbdb.com/v0/callsign/{Uri.EscapeDataString(callsign)}";
-        using var res = await http.GetAsync(url, cancellationToken);
-        if (!res.IsSuccessStatusCode) return null;
-        await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
-        var root = await JsonSerializer.DeserializeAsync<Root>(stream, JsonOptions, cancellationToken);
-        var fr = root?.Response?.FlightRoute;
-        if (fr is null) return null;
+        try
+        {
+            if (string.IsNullOrWhiteSpace(callsign))
+            {
+                return Result<FlightRouteLookupResult>.Success(null);
+            }
+
+            var url = $"https://api.adsbdb.com/v0/callsign/{Uri.EscapeDataString(callsign)}";
+            using var res = await http.GetAsync(url, cancellationToken);
+            if (!res.IsSuccessStatusCode)
+            {
+                return Result<FlightRouteLookupResult>.Success(null);
+            }
+
+            await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
+            var root = await JsonSerializer.DeserializeAsync<Root>(stream, JsonOptions, cancellationToken);
+            var fr = root?.Response?.FlightRoute;
+            if (fr is null)
+            {
+                return Result<FlightRouteLookupResult>.Success(null);
+            }
 
         FlightRouteAirline? al = fr.Airline is null ? null : new(
             Name: fr.Airline.Name,
@@ -75,12 +111,21 @@ public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient, IA
         var origin = fr.Origin is null ? null : MapAirport(fr.Origin);
         var dest = fr.Destination is null ? null : MapAirport(fr.Destination);
 
-        return new FlightRouteLookupResult(
-            Callsign: fr.Callsign ?? callsign,
-            Airline: al,
-            Origin: origin,
-            Destination: dest
-        );
+            return Result<FlightRouteLookupResult>.Success(new FlightRouteLookupResult(
+                Callsign: fr.Callsign ?? callsign,
+                Airline: al,
+                Origin: origin,
+                Destination: dest
+            ));
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<FlightRouteLookupResult>.Failure(ex.Message, "adsb.route.lookup_failed");
+        }
     }
 
     private sealed class AircraftRoot

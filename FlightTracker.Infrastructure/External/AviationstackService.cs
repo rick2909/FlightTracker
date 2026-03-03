@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 
@@ -17,54 +18,67 @@ namespace FlightTracker.Infrastructure.External;
 /// </summary>
 public class AviationstackService (HttpClient http, IConfiguration configuration) : IAirportLiveService
 {
-    public Task<IReadOnlyList<LiveFlightDto>> GetDeparturesAsync(string airportCode, int limit = 50, CancellationToken cancellationToken = default)
+    public Task<Result<IReadOnlyList<LiveFlightDto>>> GetDeparturesAsync(string airportCode, int limit = 50, CancellationToken cancellationToken = default)
         => QueryAsync(depIata: airportCode, arrIata: null, limit: limit, cancellationToken);
 
-    public Task<IReadOnlyList<LiveFlightDto>> GetArrivalsAsync(string airportCode, int limit = 50, CancellationToken cancellationToken = default)
+    public Task<Result<IReadOnlyList<LiveFlightDto>>> GetArrivalsAsync(string airportCode, int limit = 50, CancellationToken cancellationToken = default)
         => QueryAsync(depIata: null, arrIata: airportCode, limit: limit, cancellationToken);
 
-    private async Task<IReadOnlyList<LiveFlightDto>> QueryAsync(string? depIata, string? arrIata, int limit, CancellationToken cancellationToken)
+    private async Task<Result<IReadOnlyList<LiveFlightDto>>> QueryAsync(string? depIata, string? arrIata, int limit, CancellationToken cancellationToken)
     {
-        var apiKey = configuration["ApiKeys:Aviationstack"] ?? string.Empty;
-        var url = $"https://api.aviationstack.com/v1/flights?access_key={Uri.EscapeDataString(apiKey)}&limit={limit}";
-        if (!string.IsNullOrWhiteSpace(depIata)) url += $"&dep_iata={Uri.EscapeDataString(depIata!)}";
-        if (!string.IsNullOrWhiteSpace(arrIata)) url += $"&arr_iata={Uri.EscapeDataString(arrIata!)}";
-
-        using var req = new HttpRequestMessage(HttpMethod.Get, url);
-        using var resp = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        resp.EnsureSuccessStatusCode();
-        await using var stream = await resp.Content.ReadAsStreamAsync(cancellationToken);
-
-        var json = await JsonSerializer.DeserializeAsync<AviationstackResponse>(stream, s_Json, cancellationToken)
-                   ?? new AviationstackResponse();
-
-        var list = new List<LiveFlightDto>(json.Data?.Count ?? 0);
-        if (json.Data != null)
+        try
         {
-            foreach (var f in json.Data)
-            {
-                list.Add(new LiveFlightDto
-                {
-                    FlightNumber = f.Flight?.Iata ?? f.Flight?.Icao ?? f.Flight?.Number ?? string.Empty,
-                    Status = MapStatus(f.FlightStatus),
-                    AirlineName = f.Airline?.Name,
-                    AirlineIata = f.Airline?.Iata,
-                    AirlineIcao = f.Airline?.Icao,
-                    DepartureIata = f.Departure?.Iata,
-                    DepartureIcao = f.Departure?.Icao,
-                    DepartureScheduledUtc = ParseUtc(f.Departure?.Scheduled),
-                    DepartureActualUtc = ParseUtc(f.Departure?.Actual),
-                    ArrivalIata = f.Arrival?.Iata,
-                    ArrivalIcao = f.Arrival?.Icao,
-                    ArrivalScheduledUtc = ParseUtc(f.Arrival?.Scheduled),
-                    ArrivalActualUtc = ParseUtc(f.Arrival?.Actual),
-                    AircraftRegistration = f.Aircraft?.Registration,
-                    AircraftIcaoType = f.Aircraft?.Icao
-                });
-            }
-        }
+            var apiKey = configuration["ApiKeys:Aviationstack"] ?? string.Empty;
+            var url = $"https://api.aviationstack.com/v1/flights?access_key={Uri.EscapeDataString(apiKey)}&limit={limit}";
+            if (!string.IsNullOrWhiteSpace(depIata)) url += $"&dep_iata={Uri.EscapeDataString(depIata!)}";
+            if (!string.IsNullOrWhiteSpace(arrIata)) url += $"&arr_iata={Uri.EscapeDataString(arrIata!)}";
 
-        return list;
+            using var req = new HttpRequestMessage(HttpMethod.Get, url);
+            using var resp = await http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            resp.EnsureSuccessStatusCode();
+            await using var stream = await resp.Content.ReadAsStreamAsync(cancellationToken);
+
+            var json = await JsonSerializer.DeserializeAsync<AviationstackResponse>(stream, s_Json, cancellationToken)
+                       ?? new AviationstackResponse();
+
+            var list = new List<LiveFlightDto>(json.Data?.Count ?? 0);
+            if (json.Data != null)
+            {
+                foreach (var f in json.Data)
+                {
+                    list.Add(new LiveFlightDto
+                    {
+                        FlightNumber = f.Flight?.Iata ?? f.Flight?.Icao ?? f.Flight?.Number ?? string.Empty,
+                        Status = MapStatus(f.FlightStatus),
+                        AirlineName = f.Airline?.Name,
+                        AirlineIata = f.Airline?.Iata,
+                        AirlineIcao = f.Airline?.Icao,
+                        DepartureIata = f.Departure?.Iata,
+                        DepartureIcao = f.Departure?.Icao,
+                        DepartureScheduledUtc = ParseUtc(f.Departure?.Scheduled),
+                        DepartureActualUtc = ParseUtc(f.Departure?.Actual),
+                        ArrivalIata = f.Arrival?.Iata,
+                        ArrivalIcao = f.Arrival?.Icao,
+                        ArrivalScheduledUtc = ParseUtc(f.Arrival?.Scheduled),
+                        ArrivalActualUtc = ParseUtc(f.Arrival?.Actual),
+                        AircraftRegistration = f.Aircraft?.Registration,
+                        AircraftIcaoType = f.Aircraft?.Icao
+                    });
+                }
+            }
+
+            return Result<IReadOnlyList<LiveFlightDto>>.Success(list);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<IReadOnlyList<LiveFlightDto>>.Failure(
+                ex.Message,
+                "aviationstack.query.failed");
+        }
     }
 
     private static DateTime? ParseUtc(string? s)

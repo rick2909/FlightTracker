@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
 
@@ -12,14 +13,14 @@ namespace FlightTracker.Infrastructure.External;
 /// </summary>
 public class OpenSkyClient : IFlightDataProvider
 {
-    public Task<IReadOnlyList<Flight>> GetFlightsInBoundingBoxAsync(double minLatitude, double minLongitude, double maxLatitude, double maxLongitude, CancellationToken cancellationToken = default)
+    public Task<Result<IReadOnlyList<Flight>>> GetFlightsInBoundingBoxAsync(double minLatitude, double minLongitude, double maxLatitude, double maxLongitude, CancellationToken cancellationToken = default)
     {
         IReadOnlyList<Flight> empty = Array.Empty<Flight>();
-        return Task.FromResult(empty);
+        return Task.FromResult(Result<IReadOnlyList<Flight>>.Success(empty));
     }
 
-    public Task<Flight?> GetFlightByNumberAsync(string flightNumber, DateTime? departureAfterUtc = null, CancellationToken cancellationToken = default)
+    public Task<Result<Flight>> GetFlightByNumberAsync(string flightNumber, DateTime? departureAfterUtc = null, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult<Flight?>(null);
+        return Task.FromResult(Result<Flight>.Success(null));
     }
 }
