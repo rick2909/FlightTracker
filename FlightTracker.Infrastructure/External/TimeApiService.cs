@@ -1,10 +1,8 @@
 using System;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Interfaces;
 
 namespace FlightTracker.Infrastructure.External;
@@ -30,21 +28,17 @@ public class TimeApiService : ITimeApiService
         _http.Timeout = TimeSpan.FromSeconds(3);
     }
 
-    public async Task<Result<string?>> GetTimeZoneIdAsync(double latitude, double longitude, CancellationToken cancellationToken = default)
+    public async Task<string?> GetTimeZoneIdAsync(double latitude, double longitude, CancellationToken cancellationToken = default)
     {
         var url = $"{BaseUrl}?latitude={latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}&longitude={longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
         try
         {
             var resp = await _http.GetFromJsonAsync<TimeApiResponse>(url, cancellationToken);
-            return Result<string?>.Success(resp?.TimeZone);
+            return resp?.TimeZone;
         }
         catch (OperationCanceledException)
         {
-            return Result<string?>.Success(null);
-        }
-        catch (Exception ex)
-        {
-            return Result<string?>.Failure(ex.Message, "timeapi.lookup.failed");
+            return null;
         }
     }
 }

@@ -26,19 +26,26 @@ public class FlightLookupService(IFlightRepository flights, IFlightDataProvider 
             }
 
             var startOfDayUtc = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
-            var candidateResult = await provider.GetFlightByNumberAsync(
-                normalized,
-                startOfDayUtc,
-                cancellationToken);
-
-            if (candidateResult.IsFailure)
+            Flight? candidate;
+            try
+            {
+                candidate = await provider.GetFlightByNumberAsync(
+                    normalized,
+                    startOfDayUtc,
+                    cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
             {
                 return Result<Flight>.Failure(
-                    candidateResult.ErrorMessage ?? "External provider lookup failed.",
-                    candidateResult.ErrorCode ?? "flight_lookup.provider_failed");
+                    ex.Message,
+                    "flight_lookup.provider_failed");
             }
 
-            return Result<Flight>.Success(candidateResult.Value);
+            return Result<Flight>.Success(candidate);
         }
         catch (OperationCanceledException)
         {

@@ -1,6 +1,5 @@
 using System.Threading;
 using System.Threading.Tasks;
-using FlightTracker.Application.Results;
 
 namespace FlightTracker.Application.Services.Interfaces;
 
@@ -14,5 +13,5 @@ public interface ITimeApiService
     /// Returns a time zone ID (IANA) for the given latitude/longitude,
     /// or null if it cannot be determined.
     /// </summary>
-    Task<Result<string?>> GetTimeZoneIdAsync(double latitude, double longitude, CancellationToken cancellationToken = default);
+    Task<string?> GetTimeZoneIdAsync(double latitude, double longitude, CancellationToken cancellationToken = default);
 }

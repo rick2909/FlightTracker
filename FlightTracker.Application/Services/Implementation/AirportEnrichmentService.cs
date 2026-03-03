@@ -38,18 +38,23 @@ public sealed class AirportEnrichmentService(
             return Result<AirportDto>.Success(mapper.Map<AirportDto>(existing));
 
         // Fetch from external API
-        var enrichmentDataResult = await lookupClient.GetAirportAsync(
-            normalizedIcao,
-            cancellationToken);
-
-        if (enrichmentDataResult.IsFailure)
+        AirportEnrichmentDto? enrichmentData;
+        try
+        {
+            enrichmentData = await lookupClient.GetAirportAsync(
+                normalizedIcao,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
         {
             return Result<AirportDto>.Failure(
-                enrichmentDataResult.ErrorMessage ?? "Airport lookup failed.",
-                enrichmentDataResult.ErrorCode ?? "airport_enrichment.lookup_failed");
+                ex.Message,
+                "airport_enrichment.lookup_failed");
         }
-
-        var enrichmentData = enrichmentDataResult.Value;
 
         if (enrichmentData is null)
             return Result<AirportDto>.Success(null);

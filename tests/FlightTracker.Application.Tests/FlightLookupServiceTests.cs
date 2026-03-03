@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Repositories.Interfaces;
-using FlightTracker.Application.Results;
 using FlightTracker.Application.Services.Implementation;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
@@ -70,7 +69,7 @@ public class FlightLookupServiceTests
 
         var provider = new Mock<IFlightDataProvider>();
         provider.Setup(p => p.GetFlightByNumberAsync(flightNumber, It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<Flight>.Success(providerFlight));
+            .ReturnsAsync(providerFlight);
 
         var service = new FlightLookupService(repo.Object, provider.Object);
 

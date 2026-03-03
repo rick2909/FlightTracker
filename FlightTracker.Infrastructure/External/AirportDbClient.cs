@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Application.Dtos;
-using FlightTracker.Application.Results;
 using Microsoft.Extensions.Configuration;
 
 namespace FlightTracker.Infrastructure.External;
@@ -23,64 +22,45 @@ public sealed class AirportDbClient(HttpClient http, IConfiguration configuratio
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public async Task<Result<AirportEnrichmentDto>> GetAirportAsync(
+    public async Task<AirportEnrichmentDto?> GetAirportAsync(
         string icaoCode,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(icaoCode))
-            return Result<AirportEnrichmentDto>.Success(null);
+            return null;
 
         var apiToken = configuration["ApiKeys:AirportDB"];
         if (string.IsNullOrWhiteSpace(apiToken))
-            return Result<AirportEnrichmentDto>.Success(null);
+            return null;
 
         var url =
             $"https://airportdb.io/api/v1/airport/{Uri.EscapeDataString(icaoCode)}?apiToken={Uri.EscapeDataString(apiToken)}";
 
-        try
-        {
-            using var res = await http.GetAsync(url, cancellationToken);
-            if (!res.IsSuccessStatusCode)
-                return Result<AirportEnrichmentDto>.Success(null);
+        using var res = await http.GetAsync(url, cancellationToken);
+        if (!res.IsSuccessStatusCode)
+            return null;
 
-            await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
-            var airport = await JsonSerializer.DeserializeAsync<AirportDbResponse>(
-                stream,
-                JsonOptions,
-                cancellationToken);
+        await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
+        var airport = await JsonSerializer.DeserializeAsync<AirportDbResponse>(
+            stream,
+            JsonOptions,
+            cancellationToken);
 
-            if (airport is null)
-                return Result<AirportEnrichmentDto>.Success(null);
+        if (airport is null)
+            return null;
 
-            return Result<AirportEnrichmentDto>.Success(new AirportEnrichmentDto(
-                IataCode: airport.IataCode,
-                IcaoCode: airport.IcaoCode,
-                Name: airport.Name,
-                Municipality: airport.Municipality,
-                CountryName: airport.IsoCountry,
-                CountryIsoCode: airport.IsoCountry,
-                Latitude: airport.LatitudeDeg,
-                Longitude: airport.LongitudeDeg,
-                ElevationFeet: airport.ElevationFt,
-                AirportType: airport.Type
-            ));
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (HttpRequestException ex)
-        {
-            return Result<AirportEnrichmentDto>.Failure(
-                ex.Message,
-                "airportdb.http_error");
-        }
-        catch (Exception ex)
-        {
-            return Result<AirportEnrichmentDto>.Failure(
-                ex.Message,
-                "airportdb.unexpected_error");
-        }
+        return new AirportEnrichmentDto(
+            IataCode: airport.IataCode,
+            IcaoCode: airport.IcaoCode,
+            Name: airport.Name,
+            Municipality: airport.Municipality,
+            CountryName: airport.IsoCountry,
+            CountryIsoCode: airport.IsoCountry,
+            Latitude: airport.LatitudeDeg,
+            Longitude: airport.LongitudeDeg,
+            ElevationFeet: airport.ElevationFt,
+            AirportType: airport.Type
+        );
     }
 
     private sealed class AirportDbResponse

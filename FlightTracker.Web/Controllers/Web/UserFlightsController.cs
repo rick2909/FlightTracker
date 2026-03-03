@@ -276,22 +276,24 @@ public class UserFlightsController(
             return BadRequest(new { error = $"maxResults must be between {MinResults} and {MaxResults}." });
         }
 
-        var resultWrapper = await aircraftPhotoService.GetAircraftPhotosAsync(
-            modeSCode,
-            registration,
-            maxResults,
-            cancellationToken);
-
-        if (resultWrapper.IsFailure)
+        AircraftPhotoResultDto? result;
+        try
         {
-            return StatusCode(500, new
-            {
-                error = resultWrapper.ErrorMessage
-                    ?? "Unable to fetch aircraft photos"
-            });
+            result = await aircraftPhotoService.GetAircraftPhotosAsync(
+                modeSCode,
+                registration,
+                maxResults,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new { error = "Unable to fetch aircraft photos" });
         }
 
-        var result = resultWrapper.Value;
         if (result == null)
         {
             return NotFound(new { error = "No photos found" });

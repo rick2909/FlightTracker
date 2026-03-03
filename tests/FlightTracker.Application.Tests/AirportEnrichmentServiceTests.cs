@@ -114,7 +114,7 @@ public class AirportEnrichmentServiceTests
         var mockLookupClient = new Mock<IAirportLookupClient>();
         mockLookupClient
             .Setup(c => c.GetAirportAsync(icaoCode, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<AirportEnrichmentDto>.Success(enrichmentDto));
+            .ReturnsAsync(enrichmentDto);
 
         var mockMapper = new Mock<IMapper>();
         mockMapper
@@ -224,7 +224,7 @@ public class AirportEnrichmentServiceTests
         var mockLookupClient = new Mock<IAirportLookupClient>();
         mockLookupClient
             .Setup(c => c.GetAirportAsync(icaoCode, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<AirportEnrichmentDto>.Success(null));
+            .ReturnsAsync((AirportEnrichmentDto?)null);
 
         var mockMapper = new Mock<IMapper>();
 
@@ -266,7 +266,7 @@ public class AirportEnrichmentServiceTests
         var mockLookupClient = new Mock<IAirportLookupClient>();
         mockLookupClient
             .Setup(c => c.GetAirportAsync(normalizedCode, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<AirportEnrichmentDto>.Success(null));
+            .ReturnsAsync((AirportEnrichmentDto?)null);
 
         var mockMapper = new Mock<IMapper>();
 
@@ -321,7 +321,7 @@ public class AirportEnrichmentServiceTests
         var mockLookupClient = new Mock<IAirportLookupClient>();
         mockLookupClient
             .Setup(c => c.GetAirportAsync(icaoCode, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<AirportEnrichmentDto>.Success(enrichmentDto));
+            .ReturnsAsync(enrichmentDto);
 
         var mockMapper = new Mock<IMapper>();
         mockMapper
@@ -384,7 +384,7 @@ public class AirportEnrichmentServiceTests
         var mockLookupClient = new Mock<IAirportLookupClient>();
         mockLookupClient
             .Setup(c => c.GetAirportAsync(icaoCode, token))
-            .ReturnsAsync(Result<AirportEnrichmentDto>.Success(null));
+            .ReturnsAsync((AirportEnrichmentDto?)null);
 
         var mockMapper = new Mock<IMapper>();
 

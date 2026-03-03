@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Application.Dtos;
-using FlightTracker.Application.Results;
 
 namespace FlightTracker.Infrastructure.External;
 
@@ -52,29 +51,27 @@ public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient, IA
         );
     }
 
-    public async Task<Result<FlightRouteLookupResult>> GetFlightRouteAsync(string callsign, CancellationToken cancellationToken = default)
+    public async Task<FlightRouteLookupResult?> GetFlightRouteAsync(string callsign, CancellationToken cancellationToken = default)
     {
-        try
+        if (string.IsNullOrWhiteSpace(callsign))
         {
-            if (string.IsNullOrWhiteSpace(callsign))
-            {
-                return Result<FlightRouteLookupResult>.Success(null);
-            }
+            return null;
+        }
 
-            var url = $"https://api.adsbdb.com/v0/callsign/{Uri.EscapeDataString(callsign)}";
-            using var res = await http.GetAsync(url, cancellationToken);
-            if (!res.IsSuccessStatusCode)
-            {
-                return Result<FlightRouteLookupResult>.Success(null);
-            }
+        var url = $"https://api.adsbdb.com/v0/callsign/{Uri.EscapeDataString(callsign)}";
+        using var res = await http.GetAsync(url, cancellationToken);
+        if (!res.IsSuccessStatusCode)
+        {
+            return null;
+        }
 
-            await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
-            var root = await JsonSerializer.DeserializeAsync<Root>(stream, JsonOptions, cancellationToken);
-            var fr = root?.Response?.FlightRoute;
-            if (fr is null)
-            {
-                return Result<FlightRouteLookupResult>.Success(null);
-            }
+        await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
+        var root = await JsonSerializer.DeserializeAsync<Root>(stream, JsonOptions, cancellationToken);
+        var fr = root?.Response?.FlightRoute;
+        if (fr is null)
+        {
+            return null;
+        }
 
         FlightRouteAirline? al = fr.Airline is null ? null : new(
             Name: fr.Airline.Name,
@@ -100,21 +97,12 @@ public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient, IA
         var origin = fr.Origin is null ? null : MapAirport(fr.Origin);
         var dest = fr.Destination is null ? null : MapAirport(fr.Destination);
 
-            return Result<FlightRouteLookupResult>.Success(new FlightRouteLookupResult(
-                Callsign: fr.Callsign ?? callsign,
-                Airline: al,
-                Origin: origin,
-                Destination: dest
-            ));
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            return Result<FlightRouteLookupResult>.Failure(ex.Message, "adsb.route.lookup_failed");
-        }
+        return new FlightRouteLookupResult(
+            Callsign: fr.Callsign ?? callsign,
+            Airline: al,
+            Origin: origin,
+            Destination: dest
+        );
     }
 
     private sealed class AircraftRoot

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using FlightTracker.Application.Results;
 using FlightTracker.Domain.Entities;
 
 namespace FlightTracker.Application.Services.Interfaces;
@@ -16,7 +15,7 @@ public interface IFlightDataProvider
     /// <summary>
     /// Returns flights within a geographic bounding box.
     /// </summary>
-    Task<Result<IReadOnlyList<Flight>>> GetFlightsInBoundingBoxAsync(
+    Task<IReadOnlyList<Flight>> GetFlightsInBoundingBoxAsync(
         double minLatitude,
         double minLongitude,
         double maxLatitude,
@@ -26,7 +25,7 @@ public interface IFlightDataProvider
     /// <summary>
     /// Returns a flight by designator and optional earliest departure time (UTC).
     /// </summary>
-    Task<Result<Flight>> GetFlightByNumberAsync(
+    Task<Flight?> GetFlightByNumberAsync(
         string flightNumber,
         DateTime? departureAfterUtc = null,
         CancellationToken cancellationToken = default);
