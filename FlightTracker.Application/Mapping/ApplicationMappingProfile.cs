@@ -35,6 +35,14 @@ public class ApplicationMappingProfile : Profile
 
         // UserPreferences mapping
         CreateMap<UserPreferences, UserPreferencesDto>();
-        CreateMap<UserPreferencesDto, UserPreferences>();
+        CreateMap<UserPreferencesDto, UserPreferences>()
+            .ForMember(dest => dest.Id,
+                opt => opt.Ignore())
+            .ForMember(dest => dest.UserId,
+                opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAtUtc,
+                opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAtUtc,
+                opt => opt.Ignore());
     }
 }

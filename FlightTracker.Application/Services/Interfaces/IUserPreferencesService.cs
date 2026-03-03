@@ -1,4 +1,5 @@
 using FlightTracker.Application.Dtos;
+using FlightTracker.Application.Results;
 
 namespace FlightTracker.Application.Services.Interfaces;
 
@@ -10,10 +11,10 @@ public interface IUserPreferencesService
     /// <summary>
     /// Gets user preferences. Creates default preferences if none exist.
     /// </summary>
-    Task<UserPreferencesDto> GetOrCreateAsync(int userId, CancellationToken cancellationToken = default);
+    Task<Result<UserPreferencesDto>> GetOrCreateAsync(int userId, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Updates user preferences.
     /// </summary>
-    Task<UserPreferencesDto> UpdateAsync(int userId, UserPreferencesDto preferences, CancellationToken cancellationToken = default);
+    Task<Result<UserPreferencesDto>> UpdateAsync(int userId, UserPreferencesDto preferences, CancellationToken cancellationToken = default);
 }
