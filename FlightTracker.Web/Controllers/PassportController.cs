@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using FlightTracker.Domain.Enums;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Web.Formatting;
+using Microsoft.Extensions.Logging;
 
 namespace FlightTracker.Web.Controllers;
 
@@ -15,12 +16,14 @@ public class PassportController(
     IPassportService passportService,
     UserManager<ApplicationUser> userManager,
     IUserFlightService flightService,
-    IUserPreferencesService userPreferencesService) : Controller
+    IUserPreferencesService userPreferencesService,
+    ILogger<PassportController> logger) : Controller
 {
     private readonly IPassportService _passportService = passportService;
     private readonly UserManager<ApplicationUser> _userManager = userManager;
     private readonly IUserFlightService _flightService = flightService;
     private readonly IUserPreferencesService _userPreferencesService = userPreferencesService;
+    private readonly ILogger<PassportController> _logger = logger;
 
     [HttpGet("{id?}")]
     public async Task<IActionResult> Index(int? id, CancellationToken cancellationToken)
@@ -380,6 +383,8 @@ public class PassportController(
     {
         if (currentUserId <= 0)
         {
+            _logger.LogDebug(
+                "Viewer is anonymous. Using default viewer preferences.");
             return CreateDefaultViewerPreferences();
         }
 
@@ -388,6 +393,11 @@ public class PassportController(
         if (viewerPreferencesResult.IsFailure
             || viewerPreferencesResult.Value is null)
         {
+            _logger.LogWarning(
+                "Viewer preferences unavailable for user {UserId}. "
+                + "Using default viewer preferences. Error: {Error}",
+                currentUserId,
+                viewerPreferencesResult.ErrorMessage);
             return CreateDefaultViewerPreferences();
         }
 

@@ -302,11 +302,11 @@
                     const byAirline = safeParseJson('passportFlightsByAirline', {});
                     const byType = safeParseJson('passportFlightsByAircraftType', {});
                     if (window.Passport) {
-                        try { window.Passport.initPassportChart && window.Passport.initPassportChart(flightsPerYearJson); } catch {}
-                        try { window.Passport.initPie && window.Passport.initPie('passport-airlines-pie', byAirline, 'Airlines'); } catch {}
-                        try { window.Passport.initPie && window.Passport.initPie('passport-aircraft-pie', byType, 'Aircraft'); } catch {}
+                        try { window.Passport.initPassportChart && window.Passport.initPassportChart(flightsPerYearJson); } catch (error) { console.warn('Passport chart initialization failed.', error); /* Non-blocking UI init: page still works without chart render. */ }
+                        try { window.Passport.initPie && window.Passport.initPie('passport-airlines-pie', byAirline, 'Airlines'); } catch (error) { console.warn('Passport airlines pie initialization failed.', error); /* Non-blocking UI init: keep remaining widgets loading. */ }
+                        try { window.Passport.initPie && window.Passport.initPie('passport-aircraft-pie', byType, 'Aircraft'); } catch (error) { console.warn('Passport aircraft pie initialization failed.', error); /* Non-blocking UI init: keep remaining widgets loading. */ }
                     }
-                } catch { }
+                } catch (error) { console.warn('Passport initializer failed.', error); /* Defensive guard: avoid breaking Passport page when third-party chart code fails. */ }
             }
 
             if (document.readyState === 'loading') {
