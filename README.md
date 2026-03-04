@@ -1,6 +1,7 @@
 # FlightTracker
 
-[![Build](https://img.shields.io/github/actions/workflow/status/rick2909/FlightTracker/ci.yml?branch=main&style=for-the-badge&label=build)](https://github.com/rick2909/FlightTracker/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/rick2909/FlightTracker/build.yml?branch=main&style=for-the-badge&label=build)](https://github.com/rick2909/FlightTracker/actions/workflows/build.yml)
+[![Tests](https://img.shields.io/github/actions/workflow/status/rick2909/FlightTracker/test.yml?branch=main&style=for-the-badge&label=tests)](https://github.com/rick2909/FlightTracker/actions/workflows/test.yml)
 ![.NET](https://img.shields.io/badge/.NET-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)
 ![Sass](https://img.shields.io/badge/Sass-CC6699?style=for-the-badge&logo=sass&logoColor=white)
 ![C#](https://img.shields.io/badge/C%23-239120?style=for-the-badge&logo=c-sharp&logoColor=white)
@@ -77,9 +78,12 @@ FlightTracker/
 
 ## CI and Quality Notes
 
-- Build badge targets GitHub Actions workflow file `ci.yml` on `main`.
+- Build badge targets GitHub Actions workflow file `build.yml` on `main`.
+- Test badge targets GitHub Actions workflow file `test.yml` on `main`.
 - Coverage badge targets Codecov for `rick2909/FlightTracker` on `main`.
-- If your workflow file uses a different name, update the badge URL segment `ci.yml`.
+- If your workflow file uses a different name, update the badge URL segments `build.yml` and `test.yml`.
+- For private repositories, add `CODECOV_TOKEN` in GitHub Settings -> Secrets and variables -> Actions.
+- To block merges when checks fail, set branch protection (or a ruleset) on `main` and mark `Build` and `Tests` checks as required.
 
 ## Key Principles
 
