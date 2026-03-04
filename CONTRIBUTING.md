@@ -70,7 +70,7 @@ Section Guidance:
   - Async + `CancellationToken` propagation.
   - DTO usage at boundaries (no EF entities leaving Application/Infrastructure).
   - No EF attributes on Domain entities.
-  - Tests updated or added (if logic changed or added).
+  - Tests updated or added when a service has branch-heavy logic and no direct tests.
 - **Implementation Notes**: Document trade‑offs (e.g., chose in-memory cache placeholder; will swap to Redis later). This reduces tribal knowledge.
 - **Testing**: List test classes or manual sequences executed.
 - **Related Issues**: Use `Closes #123` to auto-close.
@@ -130,6 +130,10 @@ Violation Examples:
 | Hard-coded DateTime.UtcNow in Domain | Introduce IClock abstraction (later) |
 | Unbounded list endpoints | Add pagination / filtering strategy |
 | Silent seed drift | Keep SeedData deterministic & documented |
+
+Testing scope reminder:
+- Do not add tests for every small refactor.
+- Add tests when branch-heavy service logic is introduced or changed and direct tests are missing.
 
 ---
 ## FAQ
