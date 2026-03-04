@@ -48,6 +48,10 @@ public class PassportControllerTests
                 ShowMapRoutes = true
             }));
 
+        preferencesService
+            .Setup(s => s.GetAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<UserPreferencesDto?>.Success(null));
+
         var controller = new PassportController(
             passportService.Object,
             userManager.Object,
@@ -93,6 +97,16 @@ public class PassportControllerTests
                 ShowAirlines = false,
                 ShowCountries = false,
                 ShowMapRoutes = false
+            }));
+
+        preferencesService
+            .Setup(s => s.GetAsync(10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<UserPreferencesDto?>.Success(new UserPreferencesDto
+            {
+                UserId = 10,
+                DistanceUnit = DistanceUnit.NauticalMiles,
+                DateFormat = DateFormat.DayMonthYear,
+                TimeFormat = TimeFormat.TwelveHour
             }));
 
         passportService
@@ -152,6 +166,117 @@ public class PassportControllerTests
         Assert.False(model.ShowAirlines);
         Assert.False(model.ShowCountries);
         Assert.False(model.ShowMapRoutes);
+        Assert.Equal(DistanceUnit.NauticalMiles, model.DistanceUnit);
+        Assert.Equal(DateFormat.DayMonthYear, model.DateFormat);
+        Assert.Equal(TimeFormat.TwelveHour, model.TimeFormat);
+    }
+
+    [Fact]
+    public async Task Index_UsesMetricDefaults_WhenViewerNotLoggedIn()
+    {
+        var passportService = new Mock<IPassportService>();
+        var flightService = new Mock<IUserFlightService>(MockBehavior.Strict);
+        var preferencesService = new Mock<IUserPreferencesService>();
+        var userManager = CreateUserManager();
+
+        userManager
+            .Setup(m => m.FindByIdAsync("99"))
+            .ReturnsAsync(new ApplicationUser
+            {
+                Id = 99,
+                UserName = "public-user"
+            });
+
+        preferencesService
+            .Setup(s => s.GetOrCreateAsync(99, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<UserPreferencesDto>.Success(new UserPreferencesDto
+            {
+                UserId = 99,
+                ProfileVisibility = ProfileVisibilityLevel.Public,
+                ShowTotalMiles = true,
+                ShowAirlines = true,
+                ShowCountries = true,
+                ShowMapRoutes = true
+            }));
+
+        passportService
+            .Setup(s => s.GetPassportDataAsync(99, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<PassportDataDto>.Success(new PassportDataDto
+            {
+                TotalFlights = 1,
+                TotalMiles = 100
+            }));
+
+        var controller = new PassportController(
+            passportService.Object,
+            userManager.Object,
+            flightService.Object,
+            preferencesService.Object);
+
+        var result = await controller.Index(99, CancellationToken.None);
+
+        var view = Assert.IsType<ViewResult>(result);
+        var model = Assert.IsType<PassportViewModel>(view.Model);
+
+        Assert.Equal(DistanceUnit.Kilometers, model.DistanceUnit);
+        Assert.Equal("161 km", model.TotalDistanceDisplay);
+    }
+
+    [Fact]
+    public async Task Index_UsesMetricDefaults_WhenViewerPreferencesMissing()
+    {
+        var passportService = new Mock<IPassportService>();
+        var flightService = new Mock<IUserFlightService>(MockBehavior.Strict);
+        var preferencesService = new Mock<IUserPreferencesService>();
+        var userManager = CreateUserManager();
+
+        userManager
+            .Setup(m => m.FindByIdAsync("2"))
+            .ReturnsAsync(new ApplicationUser
+            {
+                Id = 2,
+                UserName = "public-user"
+            });
+
+        preferencesService
+            .Setup(s => s.GetOrCreateAsync(2, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<UserPreferencesDto>.Success(new UserPreferencesDto
+            {
+                UserId = 2,
+                ProfileVisibility = ProfileVisibilityLevel.Public,
+                ShowTotalMiles = true,
+                ShowAirlines = true,
+                ShowCountries = true,
+                ShowMapRoutes = true
+            }));
+
+        preferencesService
+            .Setup(s => s.GetAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<UserPreferencesDto?>.Success(null));
+
+        passportService
+            .Setup(s => s.GetPassportDataAsync(2, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<PassportDataDto>.Success(new PassportDataDto
+            {
+                TotalFlights = 1,
+                TotalMiles = 100
+            }));
+
+        var controller = new PassportController(
+            passportService.Object,
+            userManager.Object,
+            flightService.Object,
+            preferencesService.Object);
+
+        SetAuthenticatedUser(controller, userId: 1, userName: "viewer");
+
+        var result = await controller.Index(2, CancellationToken.None);
+
+        var view = Assert.IsType<ViewResult>(result);
+        var model = Assert.IsType<PassportViewModel>(view.Model);
+
+        Assert.Equal(DistanceUnit.Kilometers, model.DistanceUnit);
+        Assert.Equal("161 km", model.TotalDistanceDisplay);
     }
 
     private static Mock<UserManager<ApplicationUser>> CreateUserManager()

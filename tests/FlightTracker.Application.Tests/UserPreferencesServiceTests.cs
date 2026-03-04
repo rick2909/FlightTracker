@@ -16,6 +16,66 @@ namespace FlightTracker.Application.Tests.Services;
 public class UserPreferencesServiceTests
 {
     [Fact]
+    public async Task GetAsync_ReturnsExistingPreferences_WhenPresent()
+    {
+        var existing = new UserPreferences
+        {
+            Id = 10,
+            UserId = 42,
+            DistanceUnit = DistanceUnit.Kilometers
+        };
+
+        var repository = new Mock<IUserPreferencesRepository>();
+        repository
+            .Setup(r => r.GetByUserIdAsync(42, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var mapper = CreateMapper();
+        var service = new UserPreferencesService(repository.Object, mapper.Object);
+
+        var result = await service.GetAsync(42);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Equal(42, result.Value!.UserId);
+        Assert.Equal(DistanceUnit.Kilometers, result.Value.DistanceUnit);
+    }
+
+    [Fact]
+    public async Task GetAsync_ReturnsNull_WhenPreferencesMissing()
+    {
+        var repository = new Mock<IUserPreferencesRepository>();
+        repository
+            .Setup(r => r.GetByUserIdAsync(7, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserPreferences?)null);
+
+        var mapper = CreateMapper();
+        var service = new UserPreferencesService(repository.Object, mapper.Object);
+
+        var result = await service.GetAsync(7);
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value);
+    }
+
+    [Fact]
+    public async Task GetAsync_ReturnsFailure_WhenRepositoryThrows()
+    {
+        var repository = new Mock<IUserPreferencesRepository>();
+        repository
+            .Setup(r => r.GetByUserIdAsync(9, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("boom"));
+
+        var mapper = CreateMapper();
+        var service = new UserPreferencesService(repository.Object, mapper.Object);
+
+        var result = await service.GetAsync(9);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("user_preferences.get.failed", result.ErrorCode);
+    }
+
+    [Fact]
     public async Task GetOrCreateAsync_ReturnsExistingPreferences_WhenPresent()
     {
         var existing = new UserPreferences

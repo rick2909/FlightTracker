@@ -17,6 +17,36 @@ public class UserPreferencesService(
     private readonly IUserPreferencesRepository _repository = repository;
     private readonly IMapper _mapper = mapper;
 
+    public async Task<Result<UserPreferencesDto?>> GetAsync(
+        int userId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var existing = await _repository.GetByUserIdAsync(
+                userId,
+                cancellationToken);
+
+            if (existing == null)
+            {
+                return Result<UserPreferencesDto?>.Success(null);
+            }
+
+            return Result<UserPreferencesDto?>.Success(
+                _mapper.Map<UserPreferencesDto>(existing));
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            return Result<UserPreferencesDto?>.Failure(
+                ex.Message,
+                "user_preferences.get.failed");
+        }
+    }
+
     public async Task<Result<UserPreferencesDto>> GetOrCreateAsync(int userId, CancellationToken cancellationToken = default)
     {
         try

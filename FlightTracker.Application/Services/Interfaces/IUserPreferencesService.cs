@@ -9,6 +9,11 @@ namespace FlightTracker.Application.Services.Interfaces;
 public interface IUserPreferencesService
 {
     /// <summary>
+    /// Gets user preferences if present; does not create defaults.
+    /// </summary>
+    Task<Result<UserPreferencesDto?>> GetAsync(int userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets user preferences. Creates default preferences if none exist.
     /// </summary>
     Task<Result<UserPreferencesDto>> GetOrCreateAsync(int userId, CancellationToken cancellationToken = default);
