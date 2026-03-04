@@ -23,22 +23,25 @@
 </div>
 
 <div class="ft-passport-details-grid">
-    <div class="details-section">
-        <div class="rz-card">
-            <div class="rz-card-header">
-                <h3><span class="material-icons" aria-hidden="true">apartment</span>Airlines Flown</h3>
-            </div>
-            <div class="rz-card-body">
-                <div id="passport-details-airlines-pie" style="min-height:260px"></div>
-                <ul>
-                    @foreach (var stat in Model.AirlineStats)
-                    {
-                        <li><strong>@stat.AirlineName</strong> (@stat.Count flights)</li>
-                    }
-                </ul>
+    @if (Model.ShowAirlines)
+    {
+        <div class="details-section">
+            <div class="rz-card">
+                <div class="rz-card-header">
+                    <h3><span class="material-icons" aria-hidden="true">apartment</span>Airlines Flown</h3>
+                </div>
+                <div class="rz-card-body">
+                    <div id="passport-details-airlines-pie" style="min-height:260px"></div>
+                    <ul>
+                        @foreach (var stat in Model.AirlineStats)
+                        {
+                            <li><strong>@stat.AirlineName</strong> (@stat.Count flights)</li>
+                        }
+                    </ul>
+                </div>
             </div>
         </div>
-    </div>
+    }
     
     <div class="details-section">
         <div class="rz-card">
@@ -70,7 +73,9 @@
             {
                 <component type="typeof(FlightTracker.Web.Components.UserFlightsList)"
                             render-mode="ServerPrerendered"
-                            param-Flights="Model.UserFlights" />
+                            param-Flights="Model.UserFlights"
+                            param-DateFormat="Model.DateFormat"
+                            param-TimeFormat="Model.TimeFormat" />
             }
             else
             {

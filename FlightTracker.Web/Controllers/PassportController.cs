@@ -6,6 +6,7 @@ using FlightTracker.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using FlightTracker.Domain.Enums;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Web.Formatting;
 
 namespace FlightTracker.Web.Controllers;
 
@@ -15,12 +16,18 @@ public class PassportController : Controller
     private readonly IPassportService _passportService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IUserFlightService _flightService;
+    private readonly IUserPreferencesService _userPreferencesService;
 
-    public PassportController(IPassportService passportService, UserManager<ApplicationUser> userManager, IUserFlightService flightService)
+    public PassportController(
+        IPassportService passportService,
+        UserManager<ApplicationUser> userManager,
+        IUserFlightService flightService,
+        IUserPreferencesService userPreferencesService)
     {
         _passportService = passportService;
         _userManager = userManager;
         _flightService = flightService;
+        _userPreferencesService = userPreferencesService;
     }
     [HttpGet("{id?}")]
     public async Task<IActionResult> Index(int? id, CancellationToken cancellationToken)
@@ -49,7 +56,9 @@ public class PassportController : Controller
             currentUserId = currentId == 0 ? null : currentId;
         }
 
-        var isOtherUser = currentUserId is null || userId!.Value != currentUserId.Value;
+        var isOtherUser =
+            currentUserId is null
+            || userId!.Value != currentUserId.Value;
 
         var displayedUser = await _userManager.FindByIdAsync(userId!.Value.ToString());
 
@@ -69,9 +78,25 @@ public class PassportController : Controller
         //     : (User?.Claims?.FirstOrDefault(c => c.Type == "picture")?.Value
         //        ?? displayedUser.AvatarUrl ?? displayedUser.PictureUrl);
 
-        if (displayedUser is null)
+        var preferencesResult = await _userPreferencesService.GetOrCreateAsync(
+            userId.Value,
+            cancellationToken);
+
+        if (preferencesResult.IsFailure || preferencesResult.Value is null)
         {
-            return NotFound();
+            return Problem(
+                title: "Unable to load user preferences",
+                detail: preferencesResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var preferences = preferencesResult.Value;
+
+        if (isOtherUser
+            && preferences.ProfileVisibility
+                == ProfileVisibilityLevel.Private)
+        {
+            return Forbid();
         }
 
         var dataResult = await _passportService.GetPassportDataAsync(
@@ -93,20 +118,56 @@ public class PassportController : Controller
             UserName = displayName,
             AvatarUrl = avatarUrl,
             TotalFlights = data.TotalFlights,
-            TotalMiles = data.TotalMiles,
-            FavoriteAirline = data.FavoriteAirline,
+            TotalMiles = preferences.ShowTotalMiles ? data.TotalMiles : 0,
+            TotalDistanceDisplay = preferences.ShowTotalMiles
+                ? PreferenceFormatter.FormatDistanceFromMiles(
+                    data.TotalMiles,
+                    preferences.DistanceUnit)
+                : "Hidden",
+            FavoriteAirline = preferences.ShowAirlines
+                ? data.FavoriteAirline
+                : string.Empty,
             FavoriteAirport = data.FavoriteAirport,
             MostFlownAircraftType = data.MostFlownAircraftType,
             FavoriteClass = data.FavoriteClass,
-            LongestFlightMiles = data.LongestFlightMiles,
-            ShortestFlightMiles = data.ShortestFlightMiles,
-            AirlinesVisited = data.AirlinesVisited,
+            LongestFlightMiles = preferences.ShowTotalMiles
+                ? data.LongestFlightMiles
+                : 0,
+            ShortestFlightMiles = preferences.ShowTotalMiles
+                ? data.ShortestFlightMiles
+                : 0,
+            LongestDistanceDisplay = preferences.ShowTotalMiles
+                ? PreferenceFormatter.FormatDistanceFromMiles(
+                    data.LongestFlightMiles,
+                    preferences.DistanceUnit)
+                : "Hidden",
+            ShortestDistanceDisplay = preferences.ShowTotalMiles
+                ? PreferenceFormatter.FormatDistanceFromMiles(
+                    data.ShortestFlightMiles,
+                    preferences.DistanceUnit)
+                : "Hidden",
+            DistanceUnit = preferences.DistanceUnit,
+            DateFormat = preferences.DateFormat,
+            TimeFormat = preferences.TimeFormat,
+            ShowTotalMiles = preferences.ShowTotalMiles,
+            ShowAirlines = preferences.ShowAirlines,
+            ShowCountries = preferences.ShowCountries,
+            ShowMapRoutes = preferences.ShowMapRoutes,
+            AirlinesVisited = preferences.ShowAirlines
+                ? data.AirlinesVisited
+                : new List<string>(),
             AirportsVisited = data.AirportsVisited,
-            CountriesVisitedIso2 = data.CountriesVisitedIso2,
+            CountriesVisitedIso2 = preferences.ShowCountries
+                ? data.CountriesVisitedIso2
+                : new List<string>(),
             FlightsPerYear = data.FlightsPerYear,
-            FlightsByAirline = data.FlightsByAirline,
+            FlightsByAirline = preferences.ShowAirlines
+                ? data.FlightsByAirline
+                : new Dictionary<string, int>(),
             FlightsByAircraftType = data.FlightsByAircraftType,
-            Routes = data.Routes
+            Routes = preferences.ShowMapRoutes
+                ? data.Routes
+                : new List<MapFlightDto>()
         };
         return View(model);
     }
@@ -155,6 +216,27 @@ public class PassportController : Controller
             ? (displayedUser.UserName ?? "Guest User")
             : (User?.Identity?.Name ?? displayedUser.UserName ?? "Guest User");
         string? avatarUrl = null;
+
+        var preferencesResult = await _userPreferencesService.GetOrCreateAsync(
+            userId.Value,
+            cancellationToken);
+
+        if (preferencesResult.IsFailure || preferencesResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to load user preferences",
+                detail: preferencesResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var preferences = preferencesResult.Value;
+
+        if (isOtherUser
+            && preferences.ProfileVisibility
+                == ProfileVisibilityLevel.Private)
+        {
+            return Forbid();
+        }
 
 
         var passportDataResult = await _passportService.GetPassportDataAsync(
@@ -209,9 +291,16 @@ public class PassportController : Controller
         {
             UserName = displayName,
             AvatarUrl = avatarUrl,
-            FlightsByAirline = passportData.FlightsByAirline,
+            DateFormat = preferences.DateFormat,
+            TimeFormat = preferences.TimeFormat,
+            ShowAirlines = preferences.ShowAirlines,
+            FlightsByAirline = preferences.ShowAirlines
+                ? passportData.FlightsByAirline
+                : new Dictionary<string, int>(),
             FlightsByAircraftType = passportData.FlightsByAircraftType,
-            AirlineStats = airlineStats.AirlineStats,
+            AirlineStats = preferences.ShowAirlines
+                ? airlineStats.AirlineStats
+                : new List<AirlineStatsDto>(),
             AircraftTypeStats = airlineStats.AircraftTypeStats,
             UserFlights = pageItems
         };

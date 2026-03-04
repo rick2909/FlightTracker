@@ -16,6 +16,7 @@ public class UserFlightsController(
     IFlightService flightService,
     IFlightLookupService flightLookupService,
     IAircraftPhotoService aircraftPhotoService,
+    IUserPreferencesService userPreferencesService,
     IMapper mapper) : Controller
 {
     [HttpGet("/UserFlights/{userId:int?}")]
@@ -38,6 +39,18 @@ public class UserFlightsController(
             effectiveUserId,
             cancellationToken);
 
+        var preferencesResult = await userPreferencesService.GetOrCreateAsync(
+            effectiveUserId,
+            cancellationToken);
+
+        if (preferencesResult.IsFailure || preferencesResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to load user preferences",
+                detail: preferencesResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
         if (flightsResult.IsFailure || flightsResult.Value is null)
         {
             return Problem(
@@ -45,6 +58,8 @@ public class UserFlightsController(
                 detail: flightsResult.ErrorMessage,
                 statusCode: StatusCodes.Status500InternalServerError);
         }
+
+        SetPreferenceViewData(preferencesResult.Value);
 
         var flights = flightsResult.Value;
         ViewData["RequestedUserId"] = userId;
@@ -78,6 +93,21 @@ public class UserFlightsController(
         {
             return NotFound();
         }
+
+        var preferencesResult = await userPreferencesService.GetOrCreateAsync(
+            dto.UserId,
+            cancellationToken);
+
+        if (preferencesResult.IsFailure || preferencesResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to load user preferences",
+                detail: preferencesResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        SetPreferenceViewData(preferencesResult.Value);
+
         return View(dto);
     }
 
@@ -390,5 +420,12 @@ public class UserFlightsController(
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
+    }
+
+    private void SetPreferenceViewData(UserPreferencesDto preferences)
+    {
+        ViewData["DistanceUnit"] = preferences.DistanceUnit;
+        ViewData["DateFormat"] = preferences.DateFormat;
+        ViewData["TimeFormat"] = preferences.TimeFormat;
     }
 }

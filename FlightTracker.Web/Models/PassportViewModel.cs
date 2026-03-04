@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Domain.Enums;
 
 namespace YourApp.Models;
 
@@ -17,12 +18,24 @@ public class PassportViewModel
     // Aggregate stats
     public int TotalFlights { get; init; }
     public int TotalMiles { get; init; }
+    public string TotalDistanceDisplay { get; init; } = string.Empty;
     public string FavoriteAirline { get; init; } = string.Empty;
     public string FavoriteAirport { get; init; } = string.Empty;
     public string MostFlownAircraftType { get; init; } = string.Empty;
     public string FavoriteClass { get; init; } = string.Empty;
     public int LongestFlightMiles { get; init; }
     public int ShortestFlightMiles { get; init; }
+    public string LongestDistanceDisplay { get; init; } = string.Empty;
+    public string ShortestDistanceDisplay { get; init; } = string.Empty;
+
+    public DistanceUnit DistanceUnit { get; init; } = DistanceUnit.Miles;
+    public DateFormat DateFormat { get; init; } = DateFormat.YearMonthDay;
+    public TimeFormat TimeFormat { get; init; } = TimeFormat.TwentyFourHour;
+
+    public bool ShowTotalMiles { get; init; } = true;
+    public bool ShowAirlines { get; init; } = true;
+    public bool ShowCountries { get; init; } = true;
+    public bool ShowMapRoutes { get; init; } = true;
 
     // Collections
     public List<string> AirlinesVisited { get; init; } = new();
