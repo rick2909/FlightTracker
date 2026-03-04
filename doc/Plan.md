@@ -88,6 +88,35 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [ ] SignalR hub for live flight position updates
 - [ ] Health checks endpoint
 
+### 5A. MVC → Blazor + API Migration (single PR, staged)
+
+- [ ] **Step 1 — API-first boundary (Blazor is first client)**
+  - [ ] Add `FlightTracker.Api` with versioned routes (`/api/v1/...`) and OpenAPI
+  - [ ] Keep Application services as the only orchestration layer; controllers remain thin
+  - [ ] Define stable request/response DTO contracts for Flights, Airports, Passport/Stats, Preferences
+  - [ ] Keep existing MVC endpoints/pages available during transition window (no hard cut yet)
+- [ ] **Step 2 — Move Web to API consumption (feature-by-feature)**
+  - [ ] Add typed API clients in `FlightTracker.Web` (`HttpClient` + interface wrappers)
+  - [ ] Migrate one vertical slice at a time (Airports → Flights → Passport → Settings)
+  - [ ] Add per-slice parity checklist (same validation, errors, and auth behavior as before)
+  - [ ] Gate rollout with a config flag to allow fallback until parity is complete
+- [ ] **Step 3 — Future client readiness (MAUI/other apps)**
+  - [ ] Keep API stateless and client-agnostic; no Web-only assumptions in contracts
+  - [ ] Standardize auth for API clients (Bearer tokens for first-party apps)
+  - [ ] Add explicit API versioning policy and deprecation notes for non-breaking evolution
+  - [ ] Document minimal client SDK surface (or shared typed client package) for reuse
+- [ ] **Step 4 — Third-party frontend support (user-managed access keys)**
+  - [ ] Add Personal Access Token flow in Settings (create, view-once, revoke, expire)
+  - [ ] Store token hashes only (never raw token); show last-used timestamp and label
+  - [ ] Start with scoped permissions (`read:flights`, `write:flights`, `read:stats`)
+  - [ ] Add rate limits + audit log entries for token-based calls
+  - [ ] Reserve stronger option for later: OAuth2/OIDC app registration for external apps
+- [ ] **Step 5 — Complete migration inside one PR**
+  - [ ] Mark MVC controllers/views as deprecated and remove once API + Blazor parity is proven
+  - [ ] Update routing, auth config, and docs to API + Blazor as default architecture
+  - [ ] Add focused tests for API contracts, auth paths, and Blazor API client integration
+  - [ ] Keep PR scope controlled: no new business features, migration-only changes
+
 ## 6. Presentation – Web (Blazor Server)
 
 - [x] Create `FlightTracker.Web` project (WASM)
