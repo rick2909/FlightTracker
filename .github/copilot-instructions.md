@@ -174,6 +174,8 @@ Presentation/
 - Domain: pure unit tests (no infrastructure).
 - Application: service/use case tests with mocked repositories.
 - Infrastructure: integration tests (e.g., SQLite in-memory) for EF & external clients.
+- Add new tests only when a service has branch-heavy logic and no direct tests yet.
+- Prefer a small set of high-signal tests over broad low-value coverage.
 - Avoid brittle time-based tests; use deterministic base times.
 - Inject clock abstraction when time-sensitive logic emerges.
 
