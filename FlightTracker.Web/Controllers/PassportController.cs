@@ -6,32 +6,30 @@ using FlightTracker.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using FlightTracker.Domain.Enums;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Web.Formatting;
+using Microsoft.Extensions.Logging;
 
 namespace FlightTracker.Web.Controllers;
 
 [Route("Passport")]
-public class PassportController : Controller
+public class PassportController(
+    IPassportService passportService,
+    UserManager<ApplicationUser> userManager,
+    IUserFlightService flightService,
+    IUserPreferencesService userPreferencesService,
+    ILogger<PassportController> logger) : Controller
 {
-    private readonly IPassportService _passportService;
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IUserFlightService _flightService;
+    private readonly IPassportService _passportService = passportService;
+    private readonly UserManager<ApplicationUser> _userManager = userManager;
+    private readonly IUserFlightService _flightService = flightService;
+    private readonly IUserPreferencesService _userPreferencesService = userPreferencesService;
+    private readonly ILogger<PassportController> _logger = logger;
 
-    public PassportController(IPassportService passportService, UserManager<ApplicationUser> userManager, IUserFlightService flightService)
-    {
-        _passportService = passportService;
-        _userManager = userManager;
-        _flightService = flightService;
-    }
     [HttpGet("{id?}")]
     public async Task<IActionResult> Index(int? id, CancellationToken cancellationToken)
     {
-        // TODO make this an optional parameter that a user can block this and or later only can share it (temporary with an outher user).
-        // Choose target user id:
-        // - If id provided: use it.
-        // - Else if authenticated: use current user id.
-        // - Else: redirect back (or Dashboard) and render nothing.
         int? userId = id;
-        int? currentUserId = null;
+        var currentUserId = 0;
 
         if (userId is null)
         {
@@ -46,10 +44,10 @@ public class PassportController : Controller
         else
         {
             TryGetCurrentUserId(out var currentId, out _);
-            currentUserId = currentId == 0 ? null : currentId;
+            currentUserId = currentId == 0 ? 0 : currentId;
         }
 
-        var isOtherUser = currentUserId is null || userId!.Value != currentUserId.Value;
+        var isOtherUser = currentUserId == 0 || userId!.Value != currentUserId;
 
         var displayedUser = await _userManager.FindByIdAsync(userId!.Value.ToString());
 
@@ -69,10 +67,28 @@ public class PassportController : Controller
         //     : (User?.Claims?.FirstOrDefault(c => c.Type == "picture")?.Value
         //        ?? displayedUser.AvatarUrl ?? displayedUser.PictureUrl);
 
-        if (displayedUser is null)
+        var shownPreferencesResult = await _userPreferencesService.GetOrCreateAsync(
+            userId.Value,
+            cancellationToken);
+
+        if (shownPreferencesResult.IsFailure || shownPreferencesResult.Value is null)
         {
-            return NotFound();
+            return Problem(
+                title: "Unable to load user preferences",
+                detail: shownPreferencesResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
         }
+
+        var shownPreferences = shownPreferencesResult.Value;
+
+        if (isOtherUser && shownPreferences.ProfileVisibility == ProfileVisibilityLevel.Private)
+        {
+            return Forbid();
+        }
+
+        var viewerPreferences = await ResolveViewerPreferencesAsync(
+            currentUserId,
+            cancellationToken);
 
         var dataResult = await _passportService.GetPassportDataAsync(
             userId!.Value,
@@ -93,20 +109,56 @@ public class PassportController : Controller
             UserName = displayName,
             AvatarUrl = avatarUrl,
             TotalFlights = data.TotalFlights,
-            TotalMiles = data.TotalMiles,
-            FavoriteAirline = data.FavoriteAirline,
+            TotalMiles = shownPreferences.ShowTotalMiles ? data.TotalMiles : 0,
+            TotalDistanceDisplay = shownPreferences.ShowTotalMiles
+                ? PreferenceFormatter.FormatDistanceFromMiles(
+                    data.TotalMiles,
+                    viewerPreferences.DistanceUnit)
+                : "Hidden",
+            FavoriteAirline = shownPreferences.ShowAirlines
+                ? data.FavoriteAirline
+                : string.Empty,
             FavoriteAirport = data.FavoriteAirport,
             MostFlownAircraftType = data.MostFlownAircraftType,
             FavoriteClass = data.FavoriteClass,
-            LongestFlightMiles = data.LongestFlightMiles,
-            ShortestFlightMiles = data.ShortestFlightMiles,
-            AirlinesVisited = data.AirlinesVisited,
+            LongestFlightMiles = shownPreferences.ShowTotalMiles
+                ? data.LongestFlightMiles
+                : 0,
+            ShortestFlightMiles = shownPreferences.ShowTotalMiles
+                ? data.ShortestFlightMiles
+                : 0,
+            LongestDistanceDisplay = shownPreferences.ShowTotalMiles
+                ? PreferenceFormatter.FormatDistanceFromMiles(
+                    data.LongestFlightMiles,
+                    viewerPreferences.DistanceUnit)
+                : "Hidden",
+            ShortestDistanceDisplay = shownPreferences.ShowTotalMiles
+                ? PreferenceFormatter.FormatDistanceFromMiles(
+                    data.ShortestFlightMiles,
+                    viewerPreferences.DistanceUnit)
+                : "Hidden",
+            DistanceUnit = viewerPreferences.DistanceUnit,
+            DateFormat = viewerPreferences.DateFormat,
+            TimeFormat = viewerPreferences.TimeFormat,
+            ShowTotalMiles = shownPreferences.ShowTotalMiles,
+            ShowAirlines = shownPreferences.ShowAirlines,
+            ShowCountries = shownPreferences.ShowCountries,
+            ShowMapRoutes = shownPreferences.ShowMapRoutes,
+            AirlinesVisited = shownPreferences.ShowAirlines
+                ? data.AirlinesVisited
+                : new List<string>(),
             AirportsVisited = data.AirportsVisited,
-            CountriesVisitedIso2 = data.CountriesVisitedIso2,
+            CountriesVisitedIso2 = shownPreferences.ShowCountries
+                ? data.CountriesVisitedIso2
+                : new List<string>(),
             FlightsPerYear = data.FlightsPerYear,
-            FlightsByAirline = data.FlightsByAirline,
+            FlightsByAirline = shownPreferences.ShowAirlines
+                ? data.FlightsByAirline
+                : new Dictionary<string, int>(),
             FlightsByAircraftType = data.FlightsByAircraftType,
-            Routes = data.Routes
+            Routes = shownPreferences.ShowMapRoutes
+                ? data.Routes
+                : new List<MapFlightDto>()
         };
         return View(model);
     }
@@ -126,7 +178,7 @@ public class PassportController : Controller
     {
         // Resolve user (prefer route id, else current user)
         int? userId = id;
-        int? currentUserId = null;
+        var currentUserId = 0;
 
         if (userId is null)
         {
@@ -141,7 +193,7 @@ public class PassportController : Controller
         else
         {
             TryGetCurrentUserId(out var currentId, out _);
-            currentUserId = currentId == 0 ? null : currentId;
+            currentUserId = currentId == 0 ? 0 : currentId;
         }
 
         var displayedUser = await _userManager.FindByIdAsync(userId.Value.ToString());
@@ -150,11 +202,36 @@ public class PassportController : Controller
             return NotFound();
         }
 
-        var isOtherUser = currentUserId is null || userId.Value != currentUserId.Value;
+        var isOtherUser = currentUserId == 0 || userId.Value != currentUserId;
         var displayName = isOtherUser
             ? (displayedUser.UserName ?? "Guest User")
             : (User?.Identity?.Name ?? displayedUser.UserName ?? "Guest User");
         string? avatarUrl = null;
+
+        var shownPreferencesResult = await _userPreferencesService.GetOrCreateAsync(
+            userId.Value,
+            cancellationToken);
+
+        if (shownPreferencesResult.IsFailure || shownPreferencesResult.Value is null)
+        {
+            return Problem(
+                title: "Unable to load user preferences",
+                detail: shownPreferencesResult.ErrorMessage,
+                statusCode: StatusCodes.Status500InternalServerError);
+        }
+
+        var shownPreferences = shownPreferencesResult.Value;
+
+        if (isOtherUser
+            && shownPreferences.ProfileVisibility
+                == ProfileVisibilityLevel.Private)
+        {
+            return Forbid();
+        }
+
+        var viewerPreferences = await ResolveViewerPreferencesAsync(
+            currentUserId,
+            cancellationToken);
 
 
         var passportDataResult = await _passportService.GetPassportDataAsync(
@@ -209,9 +286,16 @@ public class PassportController : Controller
         {
             UserName = displayName,
             AvatarUrl = avatarUrl,
-            FlightsByAirline = passportData.FlightsByAirline,
+            DateFormat = viewerPreferences.DateFormat,
+            TimeFormat = viewerPreferences.TimeFormat,
+            ShowAirlines = shownPreferences.ShowAirlines,
+            FlightsByAirline = shownPreferences.ShowAirlines
+                ? passportData.FlightsByAirline
+                : new Dictionary<string, int>(),
             FlightsByAircraftType = passportData.FlightsByAircraftType,
-            AirlineStats = airlineStats.AirlineStats,
+            AirlineStats = shownPreferences.ShowAirlines
+                ? airlineStats.AirlineStats
+                : new List<AirlineStatsDto>(),
             AircraftTypeStats = airlineStats.AircraftTypeStats,
             UserFlights = pageItems
         };
@@ -293,5 +377,40 @@ public class PassportController : Controller
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
+    }
+
+    private async Task<UserPreferencesDto> ResolveViewerPreferencesAsync(int currentUserId, CancellationToken cancellationToken)
+    {
+        if (currentUserId <= 0)
+        {
+            _logger.LogDebug(
+                "Viewer is anonymous. Using default viewer preferences.");
+            return CreateDefaultViewerPreferences();
+        }
+
+        var viewerPreferencesResult = await _userPreferencesService.GetAsync(currentUserId, cancellationToken);
+
+        if (viewerPreferencesResult.IsFailure
+            || viewerPreferencesResult.Value is null)
+        {
+            _logger.LogWarning(
+                "Viewer preferences unavailable for user {UserId}. "
+                + "Using default viewer preferences. Error: {Error}",
+                currentUserId,
+                viewerPreferencesResult.ErrorMessage);
+            return CreateDefaultViewerPreferences();
+        }
+
+        return viewerPreferencesResult.Value;
+    }
+
+    private static UserPreferencesDto CreateDefaultViewerPreferences()
+    {
+        return new UserPreferencesDto
+        {
+            DistanceUnit = DistanceUnit.Kilometers,
+            DateFormat = DateFormat.DayMonthYear,
+            TimeFormat = TimeFormat.TwentyFourHour
+        };
     }
 }

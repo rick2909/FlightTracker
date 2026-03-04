@@ -155,6 +155,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 ## 10. Testing Strategy
 
 - [x] Add test projects: Domain.Tests, Application.Tests, Infrastructure.Tests
+- [x] Add focused Web tests for Passport privacy/masking and formatter behavior
 - [ ] Domain unit tests (Flight scheduling, status transitions once added)
 - [ ] Application service tests (mock repositories/providers)
 - [ ] Infrastructure integration tests (SQLite in-memory enforcing FKs)
@@ -193,9 +194,9 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
   - [x] Implement repository and service layers
   - [x] Add UI controls in Settings → Preferences tab
   - [x] Migrate from cookie-based to database storage
-  - [ ] Create helper services/formatters to use preferences throughout app
-  - [ ] Update Passport page to display distances in user's preferred unit
-  - [ ] Apply date/time formatting preferences in flight details
+  - [x] Create helper services/formatters to use preferences throughout app
+  - [x] Update Passport page to display distances in user's preferred unit
+  - [x] Apply date/time formatting preferences in flight details
 - [ ] **Privacy & Sharing Settings**
   - [x] Enhance ProfileVisibility with granular levels (Public/Private)
   - [x] Add StatsVisibility flags (show/hide total miles, airlines, countries)
@@ -204,8 +205,8 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
   - [x] Create ProfileVisibilityLevel enum
   - [x] Add privacy fields to UserPreferences entity and database
   - [x] Update UI with toggle switches in Settings → Preferences tab
-  - [ ] Implement access control logic for public profile views
-  - [ ] Apply privacy settings when rendering Passport page
+  - [x] Implement access control logic for public profile views
+  - [x] Apply privacy settings when rendering Passport page
 - [ ] **Notification Preferences** (Deferred)
   - [ ] Email notifications toggle
   - [ ] Flight update alerts preference

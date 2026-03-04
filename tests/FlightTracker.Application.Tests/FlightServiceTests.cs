@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using FlightTracker.Application.Repositories.Interfaces;
 using FlightTracker.Application.Services.Implementation;
 using FlightTracker.Domain.Entities;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -28,7 +29,8 @@ public class FlightServiceTests
         repo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(flights);
 
-        var service = new FlightService(repo.Object);
+        var logger = new Mock<ILogger<FlightService>>();
+        var service = new FlightService(repo.Object, logger.Object);
 
         var result = await service.GetUpcomingFlightsAsync(fromUtc, TimeSpan.FromHours(4));
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Domain.Enums;
 
 namespace YourApp.Models;
 
@@ -10,6 +11,9 @@ public class PassportDetailsViewModel
 {
     public string UserName { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; }
+    public DateFormat DateFormat { get; set; } = DateFormat.YearMonthDay;
+    public TimeFormat TimeFormat { get; set; } = TimeFormat.TwentyFourHour;
+    public bool ShowAirlines { get; set; } = true;
     public Dictionary<string, int> FlightsByAirline { get; set; } = new();
     public Dictionary<string, int> FlightsByAircraftType { get; set; } = new();
     public List<AirlineStatsDto> AirlineStats { get; set; } = new();

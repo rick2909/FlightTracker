@@ -1,6 +1,12 @@
 @model IEnumerable<FlightTracker.Application.Dtos.UserFlightDto>
 @{
     int? requestedUserId = ViewData["RequestedUserId"] as int?;
+    var dateFormat = ViewData["DateFormat"] is FlightTracker.Domain.Enums.DateFormat df
+        ? df
+        : FlightTracker.Domain.Enums.DateFormat.YearMonthDay;
+    var timeFormat = ViewData["TimeFormat"] is FlightTracker.Domain.Enums.TimeFormat tf
+        ? tf
+        : FlightTracker.Domain.Enums.TimeFormat.TwentyFourHour;
     string title = requestedUserId.HasValue ? $"User #{requestedUserId.Value} Flights" : "My Flights";
 
     ViewData["Title"] = title;
@@ -35,7 +41,9 @@
                 {
                     <component type="typeof(FlightTracker.Web.Components.UserFlightsList)"
                                 render-mode="ServerPrerendered"
-                                param-Flights="Model" />
+                                param-Flights="Model"
+                                param-DateFormat="dateFormat"
+                                param-TimeFormat="timeFormat" />
                 }
                 else
                 {
