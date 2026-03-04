@@ -12,6 +12,9 @@ using FlightTracker.Web.Controllers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using YourApp.Models;
@@ -26,6 +29,7 @@ public class PassportControllerTests
         var passportService = new Mock<IPassportService>(MockBehavior.Strict);
         var flightService = new Mock<IUserFlightService>(MockBehavior.Strict);
         var preferencesService = new Mock<IUserPreferencesService>(MockBehavior.Strict);
+        var logger = new Mock<ILogger<PassportController>>();
         var userManager = CreateUserManager();
 
         userManager
@@ -56,7 +60,8 @@ public class PassportControllerTests
             passportService.Object,
             userManager.Object,
             flightService.Object,
-            preferencesService.Object);
+            preferencesService.Object,
+            logger.Object);
 
         SetAuthenticatedUser(controller, userId: 1, userName: "viewer");
 
@@ -74,6 +79,7 @@ public class PassportControllerTests
         var passportService = new Mock<IPassportService>();
         var flightService = new Mock<IUserFlightService>(MockBehavior.Strict);
         var preferencesService = new Mock<IUserPreferencesService>();
+        var logger = new Mock<ILogger<PassportController>>();
         var userManager = CreateUserManager();
 
         userManager
@@ -144,7 +150,8 @@ public class PassportControllerTests
             passportService.Object,
             userManager.Object,
             flightService.Object,
-            preferencesService.Object);
+            preferencesService.Object,
+            logger.Object);
 
         SetAuthenticatedUser(controller, userId: 10, userName: "owner");
 
@@ -177,6 +184,7 @@ public class PassportControllerTests
         var passportService = new Mock<IPassportService>();
         var flightService = new Mock<IUserFlightService>(MockBehavior.Strict);
         var preferencesService = new Mock<IUserPreferencesService>();
+        var logger = new Mock<ILogger<PassportController>>();
         var userManager = CreateUserManager();
 
         userManager
@@ -211,7 +219,8 @@ public class PassportControllerTests
             passportService.Object,
             userManager.Object,
             flightService.Object,
-            preferencesService.Object);
+            preferencesService.Object,
+            logger.Object);
 
         var result = await controller.Index(99, CancellationToken.None);
 
@@ -228,6 +237,7 @@ public class PassportControllerTests
         var passportService = new Mock<IPassportService>();
         var flightService = new Mock<IUserFlightService>(MockBehavior.Strict);
         var preferencesService = new Mock<IUserPreferencesService>();
+        var logger = new Mock<ILogger<PassportController>>();
         var userManager = CreateUserManager();
 
         userManager
@@ -266,7 +276,8 @@ public class PassportControllerTests
             passportService.Object,
             userManager.Object,
             flightService.Object,
-            preferencesService.Object);
+            preferencesService.Object,
+            logger.Object);
 
         SetAuthenticatedUser(controller, userId: 1, userName: "viewer");
 
@@ -282,17 +293,25 @@ public class PassportControllerTests
     private static Mock<UserManager<ApplicationUser>> CreateUserManager()
     {
         var store = new Mock<IUserStore<ApplicationUser>>();
+        var options = Options.Create(new IdentityOptions());
+        var passwordHasher = new Mock<IPasswordHasher<ApplicationUser>>();
+        var userValidators = new List<IUserValidator<ApplicationUser>>();
+        var passwordValidators = new List<IPasswordValidator<ApplicationUser>>();
+        var normalizer = new UpperInvariantLookupNormalizer();
+        var errorDescriber = new IdentityErrorDescriber();
+        var serviceProvider = new Mock<IServiceProvider>();
+        var logger = NullLogger<UserManager<ApplicationUser>>.Instance;
 
         return new Mock<UserManager<ApplicationUser>>(
             store.Object,
-            null!,
-            null!,
-            null!,
-            null!,
-            null!,
-            null!,
-            null!,
-            null!);
+            options,
+            passwordHasher.Object,
+            userValidators,
+            passwordValidators,
+            normalizer,
+            errorDescriber,
+            serviceProvider.Object,
+            logger);
     }
 
     private static void SetAuthenticatedUser(
