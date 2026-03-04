@@ -10,13 +10,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Web", "Flight
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Application.Tests", "Tests\FlightTracker.Application.Tests\FlightTracker.Application.Tests.csproj", "{3FF75417-3B20-4212-911A-16E2C41CA9AC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Application.Tests", "tests\FlightTracker.Application.Tests\FlightTracker.Application.Tests.csproj", "{3FF75417-3B20-4212-911A-16E2C41CA9AC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Domain.Tests", "Tests\FlightTracker.Domain.Tests\FlightTracker.Domain.Tests.csproj", "{99A6D037-7ECE-4BAC-A7D0-DCD38D698119}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Domain.Tests", "tests\FlightTracker.Domain.Tests\FlightTracker.Domain.Tests.csproj", "{99A6D037-7ECE-4BAC-A7D0-DCD38D698119}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Infrastructure.Tests", "Tests\FlightTracker.Infrastructure.Tests\FlightTracker.Infrastructure.Tests.csproj", "{B4B250A8-5673-4BF6-9B2A-F9F63CAC8613}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Infrastructure.Tests", "tests\FlightTracker.Infrastructure.Tests\FlightTracker.Infrastructure.Tests.csproj", "{B4B250A8-5673-4BF6-9B2A-F9F63CAC8613}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Web.Tests", "Tests\FlightTracker.Web.Tests\FlightTracker.Web.Tests.csproj", "{32E90AAF-CC39-4F0B-9F30-F5FFBBD65198}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightTracker.Web.Tests", "tests\FlightTracker.Web.Tests\FlightTracker.Web.Tests.csproj", "{32E90AAF-CC39-4F0B-9F30-F5FFBBD65198}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
