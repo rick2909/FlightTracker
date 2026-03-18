@@ -90,6 +90,8 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 ### 5A. MVC → Blazor + API Migration (single PR, staged)
 
+- Goal: complete API + Blazor migration first. MAUI starts only after Step 5 is done.
+
 - [ ] **Step 1 — API-first boundary (Blazor is first client)**
   - [ ] Add `FlightTracker.Api` with versioned routes (`/api/v1/...`) and OpenAPI
   - [ ] Keep Application services as the only orchestration layer; controllers remain thin
@@ -117,9 +119,24 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
   - [ ] Add focused tests for API contracts, auth paths, and Blazor API client integration
   - [ ] Keep PR scope controlled: no new business features, migration-only changes
 
+### 5B. Prompt-driven execution order (use this in future chats)
+
+- [ ] **Run Order (strict):** 5A Step 1 → Step 2 → Step 3 → Step 4 → Step 5 → then Section 7 (MAUI)
+- [ ] **Per-step completion template (apply to every step before moving on):**
+  - [ ] Scope locked to one step only
+  - [ ] Files changed listed
+  - [ ] Build/tests run for touched area
+  - [ ] Plan checkboxes updated
+  - [ ] Next step proposed
+- [ ] **Reusable prompt format:**
+  - [ ] "Using `doc/Plan.md`, implement only `<section + step>`. Respect Clean Architecture boundaries, update checkboxes, run relevant tests/build, and stop after summarizing changed files and next step."
+- [ ] **Stop conditions for each chat step:**
+  - [ ] Step work is complete and verified
+  - [ ] Or blocker is documented with 1 recommended workaround
+
 ## 6. Presentation – Web (Blazor Server)
 
-- [x] Create `FlightTracker.Web` project (WASM)
+- [x] Create `FlightTracker.Web` project (Blazor Server)
 - [x] Integrate Radzen components (only UI layer)
 - [x] Choose charting library: ApexCharts
 - [ ] *Integrate ApexCharts for stats (passport charts)*
@@ -151,9 +168,15 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 ## 7. Presentation – Desktop & Mobile (Future)
 
-- [ ] Create MAUI Blazor Hybrid project (Deferred)
-- [ ] Create MAUI Mobile project (shared Razor components) (Deferred)
-- [ ] Platform-specific packaging / icons (Deferred)
+- [ ] Start only after 5A Step 5 is complete
+- [ ] Create native `FlightTracker.Maui` app (Android, iOS, Windows)
+- [ ] Use native UI (XAML/MVVM) while reusing shared API contracts/client logic
+- [ ] Add shared client package for API DTOs + typed HTTP clients + auth/session handling
+- [ ] Implement OAuth2/OIDC (PKCE) for MAUI first-party auth
+- [ ] Add offline sync foundation (local store, queue, retry, conflict policy)
+- [ ] Build parity slices in order: Airports → Flights → Passport → Settings
+- [ ] Keep MAUI scope separate from migration PR (follow-up PR series)
+- [ ] Platform-specific packaging / capabilities checklist
 
 ## 8. External Data & Realtime
 
@@ -296,10 +319,11 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 ## Immediate Next Suggested Focus
 
-1. Optional: Add Result wrapper for APIs; improve error surface in Presentation.
-2. Provider hardening: ensure config key set via appsettings; keep Polly retry/backoff and consider a simple enable/disable flag for live providers.
-3. Expand Application tests: add broader cancellation-token propagation coverage and additional stats aggregation scenarios.
-4. Implement preference-aware formatting helpers and apply them in Passport/Flight details (distance + date/time).
-5. Start API project scaffolding (`FlightTracker.Api`) with baseline DI + controllers.
+1. Execute **5A Step 1** only: scaffold `FlightTracker.Api` with versioned routes and OpenAPI.
+2. Execute **5A Step 2** only: connect `FlightTracker.Web` via typed API clients for one vertical slice first.
+3. Execute **5A Step 3** only: harden API contracts/versioning for future MAUI and other clients.
+4. Execute **5A Step 4** only: add user-managed Personal Access Tokens (secure hash storage + scopes + revoke).
+5. Execute **5A Step 5** only: finalize migration, deprecate MVC, and keep PR migration-only.
+6. After 5A is fully done, start Section 7 (`FlightTracker.Maui`) as a separate follow-up track.
 
 Keep this file updated; prune completed groups to maintain clarity.
