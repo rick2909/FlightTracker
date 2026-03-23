@@ -1,9 +1,8 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Mvc;
-using FlightTracker.Application.Services.Interfaces;
-using FlightTracker.Application.Repositories.Interfaces;
 using FlightTracker.Domain.Entities;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Web.Services.Interfaces;
 
 namespace FlightTracker.Web.Controllers.Web;
 
@@ -12,12 +11,10 @@ namespace FlightTracker.Web.Controllers.Web;
 /// </summary>
 [Route("[controller]")]
 public class AirportsController(ILogger<AirportsController> logger,
-    IAirportService airportService,
-    IAirportOverviewService airportOverviewService) : Controller
+    IAirportsSliceGateway airportsSliceGateway) : Controller
 {
     private readonly ILogger<AirportsController> _logger = logger;
-    private readonly IAirportService _airportService = airportService;
-    private readonly IAirportOverviewService _airportOverviewService = airportOverviewService;
+    private readonly IAirportsSliceGateway _airportsSliceGateway = airportsSliceGateway;
 
     [HttpGet("")]
     public IActionResult Index()
@@ -40,7 +37,7 @@ public class AirportsController(ILogger<AirportsController> logger,
                 return Json(Array.Empty<object>());
             }
 
-            var airportsResult = await _airportService.GetAllAirportsAsync(
+            var airportsResult = await _airportsSliceGateway.GetAllAirportsAsync(
                 HttpContext.RequestAborted);
 
             if (airportsResult.IsFailure || airportsResult.Value is null)
@@ -118,37 +115,19 @@ public class AirportsController(ILogger<AirportsController> logger,
     {
         try
         {
-            var airportsResult = await _airportService.GetAllAirportsAsync(
-                HttpContext.RequestAborted);
-
-            if (airportsResult.IsFailure || airportsResult.Value is null)
-            {
-                return StatusCode(500, new
-                {
-                    error = airportsResult.ErrorMessage
-                        ?? "Failed to load airports"
-                });
-            }
-
-            var airports = airportsResult.Value;
-            var airport = airports.FirstOrDefault(a => a.Id == id);
-            if (airport is null)
-            {
-                return NotFound(new { error = "Airport not found" });
-            }
-
-            // Prefer IATA code for search, else ICAO, else name as fallback
-            var code = airport.IataCode ?? airport.IcaoCode ?? airport.Name;
-
-            var result = await _airportOverviewService.GetFlightsAsync(
-                code!,
+            var result = await _airportsSliceGateway.GetFlightsAsync(
+                id,
                 dir,
                 live,
-                100,
                 HttpContext.RequestAborted);
 
             if (result.IsFailure || result.Value is null)
             {
+                if (string.Equals(result.ErrorCode, "airport.not_found", StringComparison.OrdinalIgnoreCase))
+                {
+                    return NotFound(new { error = result.ErrorMessage ?? "Airport not found" });
+                }
+
                 return StatusCode(500, new
                 {
                     error = result.ErrorMessage

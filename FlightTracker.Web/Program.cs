@@ -17,11 +17,17 @@ using Polly.Contrib.WaitAndRetry;
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication;
+using FlightTracker.Web.Configuration;
+using FlightTracker.Web.Services.Interfaces;
+using FlightTracker.Web.Services.Implementation;
+using FlightTracker.Web.Api.Clients;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection(AuthSettings.SectionName));
+builder.Services.Configure<FlightTrackerApiOptions>(
+    builder.Configuration.GetSection(FlightTrackerApiOptions.SectionName));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddServerSideBlazor().AddCircuitOptions(o =>
 {
@@ -56,6 +62,15 @@ builder.Services.AddScoped<IFlightStatsService, FlightStatsService>();
 builder.Services.AddScoped<IPassportService, PassportService>();
 builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
 builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
+builder.Services.AddScoped<IAirportsSliceGateway, AirportsSliceGateway>();
+builder.Services.AddHttpClient<IAirportsApiClient, AirportsApiClient>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+    {
+        client.BaseAddress = baseUri;
+    }
+});
 builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
 {
     c.Timeout = TimeSpan.FromSeconds(3);

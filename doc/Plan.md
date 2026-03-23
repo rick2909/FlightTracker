@@ -98,10 +98,10 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
   - [x] Define stable request/response DTO contracts for Flights, Airports, Passport/Stats, Preferences
   - [ ] Keep existing MVC endpoints/pages available during transition window (no hard cut yet)
 - [ ] **Step 2 — Move Web to API consumption (feature-by-feature)**
-  - [ ] Add typed API clients in `FlightTracker.Web` (`HttpClient` + interface wrappers)
-  - [ ] Migrate one vertical slice at a time (Airports → Flights → Passport → Settings)
-  - [ ] Add per-slice parity checklist (same validation, errors, and auth behavior as before)
-  - [ ] Gate rollout with a config flag to allow fallback until parity is complete
+  - [x] Add typed API clients in `FlightTracker.Web` (`HttpClient` + interface wrappers)
+  - [ ] Migrate one vertical slice at a time (Airports completed; Flights → Passport → Settings pending)
+  - [x] Add per-slice parity checklist (same validation, errors, and auth behavior as before)
+  - [x] Gate rollout with a config flag to allow fallback until parity is complete
 - [ ] **Step 3 — Future client readiness (MAUI/other apps)**
   - [ ] Keep API stateless and client-agnostic; no Web-only assumptions in contracts
   - [ ] Standardize auth for API clients (Bearer tokens for first-party apps)
