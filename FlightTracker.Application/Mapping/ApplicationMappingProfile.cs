@@ -44,5 +44,7 @@ public class ApplicationMappingProfile : Profile
                 opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedAtUtc,
                 opt => opt.Ignore());
+
+        CreateMap<PersonalAccessToken, PersonalAccessTokenDto>();
     }
 }

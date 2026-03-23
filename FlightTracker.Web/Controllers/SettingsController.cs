@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Authorization;
 using System.Text.RegularExpressions;
 using AutoMapper;
 using FlightTracker.Application.Dtos;
+using FlightTracker.Domain.Enums;
+using FlightTracker.Web.Services.Interfaces;
 
 namespace FlightTracker.Web.Controllers;
 
@@ -22,6 +24,7 @@ public class SettingsController : Controller
     private readonly IUserFlightService _userFlightService;
     private readonly IUsernameValidationService _usernameValidationService;
     private readonly IUserPreferencesService _userPreferencesService;
+    private readonly IPersonalAccessTokensApiClient _personalAccessTokensApiClient;
     private readonly IMapper _mapper;
 
     public SettingsController(
@@ -30,6 +33,7 @@ public class SettingsController : Controller
         IUserFlightService userFlightService,
         IUsernameValidationService usernameValidationService,
         IUserPreferencesService userPreferencesService,
+        IPersonalAccessTokensApiClient personalAccessTokensApiClient,
         IMapper mapper)
     {
         _userManager = userManager;
@@ -37,6 +41,7 @@ public class SettingsController : Controller
         _userFlightService = userFlightService;
         _usernameValidationService = usernameValidationService;
         _userPreferencesService = userPreferencesService;
+        _personalAccessTokensApiClient = personalAccessTokensApiClient;
         _mapper = mapper;
     }
 
@@ -87,6 +92,11 @@ public class SettingsController : Controller
         vm.Preferences.ShowCountries = preferencesValue.ShowCountries;
         vm.Preferences.ShowMapRoutes = preferencesValue.ShowMapRoutes;
         vm.Preferences.EnableActivityFeed = preferencesValue.EnableActivityFeed;
+
+        var accessTokens = await _personalAccessTokensApiClient.ListAsync(userId);
+        vm.PersonalAccessTokens = accessTokens
+            .Select(MapAccessToken)
+            .ToList();
         
         ViewData["Title"] = "Settings";
         return View(vm);
@@ -287,6 +297,133 @@ public class SettingsController : Controller
 
         TempData["Status"] = "Preferences saved";
         return Json(new { success = true });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreatePersonalAccessToken(
+        [FromForm] CreatePersonalAccessTokenViewModel model,
+        CancellationToken cancellationToken = default)
+    {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+
+            return Json(new { success = false, errors });
+        }
+
+        if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+        {
+            return challengeResult!;
+        }
+
+        var scopes = PersonalAccessTokenScopes.None;
+        if (model.ScopeReadFlights)
+        {
+            scopes |= PersonalAccessTokenScopes.ReadFlights;
+        }
+
+        if (model.ScopeWriteFlights)
+        {
+            scopes |= PersonalAccessTokenScopes.WriteFlights;
+        }
+
+        if (model.ScopeReadStats)
+        {
+            scopes |= PersonalAccessTokenScopes.ReadStats;
+        }
+
+        if (scopes == PersonalAccessTokenScopes.None)
+        {
+            return Json(new
+            {
+                success = false,
+                errors = new[] { "Select at least one token scope." }
+            });
+        }
+
+        try
+        {
+            var created = await _personalAccessTokensApiClient.CreateAsync(
+                userId,
+                model.Label,
+                scopes,
+                DateTime.UtcNow.AddDays(model.ExpiresInDays),
+                cancellationToken);
+
+            if (created is null)
+            {
+                return Json(new { success = false, errors = new[] { "Unable to create token." } });
+            }
+
+            return Json(new
+            {
+                success = true,
+                token = created.PlainTextToken,
+                metadata = MapAccessToken(created.Token)
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, errors = new[] { ex.Message } });
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ListPersonalAccessTokens(
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+        {
+            return challengeResult!;
+        }
+
+        try
+        {
+            var tokens = await _personalAccessTokensApiClient.ListAsync(
+                userId,
+                cancellationToken);
+
+            return Json(new
+            {
+                success = true,
+                items = tokens.Select(MapAccessToken)
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, errors = new[] { ex.Message } });
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RevokePersonalAccessToken(
+        [FromForm] int tokenId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetCurrentUserId(out var userId, out var challengeResult))
+        {
+            return challengeResult!;
+        }
+
+        try
+        {
+            var revoked = await _personalAccessTokensApiClient.RevokeAsync(
+                userId,
+                tokenId,
+                cancellationToken);
+
+            return Json(new { success = revoked });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, errors = new[] { ex.Message } });
+        }
     }
 
     private async Task<IActionResult> ReturnSettingsWithErrors()
@@ -515,5 +652,20 @@ public class SettingsController : Controller
         }
 
         return true;
+    }
+
+    private static PersonalAccessTokenViewModel MapAccessToken(
+        PersonalAccessTokenDto token)
+    {
+        return new PersonalAccessTokenViewModel
+        {
+            Id = token.Id,
+            Label = token.Label,
+            TokenPrefix = token.TokenPrefix,
+            Scopes = token.Scopes,
+            ExpiresAtUtc = token.ExpiresAtUtc,
+            LastUsedAtUtc = token.LastUsedAtUtc,
+            RevokedAtUtc = token.RevokedAtUtc
+        };
     }
 }

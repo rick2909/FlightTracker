@@ -107,12 +107,13 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
   - [x] Standardize auth for API clients (Bearer tokens for first-party apps)
   - [x] Add explicit API versioning policy and deprecation notes for non-breaking evolution
   - [x] Document minimal client SDK surface (or shared typed client package) for reuse
-- [ ] **Step 4 — Third-party frontend support (user-managed access keys)**
-  - [ ] Add Personal Access Token flow in Settings (create, view-once, revoke, expire)
-  - [ ] Store token hashes only (never raw token); show last-used timestamp and label
-  - [ ] Start with scoped permissions (`read:flights`, `write:flights`, `read:stats`)
-  - [ ] Add rate limits + audit log entries for token-based calls
-  - [ ] Reserve stronger option for later: OAuth2/OIDC app registration for external apps
+- [x] **Step 4 — Third-party frontend support (user-managed access keys)**
+  - [x] Add Personal Access Token flow in Settings (create, view-once, revoke, expire)
+  - [x] Store token hashes only (never raw token); show last-used timestamp and label
+  - [x] Start with scoped permissions (`read:flights`, `write:flights`, `read:stats`)
+  - [x] Add rate limits + audit log entries for token-based calls
+  - [x] Reserve stronger option for later: OAuth2/OIDC app registration for external apps
+  - [ ] Add plan-based quotas and paywall enforcement for API usage (Deferred)
 - [ ] **Step 5 — Complete migration inside one PR**
   - [ ] Mark MVC controllers/views as deprecated and remove once API + Blazor parity is proven
   - [ ] Update routing, auth config, and docs to API + Blazor as default architecture

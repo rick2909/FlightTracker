@@ -27,6 +27,10 @@ public class SettingsViewModel
     public string Theme { get; set; } = "system";
 
     public PreferencesViewModel Preferences { get; set; } = new();
+
+    public List<PersonalAccessTokenViewModel> PersonalAccessTokens { get; set; } = [];
+
+    public string? CreatedAccessTokenValue { get; set; }
 }
 
 public class ChangePasswordViewModel
@@ -75,4 +79,37 @@ public class PreferencesViewModel
     public bool ShowMapRoutes { get; set; } = true;
     
     public bool EnableActivityFeed { get; set; } = false;
+}
+
+public class PersonalAccessTokenViewModel
+{
+    public int Id { get; set; }
+
+    public string Label { get; set; } = string.Empty;
+
+    public string TokenPrefix { get; set; } = string.Empty;
+
+    public PersonalAccessTokenScopes Scopes { get; set; }
+
+    public DateTime ExpiresAtUtc { get; set; }
+
+    public DateTime? LastUsedAtUtc { get; set; }
+
+    public DateTime? RevokedAtUtc { get; set; }
+}
+
+public class CreatePersonalAccessTokenViewModel
+{
+    [Required]
+    [StringLength(128, MinimumLength = 3)]
+    public string Label { get; set; } = string.Empty;
+
+    public bool ScopeReadFlights { get; set; } = true;
+
+    public bool ScopeWriteFlights { get; set; }
+
+    public bool ScopeReadStats { get; set; }
+
+    [Range(1, 365)]
+    public int ExpiresInDays { get; set; } = 30;
 }

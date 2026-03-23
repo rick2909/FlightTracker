@@ -4,16 +4,21 @@ using FlightTracker.Application.Services.Implementation;
 using FlightTracker.Application.Services.Implementation.Analytics;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Application.Services.Interfaces.Analytics;
+using FlightTracker.Api.Infrastructure;
 using FlightTracker.Infrastructure.Data;
 using FlightTracker.Infrastructure.External;
 using FlightTracker.Infrastructure.Repositories.Implementation;
 using FlightTracker.Infrastructure.Time;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +49,7 @@ var bearerSection = builder.Configuration.GetSection("Authentication:Bearer");
 var authority = bearerSection["Authority"];
 var audience = bearerSection["Audience"];
 var issuer = bearerSection["Issuer"];
+var signingKey = bearerSection["SigningKey"];
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -61,16 +67,62 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             options.Audience = audience;
         }
 
-        options.TokenValidationParameters = new TokenValidationParameters
+        var tokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = !string.IsNullOrWhiteSpace(issuer),
             ValidIssuer = issuer,
             ValidateAudience = !string.IsNullOrWhiteSpace(audience),
-            ValidAudience = audience
+            ValidAudience = audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1),
+            NameClaimType = ClaimTypes.NameIdentifier
         };
+
+        if (string.IsNullOrWhiteSpace(authority) &&
+            !string.IsNullOrWhiteSpace(signingKey))
+        {
+            tokenValidationParameters.ValidateIssuerSigningKey = true;
+            tokenValidationParameters.IssuerSigningKey =
+                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey));
+        }
+
+        options.TokenValidationParameters = tokenValidationParameters;
     });
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        var authorizationHeader = context.Request.Headers.Authorization.ToString();
+        if (authorizationHeader.StartsWith("Bearer ft_pat_", StringComparison.OrdinalIgnoreCase))
+        {
+            var tokenPartition = authorizationHeader["Bearer ".Length..].Trim();
+            return RateLimitPartition.GetFixedWindowLimiter(
+                tokenPartition,
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 120,
+                    Window = TimeSpan.FromMinutes(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                });
+        }
+
+        var fallbackPartition = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            fallbackPartition,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 600,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            });
+    });
+});
 
 builder.Services.AddDbContext<FlightTrackerDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")
@@ -80,6 +132,7 @@ builder.Services.AddScoped<IAirportRepository, AirportRepository>();
 builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 builder.Services.AddScoped<IUserFlightRepository, UserFlightRepository>();
 builder.Services.AddScoped<IUserPreferencesRepository, UserPreferencesRepository>();
+builder.Services.AddScoped<IPersonalAccessTokenRepository, PersonalAccessTokenRepository>();
 
 builder.Services.AddSingleton<IClock, UtcClock>();
 builder.Services.AddScoped<IAirportService, AirportService>();
@@ -89,6 +142,7 @@ builder.Services.AddScoped<IFlightStatsService, FlightStatsService>();
 builder.Services.AddScoped<IPassportService, PassportService>();
 builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
 builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
+builder.Services.AddScoped<IPersonalAccessTokenService, PersonalAccessTokenService>();
 builder.Services.AddSingleton<IDistanceCalculator, DistanceCalculator>();
 
 builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
@@ -151,6 +205,8 @@ app.MapGet("/api/versioning", () => Results.Ok(new
 }));
 
 app.UseAuthentication();
+app.UseRateLimiter();
+app.UseMiddleware<TokenAuditMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 

@@ -2,11 +2,13 @@ using FlightTracker.Api.Contracts.V1;
 using FlightTracker.Api.Infrastructure;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FlightTracker.Api.Controllers.V1;
 
 [ApiController]
+[Authorize]
 [Route("api/v1")]
 public class UserFlightsController(
     IUserFlightService userFlightService) : ControllerBase
@@ -20,6 +22,12 @@ public class UserFlightsController(
         int userId,
         CancellationToken cancellationToken = default)
     {
+        var access = this.EnsureRouteUser(userId);
+        if (access is not null)
+        {
+            return access;
+        }
+
         var result = await _userFlightService.GetUserFlightsAsync(
             userId,
             cancellationToken);
@@ -39,6 +47,12 @@ public class UserFlightsController(
         int userId,
         CancellationToken cancellationToken = default)
     {
+        var access = this.EnsureRouteUser(userId);
+        if (access is not null)
+        {
+            return access;
+        }
+
         var result = await _userFlightService.GetUserFlightStatsAsync(
             userId,
             cancellationToken);
@@ -64,6 +78,12 @@ public class UserFlightsController(
         int flightId,
         CancellationToken cancellationToken = default)
     {
+        var access = this.EnsureRouteUser(userId);
+        if (access is not null)
+        {
+            return access;
+        }
+
         var result = await _userFlightService.HasUserFlownFlightAsync(
             userId,
             flightId,
@@ -85,6 +105,12 @@ public class UserFlightsController(
         [FromBody] CreateUserFlightDto request,
         CancellationToken cancellationToken = default)
     {
+        var access = this.EnsureRouteUser(userId);
+        if (access is not null)
+        {
+            return access;
+        }
+
         var result = await _userFlightService.AddUserFlightAsync(
             userId,
             request,
@@ -114,6 +140,12 @@ public class UserFlightsController(
         int id,
         CancellationToken cancellationToken = default)
     {
+        var callerId = GetCallerUserId();
+        if (callerId is null)
+        {
+            return Unauthorized();
+        }
+
         var result = await _userFlightService.GetByIdAsync(
             id,
             cancellationToken);
@@ -128,6 +160,11 @@ public class UserFlightsController(
             return NotFound();
         }
 
+        if (result.Value.UserId != callerId.Value)
+        {
+            return Forbid();
+        }
+
         return Ok(result.Value);
     }
 
@@ -140,6 +177,28 @@ public class UserFlightsController(
         [FromBody] UpdateUserFlightAndScheduleRequest request,
         CancellationToken cancellationToken = default)
     {
+        var callerId = GetCallerUserId();
+        if (callerId is null)
+        {
+            return Unauthorized();
+        }
+
+        var existing = await _userFlightService.GetByIdAsync(id, cancellationToken);
+        if (existing.IsFailure)
+        {
+            return this.ToFailure(existing);
+        }
+
+        if (existing.Value is null)
+        {
+            return NotFound();
+        }
+
+        if (existing.Value.UserId != callerId.Value)
+        {
+            return Forbid();
+        }
+
         var result = await _userFlightService.UpdateUserFlightAndScheduleAsync(
             id,
             request.UserFlight,
@@ -166,6 +225,28 @@ public class UserFlightsController(
         int id,
         CancellationToken cancellationToken = default)
     {
+        var callerId = GetCallerUserId();
+        if (callerId is null)
+        {
+            return Unauthorized();
+        }
+
+        var existing = await _userFlightService.GetByIdAsync(id, cancellationToken);
+        if (existing.IsFailure)
+        {
+            return this.ToFailure(existing);
+        }
+
+        if (existing.Value is null)
+        {
+            return NotFound();
+        }
+
+        if (existing.Value.UserId != callerId.Value)
+        {
+            return Forbid();
+        }
+
         var result = await _userFlightService.DeleteUserFlightAsync(
             id,
             cancellationToken);
@@ -176,5 +257,18 @@ public class UserFlightsController(
         }
 
         return Ok(new DeleteUserFlightResponse(result.Value));
+    }
+
+    private int? GetCallerUserId()
+    {
+        var value = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? User?.FindFirst("sub")?.Value;
+
+        if (!int.TryParse(value, out var callerId))
+        {
+            return null;
+        }
+
+        return callerId;
     }
 }

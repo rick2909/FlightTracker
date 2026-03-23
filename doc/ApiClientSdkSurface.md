@@ -47,6 +47,12 @@ This document defines the minimum typed client surface that first-party clients 
 - PUT /user-flights/{id}
 - DELETE /user-flights/{id}
 
+### Personal Access Tokens
+
+- GET /users/{userId}/access-tokens
+- POST /users/{userId}/access-tokens
+- POST /users/{userId}/access-tokens/revoke
+
 ## Contract Source Of Truth
 
 DTO contracts for API evolution are defined in:

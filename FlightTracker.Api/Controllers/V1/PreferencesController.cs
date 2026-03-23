@@ -2,11 +2,13 @@ using FlightTracker.Api.Contracts.V1;
 using FlightTracker.Api.Infrastructure;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FlightTracker.Api.Controllers.V1;
 
 [ApiController]
+[Authorize]
 [Route("api/v1/preferences/users/{userId:int}")]
 public class PreferencesController(
     IUserPreferencesService userPreferencesService) : ControllerBase
@@ -20,6 +22,12 @@ public class PreferencesController(
         int userId,
         CancellationToken cancellationToken = default)
     {
+        var access = this.EnsureRouteUser(userId);
+        if (access is not null)
+        {
+            return access;
+        }
+
         var result = await _userPreferencesService.GetOrCreateAsync(
             userId,
             cancellationToken);
@@ -45,6 +53,12 @@ public class PreferencesController(
         [FromBody] UpdateUserPreferencesRequest request,
         CancellationToken cancellationToken = default)
     {
+        var access = this.EnsureRouteUser(userId);
+        if (access is not null)
+        {
+            return access;
+        }
+
         var dto = new UserPreferencesDto
         {
             UserId = userId,

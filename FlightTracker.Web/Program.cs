@@ -67,6 +67,7 @@ builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
 builder.Services.AddScoped<UserPreferencesService>();
 builder.Services.AddScoped<IUserPreferencesService, ApiBackedUserPreferencesService>();
 builder.Services.AddScoped<IAirportsSliceGateway, AirportsSliceGateway>();
+builder.Services.AddTransient<FirstPartyApiBearerTokenHandler>();
 builder.Services.AddHttpClient<IAirportsApiClient, AirportsApiClient>((sp, client) =>
 {
     var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
@@ -74,7 +75,8 @@ builder.Services.AddHttpClient<IAirportsApiClient, AirportsApiClient>((sp, clien
     {
         client.BaseAddress = baseUri;
     }
-});
+})
+.AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
 builder.Services.AddHttpClient<IUserFlightsApiClient, UserFlightsApiClient>((sp, client) =>
 {
     var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
@@ -82,7 +84,8 @@ builder.Services.AddHttpClient<IUserFlightsApiClient, UserFlightsApiClient>((sp,
     {
         client.BaseAddress = baseUri;
     }
-});
+})
+.AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
 builder.Services.AddHttpClient<IPassportApiClient, PassportApiClient>((sp, client) =>
 {
     var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
@@ -90,7 +93,8 @@ builder.Services.AddHttpClient<IPassportApiClient, PassportApiClient>((sp, clien
     {
         client.BaseAddress = baseUri;
     }
-});
+})
+.AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
 builder.Services.AddHttpClient<IUserPreferencesApiClient, UserPreferencesApiClient>((sp, client) =>
 {
     var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
@@ -98,7 +102,17 @@ builder.Services.AddHttpClient<IUserPreferencesApiClient, UserPreferencesApiClie
     {
         client.BaseAddress = baseUri;
     }
-});
+})
+.AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
+builder.Services.AddHttpClient<IPersonalAccessTokensApiClient, PersonalAccessTokensApiClient>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+    {
+        client.BaseAddress = baseUri;
+    }
+})
+.AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
 builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
 {
     c.Timeout = TimeSpan.FromSeconds(3);
