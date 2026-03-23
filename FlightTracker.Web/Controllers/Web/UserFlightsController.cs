@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace FlightTracker.Web.Controllers.Web;
 
 [Authorize]
+[Obsolete("Deprecated legacy MVC controller. Use API + Blazor flow.")]
 public class UserFlightsController(
     IUserFlightService userFlightService,
     IFlightService flightService,

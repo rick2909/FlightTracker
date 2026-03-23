@@ -11,7 +11,7 @@
 ![xUnit](https://img.shields.io/badge/xUnit-5A2B81?style=for-the-badge&logo=xunit&logoColor=white)
 [![Coverage](https://img.shields.io/codecov/c/github/rick2909/FlightTracker?branch=main&style=for-the-badge&logo=codecov)](https://app.codecov.io/gh/rick2909/FlightTracker)
 
-A modern, multi-platform flight tracking application (web, desktop, mobile) built with .NET and Clean Architecture principles. Designed to evolve from a simple flight & airport data core into a richer experience (live map, passport/stats, playback, provider adapters like OpenSky and FR24).
+A modern, multi-platform flight tracking application (web, desktop, mobile) built with .NET and Clean Architecture principles. The default presentation architecture is API + Blazor, with temporary MVC compatibility controllers during migration.
 
 ## Status
 
@@ -103,7 +103,7 @@ See `doc/Repository-Result-Policy.md` for the authoritative return-contract poli
 | Language | C# 13 / .NET 10 |
 | Auth | ASP.NET Core Identity (int keys) |
 | ORM | EF Core 10 |
-| UI (current) | ASP.NET Core MVC + Blazor Server, Radzen, ApexCharts |
+| UI (current) | ASP.NET Core API + Blazor Server (default), Radzen, ApexCharts |
 | Realtime (planned) | SignalR |
 | Mapping | AutoMapper |
 | External Flight Data (current/planned) | timeapi.io (current); Aviationstack (airport live departures/arrivals); ADSBdb (aircraft metadata); OpenSky/FR24 (planned) |
@@ -233,7 +233,7 @@ Notes:
   - Provider hardening (config, retries/backoff, resilient fallbacks)
   - Expand Application tests (cancellation token and aggregation scenarios)
   - Preference-aware formatting across Passport and Flight details
-  - API project scaffolding (`FlightTracker.Api`) with DI and controllers
+  - API-first presentation flow (`FlightTracker.Api`) with versioned contracts and Blazor typed clients
 - Next phase
   - OpenSky adapter implementation behind `IFlightDataProvider`
   - Flight track persistence and playback interpolation

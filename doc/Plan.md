@@ -114,11 +114,11 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
   - [x] Add rate limits + audit log entries for token-based calls
   - [x] Reserve stronger option for later: OAuth2/OIDC app registration for external apps
   - [ ] Add plan-based quotas and paywall enforcement for API usage (Deferred)
-- [ ] **Step 5 — Complete migration inside one PR**
-  - [ ] Mark MVC controllers/views as deprecated and remove once API + Blazor parity is proven
-  - [ ] Update routing, auth config, and docs to API + Blazor as default architecture
-  - [ ] Add focused tests for API contracts, auth paths, and Blazor API client integration
-  - [ ] Keep PR scope controlled: no new business features, migration-only changes
+- [x] **Step 5 — Complete migration inside one PR**
+  - [x] Mark MVC controllers/views as deprecated and remove once API + Blazor parity is proven
+  - [x] Update routing, auth config, and docs to API + Blazor as default architecture
+  - [x] Add focused tests for API contracts, auth paths, and Blazor API client integration
+  - [x] Keep PR scope controlled: no new business features, migration-only changes
 
 ### 5B. Prompt-driven execution order (use this in future chats)
 

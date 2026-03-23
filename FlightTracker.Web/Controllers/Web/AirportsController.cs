@@ -9,6 +9,7 @@ namespace FlightTracker.Web.Controllers.Web;
 /// <summary>
 /// Airports overview page with a map and flight listings for a selected airport.
 /// </summary>
+[Obsolete("Deprecated legacy MVC controller. Use API + Blazor flow.")]
 [Route("[controller]")]
 public class AirportsController(ILogger<AirportsController> logger,
     IAirportsSliceGateway airportsSliceGateway) : Controller

@@ -12,6 +12,7 @@ namespace FlightTracker.Web.Controllers.Web;
 /// Shows user's flight history, statistics, and quick actions.
 /// </summary>
 [Authorize]
+[Obsolete("Deprecated legacy MVC controller. Use API + Blazor flow.")]
 public class DashboardController(
     ILogger<DashboardController> logger,
     IUserFlightService userFlightService,
