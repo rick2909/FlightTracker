@@ -12,4 +12,7 @@ public sealed class FlightTrackerApiOptions
 public sealed class ApiSliceRolloutOptions
 {
     public bool Airports { get; set; }
+    public bool Flights { get; set; }
+    public bool Passport { get; set; }
+    public bool Settings { get; set; }
 }

@@ -55,15 +55,43 @@ builder.Services.AddScoped<IUserPreferencesRepository, UserPreferencesRepository
 // Register application services
 builder.Services.AddSingleton<IClock, UtcClock>();
 builder.Services.AddScoped<IAirportService, AirportService>();
-builder.Services.AddScoped<IFlightService, FlightService>();
-builder.Services.AddScoped<IUserFlightService, UserFlightService>();
+builder.Services.AddScoped<FlightService>();
+builder.Services.AddScoped<IFlightService>(sp => sp.GetRequiredService<FlightService>());
+builder.Services.AddScoped<UserFlightService>();
+builder.Services.AddScoped<IUserFlightService, ApiBackedUserFlightService>();
 builder.Services.AddScoped<IMapFlightService, MapFlightService>();
 builder.Services.AddScoped<IFlightStatsService, FlightStatsService>();
-builder.Services.AddScoped<IPassportService, PassportService>();
+builder.Services.AddScoped<PassportService>();
+builder.Services.AddScoped<IPassportService, ApiBackedPassportService>();
 builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
-builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
+builder.Services.AddScoped<UserPreferencesService>();
+builder.Services.AddScoped<IUserPreferencesService, ApiBackedUserPreferencesService>();
 builder.Services.AddScoped<IAirportsSliceGateway, AirportsSliceGateway>();
 builder.Services.AddHttpClient<IAirportsApiClient, AirportsApiClient>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+    {
+        client.BaseAddress = baseUri;
+    }
+});
+builder.Services.AddHttpClient<IUserFlightsApiClient, UserFlightsApiClient>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+    {
+        client.BaseAddress = baseUri;
+    }
+});
+builder.Services.AddHttpClient<IPassportApiClient, PassportApiClient>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+    {
+        client.BaseAddress = baseUri;
+    }
+});
+builder.Services.AddHttpClient<IUserPreferencesApiClient, UserPreferencesApiClient>((sp, client) =>
 {
     var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
     if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
