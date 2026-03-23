@@ -92,10 +92,10 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 - Goal: complete API + Blazor migration first. MAUI starts only after Step 5 is done.
 
-- [ ] **Step 1 — API-first boundary (Blazor is first client)**
-  - [ ] Add `FlightTracker.Api` with versioned routes (`/api/v1/...`) and OpenAPI
-  - [ ] Keep Application services as the only orchestration layer; controllers remain thin
-  - [ ] Define stable request/response DTO contracts for Flights, Airports, Passport/Stats, Preferences
+- [x] **Step 1 — API-first boundary (Blazor is first client)**
+  - [x] Add `FlightTracker.Api` with versioned routes (`/api/v1/...`) and OpenAPI
+  - [x] Keep Application services as the only orchestration layer; controllers remain thin
+  - [x] Define stable request/response DTO contracts for Flights, Airports, Passport/Stats, Preferences
   - [ ] Keep existing MVC endpoints/pages available during transition window (no hard cut yet)
 - [ ] **Step 2 — Move Web to API consumption (feature-by-feature)**
   - [ ] Add typed API clients in `FlightTracker.Web` (`HttpClient` + interface wrappers)
