@@ -102,11 +102,11 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
   - [x] Migrate one vertical slice at a time (Airports, Flights, Passport, Settings)
   - [x] Add per-slice parity checklist (same validation, errors, and auth behavior as before)
   - [x] Gate rollout with a config flag to allow fallback until parity is complete
-- [ ] **Step 3 — Future client readiness (MAUI/other apps)**
-  - [ ] Keep API stateless and client-agnostic; no Web-only assumptions in contracts
-  - [ ] Standardize auth for API clients (Bearer tokens for first-party apps)
-  - [ ] Add explicit API versioning policy and deprecation notes for non-breaking evolution
-  - [ ] Document minimal client SDK surface (or shared typed client package) for reuse
+- [x] **Step 3 — Future client readiness (MAUI/other apps)**
+  - [x] Keep API stateless and client-agnostic; no Web-only assumptions in contracts
+  - [x] Standardize auth for API clients (Bearer tokens for first-party apps)
+  - [x] Add explicit API versioning policy and deprecation notes for non-breaking evolution
+  - [x] Document minimal client SDK surface (or shared typed client package) for reuse
 - [ ] **Step 4 — Third-party frontend support (user-managed access keys)**
   - [ ] Add Personal Access Token flow in Settings (create, view-once, revoke, expire)
   - [ ] Store token hashes only (never raw token); show last-used timestamp and label
