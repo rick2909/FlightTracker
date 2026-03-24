@@ -215,6 +215,77 @@ npm run build
 npm run watch
 ```
 
+## Database Migrations (Root SQLite)
+
+FlightTracker uses the solution-root SQLite file:
+
+- Path: `./flighttracker.dev.db`
+- API runtime (cwd = `FlightTracker.Api`) points to `../flighttracker.dev.db`
+
+Run migrations explicitly against the root DB:
+
+```powershell
+dotnet ef database update \
+  --project .\FlightTracker.Infrastructure\FlightTracker.Infrastructure.csproj \
+  --startup-project .\FlightTracker.Api\FlightTracker.Api.csproj \
+  --context FlightTrackerDbContext \
+  --connection "Data Source=$((Resolve-Path .\flighttracker.dev.db).Path)"
+```
+
+Create a new migration in Infrastructure:
+
+```powershell
+dotnet ef migrations add <MigrationName> \
+  --project .\FlightTracker.Infrastructure\FlightTracker.Infrastructure.csproj \
+  --startup-project .\FlightTracker.Api\FlightTracker.Api.csproj \
+  --context FlightTrackerDbContext \
+  --output-dir Data\Migrations
+```
+
+## Merge Old API-local DB Into Root DB
+
+If you have data in `FlightTracker.Api/flighttracker.dev.db` and want to merge into `./flighttracker.dev.db`:
+
+1. Back up both files first.
+2. Use SQLite attach + table copy (examples below).
+3. Keep root DB as source of truth going forward.
+
+Example with sqlite3:
+
+```powershell
+sqlite3 .\flighttracker.dev.db "ATTACH DATABASE './FlightTracker.Api/flighttracker.dev.db' AS old; \
+PRAGMA foreign_keys=OFF; \
+INSERT OR IGNORE INTO Airports SELECT * FROM old.Airports; \
+INSERT OR IGNORE INTO Airlines SELECT * FROM old.Airlines; \
+INSERT OR IGNORE INTO Aircraft SELECT * FROM old.Aircraft; \
+INSERT OR IGNORE INTO Flights SELECT * FROM old.Flights; \
+INSERT OR IGNORE INTO AspNetUsers SELECT * FROM old.AspNetUsers; \
+INSERT OR IGNORE INTO AspNetRoles SELECT * FROM old.AspNetRoles; \
+INSERT OR IGNORE INTO AspNetUserRoles SELECT * FROM old.AspNetUserRoles; \
+INSERT OR IGNORE INTO AspNetUserClaims SELECT * FROM old.AspNetUserClaims; \
+INSERT OR IGNORE INTO AspNetRoleClaims SELECT * FROM old.AspNetRoleClaims; \
+INSERT OR IGNORE INTO AspNetUserLogins SELECT * FROM old.AspNetUserLogins; \
+INSERT OR IGNORE INTO AspNetUserTokens SELECT * FROM old.AspNetUserTokens; \
+INSERT OR IGNORE INTO UserPreferences SELECT * FROM old.UserPreferences; \
+INSERT OR IGNORE INTO UserFlights SELECT * FROM old.UserFlights; \
+INSERT OR IGNORE INTO PersonalAccessTokens SELECT * FROM old.PersonalAccessTokens; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM Airports) WHERE name='Airports'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM Airlines) WHERE name='Airlines'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM Aircraft) WHERE name='Aircraft'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM Flights) WHERE name='Flights'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM AspNetUsers) WHERE name='AspNetUsers'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM UserPreferences) WHERE name='UserPreferences'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM UserFlights) WHERE name='UserFlights'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM PersonalAccessTokens) WHERE name='PersonalAccessTokens'; \
+DETACH DATABASE old; \
+PRAGMA foreign_keys=ON;"
+```
+
+Notes:
+
+- `INSERT OR IGNORE` keeps existing rows in root DB when primary keys collide.
+- If both DBs changed the same row and you need field-level conflict resolution, use a custom merge script instead of `OR IGNORE`.
+
 Notes:
 
 - `FlightTracker.Web.csproj` already runs Sass/JS asset targets during `dotnet build`.

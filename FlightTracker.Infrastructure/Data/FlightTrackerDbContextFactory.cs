@@ -13,8 +13,17 @@ public class FlightTrackerDbContextFactory : IDesignTimeDbContextFactory<FlightT
     {
         var optionsBuilder = new DbContextOptionsBuilder<FlightTrackerDbContext>();
 
-        // Use SQLite for design-time migrations to align with development
-        optionsBuilder.UseSqlite("Data Source=flighttracker.dev.db");
+        // Resolve db path to solution root regardless of current working directory.
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var folderName = Path.GetFileName(currentDirectory);
+        var solutionRoot = folderName.Equals("FlightTracker.Api", StringComparison.OrdinalIgnoreCase)
+            || folderName.Equals("FlightTracker.Web", StringComparison.OrdinalIgnoreCase)
+            || folderName.Equals("FlightTracker.Infrastructure", StringComparison.OrdinalIgnoreCase)
+                ? Directory.GetParent(currentDirectory)?.FullName ?? currentDirectory
+                : currentDirectory;
+        var dbPath = Path.Combine(solutionRoot, "flighttracker.dev.db");
+
+        optionsBuilder.UseSqlite($"Data Source={dbPath}");
 
         return new FlightTrackerDbContext(optionsBuilder.Options);
     }

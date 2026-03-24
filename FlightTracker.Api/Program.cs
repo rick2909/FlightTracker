@@ -192,7 +192,7 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddDbContext<FlightTrackerDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")
-        ?? "Data Source=flighttracker.dev.db"));
+        ?? "Data Source=../flighttracker.dev.db"));
 
 builder.Services
     .AddIdentityCore<ApplicationUser>(options =>
@@ -210,12 +210,15 @@ builder.Services
 builder.Services.AddScoped<IAirportRepository, AirportRepository>();
 builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 builder.Services.AddScoped<IUserFlightRepository, UserFlightRepository>();
+builder.Services.AddScoped<IAircraftRepository, AircraftRepository>();
+builder.Services.AddScoped<IAirlineRepository, AirlineRepository>();
 builder.Services.AddScoped<IUserPreferencesRepository, UserPreferencesRepository>();
 builder.Services.AddScoped<IPersonalAccessTokenRepository, PersonalAccessTokenRepository>();
 
 builder.Services.AddSingleton<IClock, UtcClock>();
 builder.Services.AddScoped<IAirportService, AirportService>();
 builder.Services.AddScoped<IFlightService, FlightService>();
+builder.Services.AddScoped<IUserFlightService, UserFlightService>();
 builder.Services.AddScoped<IMapFlightService, MapFlightService>();
 builder.Services.AddScoped<IFlightStatsService, FlightStatsService>();
 builder.Services.AddScoped<IPassportService, PassportService>();
@@ -223,6 +226,8 @@ builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
 builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
 builder.Services.AddScoped<IPersonalAccessTokenService, PersonalAccessTokenService>();
 builder.Services.AddScoped<IUsernameValidationService, UsernameValidationService>();
+builder.Services.AddScoped<IAirportEnrichmentService, AirportEnrichmentService>();
+builder.Services.AddScoped<IFlightMetadataProvisionService, FlightMetadataProvisionService>();
 builder.Services.AddSingleton<IDistanceCalculator, DistanceCalculator>();
 
 builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
@@ -242,6 +247,19 @@ builder.Services.AddHttpClient<IAirportLiveService, AviationstackService>(c =>
             Backoff.DecorrelatedJitterBackoffV2(
                 TimeSpan.FromMilliseconds(200),
                 3)));
+
+builder.Services.AddHttpClient<AdsBdbClient>(c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(6);
+});
+builder.Services.AddScoped<IFlightRouteLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
+builder.Services.AddScoped<IAircraftLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
+
+builder.Services.AddHttpClient<AirportDbClient>(c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(6);
+});
+builder.Services.AddScoped<IAirportLookupClient>(sp => sp.GetRequiredService<AirportDbClient>());
 
 builder.Services.AddAutoMapper(cfg =>
 {
@@ -283,6 +301,23 @@ app.MapGet("/api/versioning", () => Results.Ok(new
     deprecatedVersions = Array.Empty<string>(),
     documentation = "/swagger"
 }));
+
+// Development seed (only if DB empty)
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<FlightTrackerDbContext>();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    try
+    {
+        await SeedData.EnsureSeededAsync(db, userManager);
+        Console.WriteLine("[Startup] Development database ensured & seeded (SQLite)");
+    }
+    catch (Exception se)
+    {
+        Console.WriteLine($"[Startup] Seed error: {se}");
+    }
+}
 
 app.UseAuthentication();
 app.UseRateLimiter();

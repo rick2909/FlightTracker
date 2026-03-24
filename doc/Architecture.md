@@ -119,3 +119,36 @@ Infrastructure/   Data/ (DbContext, Migrations, SeedData), Repositories/, Extern
 Presentation/     Api/, Web/, Desktop/, Mobile/
 Tests/            *.Domain.Tests/, *.Application.Tests/, *.Infrastructure.Tests/, *.Web.Tests/
 ```
+
+---
+
+## SQLite Location and Migration Commands
+
+Canonical development database file:
+
+- Solution root: `./flighttracker.dev.db`
+
+Runtime behavior:
+
+- API runs with working directory `FlightTracker.Api`
+- API connection string therefore uses `../flighttracker.dev.db`
+
+Apply migrations to the root DB:
+
+```powershell
+dotnet ef database update \
+	--project .\FlightTracker.Infrastructure\FlightTracker.Infrastructure.csproj \
+	--startup-project .\FlightTracker.Api\FlightTracker.Api.csproj \
+	--context FlightTrackerDbContext \
+	--connection "Data Source=$((Resolve-Path .\flighttracker.dev.db).Path)"
+```
+
+Create a migration in Infrastructure:
+
+```powershell
+dotnet ef migrations add <MigrationName> \
+	--project .\FlightTracker.Infrastructure\FlightTracker.Infrastructure.csproj \
+	--startup-project .\FlightTracker.Api\FlightTracker.Api.csproj \
+	--context FlightTrackerDbContext \
+	--output-dir Data\Migrations
+```
