@@ -1,0 +1,38 @@
+@page "/UserFlights/Details/{Id:int}"
+@attribute [Authorize]
+
+@if (Flight is null)
+{
+    <div class="rz-p-4">Loading flight...</div>
+}
+else
+{
+    <div style="max-width: 900px; margin: 0 auto; padding: 1rem 1rem 4rem 1rem;">
+        <div class="rz-card mb-4">
+            <div class="rz-card-body" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0;">@Flight.FlightNumber</h3>
+                    <p style="margin: 0; color: var(--rz-text-secondary);">@(Flight.OperatingAirlineName ?? "Unknown Airline")</p>
+                </div>
+                <span class="badge bg-secondary fs-6">@Flight.FlightStatus</span>
+            </div>
+        </div>
+
+        <FlightTracker.Web.Components.Cards.FlightDetailsCard Flight="Flight" DateFormat="DateFormat" TimeFormat="TimeFormat" />
+
+        <div class="row g-2 mt-3">
+            <div class="col-12 col-sm-auto">
+                <a class="btn btn-primary" href="@($"/UserFlights/Edit/{Flight.Id}")" style="width: 100%;">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 0.5rem;">edit</span>
+                    Edit Flight
+                </a>
+            </div>
+            <div class="col-12 col-sm-auto">
+                <a class="btn btn-outline-secondary" href="/UserFlights" style="width: 100%;">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 0.5rem;">arrow_back</span>
+                    Back to Flights
+                </a>
+            </div>
+        </div>
+    </div>
+}

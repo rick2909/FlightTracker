@@ -1,0 +1,66 @@
+@page "/login"
+
+<div class="login-page">
+    <div class="login-card">
+        <div class="login-card__header">
+            <h1 class="login-card__title">Welcome back</h1>
+            <p class="login-card__subtitle">Sign in to continue tracking your flights.</p>
+        </div>
+
+        @if (RegistrationSuccess)
+        {
+            <div class="login-form__info" role="status">
+                <span class="material-icons login-form__info-icon" aria-hidden="true">info</span>
+                <div>Registration successful! Please sign in with your new account.</div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <div class="login-form__errors" role="alert">
+                <span class="material-icons login-form__errors-icon" aria-hidden="true">error</span>
+                <div>@ErrorMessage</div>
+            </div>
+        }
+
+        <EditForm class="login-form" Model="Model" OnValidSubmit="LoginAsync">
+            <DataAnnotationsValidator />
+
+            <InputHidden @bind-Value="Model.ReturnUrl" />
+
+            <div class="login-form__field">
+                <label class="login-form__label" for="UserNameOrEmail">Username or email</label>
+                <InputText class="login-form__input" id="UserNameOrEmail" @bind-Value="Model.UserNameOrEmail" autocomplete="username" />
+            </div>
+            <div class="login-form__field">
+                <label class="login-form__label" for="Password">Password</label>
+                <InputText class="login-form__input" id="Password" @bind-Value="Model.Password" type="password" autocomplete="current-password" />
+            </div>
+            <div class="login-form__row">
+                <label class="login-form__checkbox">
+                    <InputCheckbox class="login-form__checkbox-input" @bind-Value="Model.RememberMe" />
+                    <span class="login-form__checkbox-box" aria-hidden="true"></span>
+                    <span class="login-form__checkbox-text">Remember me</span>
+                </label>
+            </div>
+            <div class="login-form__actions">
+                <button class="login-form__button" type="submit">
+                    <span class="material-icons" aria-hidden="true">login</span>
+                    Sign in
+                </button>
+                <a class="login-form__link" href="/register">Create account</a>
+            </div>
+        </EditForm>
+
+        @if (EnableDevBypass)
+        {
+            <div class="login-dev">
+                <p class="login-dev__title">Development bypass enabled</p>
+                <p>Use the configured development account to sign in automatically.</p>
+                <form method="post" action="/dev-login" class="login-form__dev-login-form">
+                    <button class="login-form__link login-form__dev-login-button" type="submit">Dev sign in</button>
+                </form>
+            </div>
+        }
+    </div>
+</div>

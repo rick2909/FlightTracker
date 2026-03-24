@@ -23,11 +23,43 @@
 
   async function loadAirports(){
     const reqId = ++lastReq;
-    const url = `/Airports/Browse?${boundsQuery()}`;
+    const url = '/api/v1/airports';
     try{
       const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
       if(!res.ok) throw new Error('HTTP '+res.status);
-      const list = await res.json();
+      const airports = await res.json();
+      const b = map.getBounds();
+      const z = map.getZoom();
+      const north = b.getNorth();
+      const south = b.getSouth();
+      const east = b.getEast();
+      const west = b.getWest();
+      const crossesAntimeridian = east < west;
+
+      const list = z <= 3
+        ? []
+        : (airports || []).filter(a => {
+            if(a.latitude == null || a.longitude == null) return false;
+            const lat = a.latitude;
+            const lon = a.longitude;
+            const withinLat = lat <= north && lat >= south;
+            const withinLon = crossesAntimeridian
+              ? (lon >= west || lon <= east)
+              : (lon >= west && lon <= east);
+            if(!withinLat || !withinLon) return false;
+            if(z >= 4 && z < 6) return !!a.iataCode;
+            if(z >= 6 && z < 8) return !!a.iataCode || !!a.city;
+            return true;
+        }).map(a => ({
+            id: a.id,
+            name: a.name,
+            city: a.city,
+            country: a.country,
+            iata: a.iataCode,
+            icao: a.icaoCode,
+            lat: a.latitude,
+            lon: a.longitude
+        }));
       if(reqId !== lastReq) return; // stale
       markersLayer.clearLayers();
       markerIndex = new Map();
@@ -92,7 +124,7 @@
     if(m){ setMarkerSelected(m, true); selectedMarker = m; }
     document.getElementById('airportSelection').hidden = false;
     document.getElementById('selectedAirportName').textContent = `${a.name}${a.iata?` (${a.iata})`: (a.icao?` (${a.icao})`: '')}`;
-    await loadFlights(a.id);
+    await loadFlights(a);
   }
 
   function renderFlightItem(f){
@@ -131,8 +163,9 @@
     return div;
   }
 
-  async function loadFlights(airportId){
-    const url = `/Airports/${airportId}/Flights?live=${useLive}`;
+  async function loadFlights(airport){
+    const code = airport.iata || airport.icao || airport.name;
+    const url = `/api/v1/airports/${encodeURIComponent(code)}/flights?live=${useLive}`;
     try{
       const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
       if(!res.ok) throw new Error('HTTP '+res.status);

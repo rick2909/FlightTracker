@@ -1,0 +1,32 @@
+@page "/Dashboard/Statistics"
+@attribute [Authorize]
+
+<div class="remove__header"></div>
+
+<FlightTracker.Web.Components.Maps.FlightMapPanel MapFlights="Model.MapFlights" Height="65vh" />
+
+<div class="ft-stats-grid" style="margin-top:1rem">
+    <div class="ft-stats-grid__item">
+        <FlightTracker.Web.Components.Cards.StatCard Title="Total Flights" Data="@Model.Stats.TotalFlights.ToString()" Icon="flight" SubTitle="Lifetime" />
+    </div>
+    <div class="ft-stats-grid__item">
+        <FlightTracker.Web.Components.Cards.StatCard Title="Airports Visited" Data="@Model.Stats.UniqueAirports.ToString()" Icon="flight_land" SubTitle="Unique" />
+    </div>
+    <div class="ft-stats-grid__item">
+        <FlightTracker.Web.Components.Cards.StatCard Title="Countries Visited" Data="@Model.Stats.UniqueCountries.ToString()" Icon="public" SubTitle="Unique" />
+    </div>
+</div>
+
+<div class="rz-card" style="margin-top:1rem">
+    <div class="rz-card-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:.5rem">
+            <span class="material-icons" aria-hidden="true">bar_chart</span>
+            <h3 style="margin:0">Flights per year</h3>
+        </div>
+    </div>
+    <div class="rz-card-body">
+        <div id="apx-flights-per-year" style="min-height:300px"></div>
+        <script type="application/json" id="apxFlightsPerYearData">@FlightsPerYearJson</script>
+    </div>
+    <div class="rz-card-footer" style="font-size:.8rem;color:#666">Counts based on recorded flights</div>
+</div>

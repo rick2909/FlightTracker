@@ -1,0 +1,60 @@
+@page "/Passport"
+@page "/Passport/{Id:int}"
+@attribute [Authorize]
+@using System.Text.Json
+
+@if (Model is null)
+{
+    <div class="rz-p-4">Loading passport...</div>
+}
+else
+{
+    <div class="ft-toolbar">
+        <h2 class="layout__title" style="margin:0">My Passport</h2>
+    </div>
+
+    <div class="passport-section">
+        <div class="rz-card">
+            <div class="rz-card-body" style="display:flex;align-items:center;gap:2rem;flex-wrap:wrap;padding:2rem;">
+                <div class="passport-card__avatar">
+                    <span style="display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:600;">@Initials</span>
+                </div>
+                <div style="flex:1;min-width:250px;">
+                    <div style="font-weight:600;font-size:1.4rem;margin-bottom:1rem;color:var(--rz-text-color);">@Model.UserName</div>
+                    <div class="passport-card__stats">
+                        <div class="stat-item">
+                            <span class="material-icons">flight</span>
+                            <span class="stat-value">@Model.TotalFlights</span>
+                            <span>Flights</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="material-icons">location_city</span>
+                            <span class="stat-value">@Model.AirportsVisited.Count</span>
+                            <span>Airports</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.ShowMapRoutes)
+    {
+        <FlightTracker.Web.Components.Maps.FlightMapPanel MapFlights="Model.Routes" Height="60vh" />
+    }
+
+    <div class="passport-section">
+        <div class="rz-card">
+            <div class="rz-card-header">
+                <h3><span class="material-icons" aria-hidden="true">bar_chart</span>Flights Per Year</h3>
+            </div>
+            <div class="rz-card-body">
+                <div id="passport-chart" style="min-height:300px"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="application/json" id="passportFlightsPerYear">@FlightsPerYearJson</script>
+    <script type="application/json" id="passportFlightsByAirline">@FlightsByAirlineJson</script>
+    <script type="application/json" id="passportFlightsByAircraftType">@FlightsByAircraftTypeJson</script>
+}

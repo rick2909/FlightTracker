@@ -1,6 +1,5 @@
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Results;
-using FlightTracker.Application.Services.Implementation;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Enums;
 using FlightTracker.Web.Configuration;
@@ -11,12 +10,10 @@ namespace FlightTracker.Web.Services.Implementation;
 
 public sealed class ApiBackedUserFlightService(
     ILogger<ApiBackedUserFlightService> logger,
-    UserFlightService fallbackService,
     IUserFlightsApiClient apiClient,
     IOptions<FlightTrackerApiOptions> apiOptions) : IUserFlightService
 {
     private readonly ILogger<ApiBackedUserFlightService> _logger = logger;
-    private readonly UserFlightService _fallbackService = fallbackService;
     private readonly IUserFlightsApiClient _apiClient = apiClient;
     private readonly FlightTrackerApiOptions _apiOptions = apiOptions.Value;
 
@@ -24,7 +21,6 @@ public sealed class ApiBackedUserFlightService(
         => UseFlightsApiAsync<IReadOnlyList<UserFlightDto>, IEnumerable<UserFlightDto>>(
             () => _apiClient.GetUserFlightsAsync(userId, cancellationToken),
             flights => Result<IEnumerable<UserFlightDto>>.Success(flights),
-            () => _fallbackService.GetUserFlightsAsync(userId, cancellationToken),
             "Unable to load flights",
             "userflight.api.list.failed");
 
@@ -32,29 +28,32 @@ public sealed class ApiBackedUserFlightService(
         => UseFlightsApiAsync<UserFlightDto?, UserFlightDto>(
             () => _apiClient.GetByIdAsync(id, cancellationToken),
             dto => Result<UserFlightDto>.Success(dto),
-            () => _fallbackService.GetByIdAsync(id, cancellationToken),
             "Unable to load flight",
             "userflight.api.by_id.failed");
 
     public Task<Result<IEnumerable<UserFlightDto>>> GetUserFlightsByClassAsync(int userId, FlightClass flightClass, CancellationToken cancellationToken = default)
-        => _fallbackService.GetUserFlightsByClassAsync(userId, flightClass, cancellationToken);
+        => UseFlightsApiAsync<IReadOnlyList<UserFlightDto>, IEnumerable<UserFlightDto>>(
+            () => _apiClient.GetUserFlightsAsync(userId, cancellationToken),
+            flights => Result<IEnumerable<UserFlightDto>>.Success(flights.Where(f => f.FlightClass == flightClass)),
+            "Unable to load flights",
+            "userflight.api.list_by_class.failed");
 
     public Task<Result<UserFlightDto>> AddUserFlightAsync(int userId, CreateUserFlightDto createDto, CancellationToken cancellationToken = default)
         => UseFlightsApiAsync<UserFlightDto?, UserFlightDto>(
             () => _apiClient.AddUserFlightAsync(userId, createDto, cancellationToken),
             dto => Result<UserFlightDto>.Success(dto),
-            () => _fallbackService.AddUserFlightAsync(userId, createDto, cancellationToken),
             "Unable to save flight",
             "userflight.api.add.failed");
 
     public Task<Result<UserFlightDto>> UpdateUserFlightAsync(int id, CreateUserFlightDto updateDto, CancellationToken cancellationToken = default)
-        => _fallbackService.UpdateUserFlightAsync(id, updateDto, cancellationToken);
+        => Result<UserFlightDto>.Failure(
+            "Legacy update endpoint is not supported in API mode.",
+            "userflight.api.legacy_update.unsupported").AsTask();
 
     public Task<Result<UserFlightDto>> UpdateUserFlightAndScheduleAsync(int id, UpdateUserFlightDto userFlight, FlightScheduleUpdateDto schedule, CancellationToken cancellationToken = default)
         => UseFlightsApiAsync<UserFlightDto?, UserFlightDto>(
             () => _apiClient.UpdateUserFlightAndScheduleAsync(id, userFlight, schedule, cancellationToken),
             dto => Result<UserFlightDto>.Success(dto),
-            () => _fallbackService.UpdateUserFlightAndScheduleAsync(id, userFlight, schedule, cancellationToken),
             "Unable to update flight",
             "userflight.api.update.failed");
 
@@ -62,7 +61,6 @@ public sealed class ApiBackedUserFlightService(
         => UseFlightsApiAsync<bool, bool>(
             () => _apiClient.DeleteUserFlightAsync(id, cancellationToken),
             deleted => Result<bool>.Success(deleted),
-            () => _fallbackService.DeleteUserFlightAsync(id, cancellationToken),
             "Unable to delete flight",
             "userflight.api.delete.failed");
 
@@ -70,7 +68,6 @@ public sealed class ApiBackedUserFlightService(
         => UseFlightsApiAsync<UserFlightStatsDto?, UserFlightStatsDto>(
             () => _apiClient.GetUserFlightStatsAsync(userId, cancellationToken),
             stats => Result<UserFlightStatsDto>.Success(stats),
-            () => _fallbackService.GetUserFlightStatsAsync(userId, cancellationToken),
             "Unable to load flight statistics",
             "userflight.api.stats.failed");
 
@@ -78,20 +75,20 @@ public sealed class ApiBackedUserFlightService(
         => UseFlightsApiAsync<bool, bool>(
             () => _apiClient.HasUserFlownFlightAsync(userId, flightId, cancellationToken),
             hasFlown => Result<bool>.Success(hasFlown),
-            () => _fallbackService.HasUserFlownFlightAsync(userId, flightId, cancellationToken),
             "Unable to check user flight history",
             "userflight.api.hasflown.failed");
 
     private async Task<Result<TResult>> UseFlightsApiAsync<TApi, TResult>(
         Func<Task<TApi>> apiCall,
         Func<TApi, Result<TResult>> mapSuccess,
-        Func<Task<Result<TResult>>> fallbackCall,
         string errorMessage,
         string errorCode)
     {
         if (!UseFlightsApi())
         {
-            return await fallbackCall();
+            return Result<TResult>.Failure(
+                "Flights API is not configured.",
+                "userflight.api.not_configured");
         }
 
         try
@@ -114,5 +111,13 @@ public sealed class ApiBackedUserFlightService(
     {
         return _apiOptions.Slices.Flights
             && Uri.TryCreate(_apiOptions.BaseUrl, UriKind.Absolute, out _);
+    }
+}
+
+internal static class ResultTaskExtensions
+{
+    public static Task<Result<T>> AsTask<T>(this Result<T> result)
+    {
+        return Task.FromResult(result);
     }
 }

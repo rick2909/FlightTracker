@@ -1,0 +1,72 @@
+<aside class="sidebar" aria-label="Primary navigation" data-sidebar>
+    <div class="sidebar__header">
+        <div class="sidebar__profile-card">
+            <div class="sidebar__avatar" aria-hidden="true">
+                @if (!string.IsNullOrWhiteSpace(ProfileImageUrl))
+                {
+                    <img src="@ProfileImageUrl"
+                         alt="@DisplayName"
+                         class="sidebar__avatar-img"
+                         style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%"
+                         onerror="this.style.display='none'; var f=this.nextElementSibling; if(f) f.style.display='inline-flex';" />
+                }
+                <span class="sidebar__avatar-fallback"
+                      style="display:@(string.IsNullOrWhiteSpace(ProfileImageUrl) ? "inline-flex" : "none");width:100%;height:100%;align-items:center;justify-content:center;font-weight:600;">
+                    @Initials
+                </span>
+            </div>
+            <div class="sidebar__profile-text sidebar__profile-text-transition">
+                <div class="sidebar__name" title="@DisplayName">@DisplayName</div>
+                <div class="sidebar__role">Traveler</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar__scroll">
+        <div class="flight-status sidebar__section">
+            <a class="flight-status__link status-none" href="/Dashboard/Status" title="Next flight">
+                <span class="material-icons flight-status__icon" aria-hidden="true">airplanemode_inactive</span>
+                <span class="flight-status__text">Next: None</span>
+            </a>
+        </div>
+
+        <nav class="sidebar__nav sidebar__section" data-sidebar-nav>
+            <a class="sidebar__link @ActiveClass("/Dashboard")" href="/Dashboard">
+                <span class="material-symbols-outlined" aria-hidden="true">globe</span>
+                <span class="sidebar__text">Dashboard</span>
+            </a>
+            <a class="sidebar__link @ActiveClass("/UserFlights")" href="/UserFlights">
+                <span class="material-symbols-outlined" aria-hidden="true">flight</span>
+                <span class="sidebar__text">Flights</span>
+            </a>
+            <a class="sidebar__link @ActiveClass("/Airports")" href="/Airports">
+                <span class="material-icons" aria-hidden="true">location_city</span>
+                <span class="sidebar__text">Airports</span>
+            </a>
+            <a class="sidebar__link @ActiveClass("/Passport")" href="/Passport">
+                <span class="material-icons" aria-hidden="true">badge</span>
+                <span class="sidebar__text">Passport</span>
+            </a>
+            <a class="sidebar__link @ActiveClass("/Settings")" href="/Settings">
+                <span class="material-icons" aria-hidden="true">settings</span>
+                <span class="sidebar__text">Settings</span>
+            </a>
+        </nav>
+    </div>
+
+    <div class="sidebar__footer">
+        <div class="sidebar__footer-actions">
+            <form method="post" action="/logout">
+                <button class="sidebar__logout" type="submit" title="Sign out" aria-label="Sign out">
+                    <span class="material-icons" aria-hidden="true">logout</span>
+                </button>
+            </form>
+            <button class="sidebar__collapse-btn" type="button" aria-label="Toggle sidebar" aria-expanded="true" data-sidebar-toggle>
+                <span class="collapse-icon-wrapper" aria-hidden="true">
+                    <span class="material-icons collapse-icon collapse-icon-open">arrow_right_alt</span>
+                    <span class="material-icons collapse-icon collapse-icon-close">close</span>
+                </span>
+            </button>
+        </div>
+    </div>
+</aside>
