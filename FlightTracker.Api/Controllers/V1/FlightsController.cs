@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FlightTracker.Api.Controllers.V1;
 
+/// <summary>Provides read-only access to flight schedule data.</summary>
 [ApiController]
 [Route("api/v1/flights")]
 public class FlightsController(
@@ -16,6 +17,7 @@ public class FlightsController(
     private readonly IFlightService _flightService = flightService;
     private readonly IMapper _mapper = mapper;
 
+    /// <summary>Returns a single flight by its internal identifier.</summary>
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(FlightResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -42,6 +44,7 @@ public class FlightsController(
         return Ok(MapFlight(dto));
     }
 
+    /// <summary>Returns scheduled flights within an optional time window starting from <paramref name="query"/>.</summary>
     [HttpGet("upcoming")]
     [ProducesResponseType(typeof(IEnumerable<FlightResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

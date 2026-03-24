@@ -4,6 +4,11 @@ using System.Security.Claims;
 
 namespace FlightTracker.Api.Infrastructure;
 
+/// <summary>
+/// ASP.NET Core middleware that validates personal access tokens (PATs with the <c>ft_pat_*</c> prefix),
+/// enforces required scopes, records usage, and projects a <see cref="System.Security.Claims.ClaimsPrincipal"/>
+/// so downstream <c>[Authorize]</c> filters work without additional configuration.
+/// </summary>
 public sealed class TokenAuditMiddleware(
     RequestDelegate next,
     ILogger<TokenAuditMiddleware> logger)
@@ -11,6 +16,7 @@ public sealed class TokenAuditMiddleware(
     private readonly RequestDelegate _next = next;
     private readonly ILogger<TokenAuditMiddleware> _logger = logger;
 
+    /// <summary>Invokes the middleware for the current HTTP request.</summary>
     public async Task InvokeAsync(
         HttpContext context,
         IPersonalAccessTokenService tokenService)

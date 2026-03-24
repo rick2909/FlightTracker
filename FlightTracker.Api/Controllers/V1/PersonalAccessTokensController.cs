@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FlightTracker.Api.Controllers.V1;
 
+/// <summary>
+/// Manages personal access tokens (PATs) that allow external clients to authenticate with the API.
+/// PAT management endpoints are not accessible via PAT auth — a session token is required.
+/// </summary>
 [ApiController]
 [Authorize]
 [Route("api/v1/users/{userId:int}/access-tokens")]
@@ -16,6 +20,7 @@ public class PersonalAccessTokensController(
     private readonly IPersonalAccessTokenService _personalAccessTokenService =
         personalAccessTokenService;
 
+    /// <summary>Lists all personal access tokens belonging to the authenticated user.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<PersonalAccessTokenResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -46,6 +51,9 @@ public class PersonalAccessTokensController(
         return Ok(payload);
     }
 
+    /// <summary>
+    /// Creates a new personal access token. The plain-text token is returned once and cannot be retrieved again.
+    /// </summary>
     [HttpPost]
     [ProducesResponseType(typeof(CreatePersonalAccessTokenResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -88,6 +96,7 @@ public class PersonalAccessTokensController(
                 result.Value.PlainTextToken));
     }
 
+    /// <summary>Revokes a personal access token, immediately invalidating it for future requests.</summary>
     [HttpPost("revoke")]
     [ProducesResponseType(typeof(RevokePersonalAccessTokenResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FlightTracker.Api.Controllers.V1;
 
+/// <summary>Provides flight statistics for a user. Requires authentication.</summary>
 [ApiController]
 [Authorize]
 [Route("api/v1/stats/users/{userId:int}")]
@@ -14,6 +15,7 @@ public class StatsController(
 {
     private readonly IFlightStatsService _flightStatsService = flightStatsService;
 
+    /// <summary>Returns per-airline and per-aircraft-type breakdowns for the authenticated user's passport.</summary>
     [HttpGet("passport-details")]
     [ProducesResponseType(typeof(PassportDetailsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

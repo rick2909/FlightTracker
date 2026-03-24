@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FlightTracker.Api.Controllers.V1;
 
+/// <summary>Provides aggregated passport and travel-history data for a user. Requires authentication.</summary>
 [ApiController]
 [Authorize]
 [Route("api/v1/passport/users/{userId:int}")]
@@ -14,6 +15,7 @@ public class PassportController(
 {
     private readonly IPassportService _passportService = passportService;
 
+    /// <summary>Returns the full passport aggregate (totals, favourites, maps) for the authenticated user.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(PassportDataResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -61,6 +63,7 @@ public class PassportController(
             dto.Routes));
     }
 
+    /// <summary>Returns breakdown statistics (per-airline, per-aircraft-type) for the authenticated user.</summary>
     [HttpGet("details")]
     [ProducesResponseType(typeof(PassportDetailsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

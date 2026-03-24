@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FlightTracker.Api.Controllers.V1;
 
+/// <summary>Manages display and privacy preferences for a user. Requires authentication.</summary>
 [ApiController]
 [Authorize]
 [Route("api/v1/preferences/users/{userId:int}")]
@@ -15,6 +16,7 @@ public class PreferencesController(
 {
     private readonly IUserPreferencesService _userPreferencesService = userPreferencesService;
 
+    /// <summary>Returns the current preferences for the authenticated user, creating defaults if none exist.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(UserPreferencesResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -45,6 +47,7 @@ public class PreferencesController(
         return Ok(MapPreferences(result.Value));
     }
 
+    /// <summary>Replaces the preferences for the authenticated user with the supplied values.</summary>
     [HttpPut]
     [ProducesResponseType(typeof(UserPreferencesResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

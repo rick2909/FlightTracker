@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FlightTracker.Api.Controllers.V1;
 
+/// <summary>Provides read-only access to airport data and per-airport flight lists.</summary>
 [ApiController]
 [Route("api/v1/airports")]
 public class AirportsController(
@@ -18,6 +19,7 @@ public class AirportsController(
     private readonly IAirportOverviewService _airportOverviewService = airportOverviewService;
     private readonly IMapper _mapper = mapper;
 
+    /// <summary>Returns all airports known to the system.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(IEnumerable<AirportResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -37,6 +39,7 @@ public class AirportsController(
         return Ok(response);
     }
 
+    /// <summary>Returns a single airport by its IATA or ICAO code.</summary>
     [HttpGet("{code}")]
     [ProducesResponseType(typeof(AirportResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -63,6 +66,7 @@ public class AirportsController(
         return Ok(MapAirport(dto));
     }
 
+    /// <summary>Returns departure and arrival flight lists for the given airport code.</summary>
     [HttpGet("{code}/flights")]
     [ProducesResponseType(typeof(AirportFlightsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

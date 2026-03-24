@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FlightTracker.Api.Controllers.V1;
 
+/// <summary>
+/// Manages a user's tracked flights (add, view, update, delete).
+/// User-scoped routes enforce that the caller owns the resource. Requires authentication.
+/// </summary>
 [ApiController]
 [Authorize]
 [Route("api/v1")]
@@ -15,6 +19,8 @@ public class UserFlightsController(
 {
     private readonly IUserFlightService _userFlightService = userFlightService;
 
+    
+    /// <summary>Returns all tracked flights for the authenticated user.</summary>
     [HttpGet("users/{userId:int}/flights")]
     [ProducesResponseType(typeof(IEnumerable<UserFlightDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -40,6 +46,7 @@ public class UserFlightsController(
         return Ok(result.Value ?? Array.Empty<UserFlightDto>());
     }
 
+    /// <summary>Returns aggregated flight statistics for the authenticated user.</summary>
     [HttpGet("users/{userId:int}/flights/stats")]
     [ProducesResponseType(typeof(UserFlightStatsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -70,6 +77,7 @@ public class UserFlightsController(
         return Ok(result.Value);
     }
 
+    /// <summary>Returns whether the authenticated user has a tracked flight for the given flight.</summary>
     [HttpGet("users/{userId:int}/flights/{flightId:int}/has-flown")]
     [ProducesResponseType(typeof(HasUserFlownResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -97,6 +105,7 @@ public class UserFlightsController(
         return Ok(new HasUserFlownResponse(result.Value));
     }
 
+    /// <summary>Adds a new tracked flight for the authenticated user.</summary>
     [HttpPost("users/{userId:int}/flights")]
     [ProducesResponseType(typeof(UserFlightDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -132,6 +141,7 @@ public class UserFlightsController(
             result.Value);
     }
 
+    /// <summary>Returns a single user-flight record by its internal identifier.</summary>
     [HttpGet("user-flights/{id:int}")]
     [ProducesResponseType(typeof(UserFlightDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -168,6 +178,7 @@ public class UserFlightsController(
         return Ok(result.Value);
     }
 
+    /// <summary>Updates the user-flight and its associated flight schedule in a single request.</summary>
     [HttpPut("user-flights/{id:int}")]
     [ProducesResponseType(typeof(UserFlightDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -217,6 +228,7 @@ public class UserFlightsController(
 
         return Ok(result.Value);
     }
+    /// <summary>Deletes a tracked user-flight record.</summary>
 
     [HttpDelete("user-flights/{id:int}")]
     [ProducesResponseType(typeof(DeleteUserFlightResponse), StatusCodes.Status200OK)]
