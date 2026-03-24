@@ -31,7 +31,49 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "FlightTracker API",
         Version = "v1",
-        Description = "Versioning and deprecation policy: see doc/ApiVersioningPolicy.md"
+        Description = """
+            ## Authentication
+
+            Most endpoints require a Bearer token:
+
+            ```
+            Authorization: Bearer {token}
+            ```
+
+            **Blazor Web frontend** — short-lived first-party JWTs issued by the Web host.
+
+            **External clients** — Personal Access Tokens (PAT) created via
+            `POST /api/v1/users/{userId}/access-tokens`. PATs use the `ft_pat_*` prefix.
+
+            ## Rate Limits
+
+            | Client type | Limit |
+            |---|---|
+            | PAT (`ft_pat_*`) | 120 requests / minute |
+            | IP fallback | 600 requests / minute |
+
+            Returns `429 Too Many Requests` when exceeded.
+
+            ## PAT Scopes
+
+            | Scope | Access |
+            |---|---|
+            | `read:flights` | Read user flight history |
+            | `write:flights` | Create and modify flight records |
+            | `read:stats` | Read statistics and passport data |
+
+            ## Versioning
+
+            Route-based versioning. Additive changes ship within the same major version.
+            Breaking changes get a new prefix (e.g. `/api/v2`).
+            Deprecated versions include `api-supported-versions` and
+            `api-deprecation-notes` response headers.
+
+            ## Ownership
+
+            User-scoped endpoints enforce that the `userId` route parameter matches
+            the authenticated token subject. Returns `403` on mismatch.
+            """
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -41,8 +83,31 @@ builder.Services.AddSwaggerGen(options =>
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        Description = "Use: Authorization: Bearer {token}"
+        Description = """
+            Enter your bearer token.
+
+            **First-party clients**: JWT issued by the FlightTracker Web host.
+
+            **External clients**: Personal Access Token with prefix `ft_pat_*`.
+
+            Example: `Bearer ft_pat_abc123...`
+            """
     });
+
+    options.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer")] = new List<string>()
+    });
+
+    var xmlFile = $"{System.Reflection.Assembly
+        .GetExecutingAssembly()
+        .GetName()
+        .Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
 });
 
 var bearerSection = builder.Configuration.GetSection("Authentication:Bearer");
@@ -190,7 +255,7 @@ app.Use(async (context, next) =>
     {
         context.Response.Headers["api-supported-versions"] = "1.0";
         context.Response.Headers["api-deprecation-notes"] =
-            "See doc/ApiVersioningPolicy.md";
+            "See /swagger for versioning and deprecation policy.";
     }
 
     await next();
@@ -201,7 +266,7 @@ app.MapGet("/api/versioning", () => Results.Ok(new
     currentVersion = "v1",
     supportedVersions = new[] { "v1" },
     deprecatedVersions = Array.Empty<string>(),
-    policyDocument = "doc/ApiVersioningPolicy.md"
+    documentation = "/swagger"
 }));
 
 app.UseAuthentication();
