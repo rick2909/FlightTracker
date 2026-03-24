@@ -1,12 +1,10 @@
 using System.Security.Claims;
-using FlightTracker.Application.Services.Interfaces;
-using FlightTracker.Infrastructure.Data;
 using FlightTracker.Web.Models.ViewModels;
 using FlightTracker.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Http;
 
 namespace FlightTracker.Web.Pages;
 
@@ -14,59 +12,65 @@ namespace FlightTracker.Web.Pages;
 public partial class Settings
 {
     [Inject]
-    private UserManager<ApplicationUser> UserManager { get; set; } = default!;
+    private IAccountApiClient AccountApiClient { get; set; } = default!;
 
     [Inject]
-    private IUserPreferencesService UserPreferencesService { get; set; } = default!;
+    private IUserPreferencesApiClient UserPreferencesApiClient { get; set; } = default!;
 
     [Inject]
     private IPersonalAccessTokensApiClient PersonalAccessTokensApiClient { get; set; } = default!;
 
+    [Inject]
+    private IHttpContextAccessor HttpContextAccessor { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    protected int UserId { get; private set; }
 
     protected SettingsViewModel? Model { get; private set; }
 
     protected override async Task OnInitializedAsync()
     {
-        var userId = await GetCurrentUserIdAsync();
-        if (userId <= 0)
+        UserId = await GetCurrentUserIdAsync();
+        if (UserId <= 0)
         {
             return;
         }
 
-        var user = await UserManager.FindByIdAsync(userId.ToString());
-        if (user is null)
+        var profile = await AccountApiClient.GetAsync(UserId);
+        if (profile is null)
         {
             return;
         }
 
-        var preferences = await UserPreferencesService.GetOrCreateAsync(userId, default);
-        if (preferences.IsFailure || preferences.Value is null)
+        var preferences = await UserPreferencesApiClient.GetAsync(UserId);
+        if (preferences is null)
         {
             return;
         }
 
-        var accessTokens = await PersonalAccessTokensApiClient.ListAsync(userId);
+        var accessTokens = await PersonalAccessTokensApiClient.ListAsync(UserId);
+        var requestCookies = HttpContextAccessor.HttpContext?.Request.Cookies;
         Model = new SettingsViewModel
         {
-            FullName = user.FullName ?? string.Empty,
-            UserName = user.UserName ?? string.Empty,
-            Email = user.Email ?? string.Empty,
-            ProfileVisibility = "private",
-            Theme = "system",
+            FullName = profile.FullName,
+            UserName = profile.UserName,
+            Email = profile.Email,
+            ProfileVisibility = requestCookies?["ft_profile_visibility"] ?? "private",
+            Theme = requestCookies?["ft_theme"] ?? "system",
             Preferences = new PreferencesViewModel
             {
-                DistanceUnit = preferences.Value.DistanceUnit,
-                TemperatureUnit = preferences.Value.TemperatureUnit,
-                TimeFormat = preferences.Value.TimeFormat,
-                DateFormat = preferences.Value.DateFormat,
-                ProfileVisibilityLevel = preferences.Value.ProfileVisibility,
-                ShowTotalMiles = preferences.Value.ShowTotalMiles,
-                ShowAirlines = preferences.Value.ShowAirlines,
-                ShowCountries = preferences.Value.ShowCountries,
-                ShowMapRoutes = preferences.Value.ShowMapRoutes,
-                EnableActivityFeed = preferences.Value.EnableActivityFeed
+                DistanceUnit = preferences.DistanceUnit,
+                TemperatureUnit = preferences.TemperatureUnit,
+                TimeFormat = preferences.TimeFormat,
+                DateFormat = preferences.DateFormat,
+                ProfileVisibilityLevel = preferences.ProfileVisibility,
+                ShowTotalMiles = preferences.ShowTotalMiles,
+                ShowAirlines = preferences.ShowAirlines,
+                ShowCountries = preferences.ShowCountries,
+                ShowMapRoutes = preferences.ShowMapRoutes,
+                EnableActivityFeed = preferences.EnableActivityFeed
             },
             PersonalAccessTokens = accessTokens.Select(token => new PersonalAccessTokenViewModel
             {

@@ -21,10 +21,15 @@ using FlightTracker.Web.Configuration;
 using FlightTracker.Web.Services.Interfaces;
 using FlightTracker.Web.Services.Implementation;
 using FlightTracker.Web.Api.Clients;
+using FlightTracker.Web.Models.ViewModels;
+using FlightTracker.Domain.Enums;
+using FlightTracker.Application.Dtos;
+using FlightTracker.Domain.Entities;
+using AutoMapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages();
 builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection(AuthSettings.SectionName));
 builder.Services.Configure<FlightTrackerApiOptions>(
     builder.Configuration.GetSection(FlightTrackerApiOptions.SectionName));
@@ -105,6 +110,15 @@ builder.Services.AddHttpClient<IUserPreferencesApiClient, UserPreferencesApiClie
 })
 .AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
 builder.Services.AddHttpClient<IPersonalAccessTokensApiClient, PersonalAccessTokensApiClient>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+    {
+        client.BaseAddress = baseUri;
+    }
+})
+.AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
+builder.Services.AddHttpClient<IAccountApiClient, AccountApiClient>((sp, client) =>
 {
     var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
     if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
@@ -235,7 +249,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler("/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
@@ -267,13 +281,10 @@ app.UseAuthorization();
 
 app.MapStaticAssets();
 
-// Route authenticated users to Dashboard, unauthenticated to Home
-app.MapControllerRoute(
-        name: "default",
-        pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+app.MapRazorPages().WithStaticAssets();
 
 app.MapBlazorHub();
+app.MapFallbackToPage("/_Host");
 
 if (app.Environment.IsDevelopment())
 {
@@ -312,5 +323,54 @@ if (app.Environment.IsDevelopment())
         return Results.Redirect("/Dashboard");
     });
 }
+
+app.MapPost("/logout", async (
+    HttpContext httpContext,
+    SignInManager<ApplicationUser> signInManager) =>
+{
+    await signInManager.SignOutAsync();
+    return Results.Redirect("/");
+});
+
+app.MapGet("/api/aircraft-photos", async (
+    string? modeSCode,
+    string? registration,
+    int maxResults,
+    IAircraftPhotoService aircraftPhotoService,
+    CancellationToken cancellationToken) =>
+{
+    const int MinResults = 1;
+    const int MaxResults = 5;
+
+    if (string.IsNullOrWhiteSpace(modeSCode) && string.IsNullOrWhiteSpace(registration))
+    {
+        return Results.BadRequest(new { error = "Either modeSCode or registration must be provided" });
+    }
+
+    if (maxResults < MinResults || maxResults > MaxResults)
+    {
+        return Results.BadRequest(new { error = $"maxResults must be between {MinResults} and {MaxResults}." });
+    }
+
+    AircraftPhotoResultDto? result;
+    try
+    {
+        result = await aircraftPhotoService.GetAircraftPhotosAsync(
+            modeSCode,
+            registration,
+            maxResults,
+            cancellationToken);
+    }
+    catch (Exception)
+    {
+        return Results.Problem(
+            title: "Unable to fetch aircraft photos",
+            statusCode: StatusCodes.Status500InternalServerError);
+    }
+
+    return result is null
+        ? Results.NotFound(new { error = "No photos found" })
+        : Results.Ok(result);
+});
 
 app.Run();

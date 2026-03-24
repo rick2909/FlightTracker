@@ -10,6 +10,7 @@ using FlightTracker.Infrastructure.External;
 using FlightTracker.Infrastructure.Repositories.Implementation;
 using FlightTracker.Infrastructure.Time;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -193,6 +194,19 @@ builder.Services.AddDbContext<FlightTrackerDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")
         ?? "Data Source=flighttracker.dev.db"));
 
+builder.Services
+    .AddIdentityCore<ApplicationUser>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequireDigit = true;
+        options.Password.RequiredLength = 6;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequireUppercase = true;
+    })
+    .AddRoles<IdentityRole<int>>()
+    .AddEntityFrameworkStores<FlightTrackerDbContext>();
+
 builder.Services.AddScoped<IAirportRepository, AirportRepository>();
 builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 builder.Services.AddScoped<IUserFlightRepository, UserFlightRepository>();
@@ -208,6 +222,7 @@ builder.Services.AddScoped<IPassportService, PassportService>();
 builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
 builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
 builder.Services.AddScoped<IPersonalAccessTokenService, PersonalAccessTokenService>();
+builder.Services.AddScoped<IUsernameValidationService, UsernameValidationService>();
 builder.Services.AddSingleton<IDistanceCalculator, DistanceCalculator>();
 
 builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>

@@ -1,8 +1,7 @@
 using System.Security.Claims;
-using FlightTracker.Infrastructure.Data;
+using FlightTracker.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Identity;
 
 namespace FlightTracker.Web.Components.Layout;
 
@@ -12,7 +11,7 @@ public partial class Sidebar
     private NavigationManager NavigationManager { get; set; } = default!;
 
     [Inject]
-    private UserManager<ApplicationUser> UserManager { get; set; } = default!;
+    private IAccountApiClient AccountApiClient { get; set; } = default!;
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
@@ -52,7 +51,15 @@ public partial class Sidebar
             return;
         }
 
-        _ = await UserManager.FindByIdAsync(parsedUserId.ToString());
+        var profile = await AccountApiClient.GetAsync(parsedUserId);
+        if (profile is not null)
+        {
+            DisplayName = string.IsNullOrWhiteSpace(profile.FullName)
+                ? profile.UserName
+                : profile.FullName;
+            Initials = BuildInitials(DisplayName);
+        }
+
         ProfileImageUrl = null;
     }
 
