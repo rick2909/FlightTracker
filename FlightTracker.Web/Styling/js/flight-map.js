@@ -1,28 +1,93 @@
-// Leaflet flight map using embedded JSON (script#flightMapData)
+// Leaflet flight map using embedded JSON in script[type="application/json"]
 (function(){
-    const mapEl=document.getElementById('flightMap');
-    if(!mapEl||!window.L){console.warn('[flight-map] map element or Leaflet missing');return;}
+    let map=null;
+    let mapEl=null;
+    let renderer=null;
+    let layers={past:null,upcoming:null};
+    const flightIndex=new Map();
+    let lastFilterKeys=[];
+    let eventsBound=false;
+    let resizeObserver=null;
+    let observedMapEl=null;
+    let currentMapId='flightMap';
+    let currentDataId='flightMapData';
+
+    function getMapElement(mapId){
+        return document.getElementById(mapId||'flightMap');
+    }
+
+    function ensureMap(mapId){
+        const resolvedMapId=mapId||currentMapId||'flightMap';
+        const currentEl=getMapElement(resolvedMapId);
+        if(!currentEl){
+            return false;
+        }
+        if(!window.L){
+            console.warn('[flight-map] Leaflet missing while map element exists');
+            return false;
+        }
+
+        const requiresRecreate=!map || currentMapId!==resolvedMapId || mapEl!==currentEl;
+        if(requiresRecreate && map){
+            try{map.remove();}catch(_){ }
+            map=null;
+            renderer=null;
+            layers={past:null,upcoming:null};
+            flightIndex.clear();
+            lastFilterKeys=[];
+        }
+
+        mapEl=currentEl;
+        currentMapId=resolvedMapId;
+
+        if(!map){
+            map=L.map(mapEl,{center:[20,0],zoom:2,worldCopyJump:true});
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+            renderer=L.canvas({padding:0.2});
+            layers={past:L.layerGroup().addTo(map),upcoming:L.layerGroup().addTo(map)};
+        }
+
+        return true;
+    }
 
     const cssVar=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
     const colorPast=cssVar('--flight-map-past-line')||'#1565C0';
     const colorUpcoming=cssVar('--flight-map-upcoming-marker')||'#FFB300';
     const colorHighlight=cssVar('--flight-map-highlight')||'#ff4081';
 
-    function readFlights(){
-        const el=document.getElementById('flightMapData');
-        if(!el){console.warn('[flight-map] #flightMapData not found');return [];}    
-        const raw=el.textContent||'[]';
-        try{const parsed=JSON.parse(raw);return parsed;}catch(e){console.warn('[flight-map] JSON parse error',e);return [];}
+    function decodeHtmlEntities(value){
+        if(typeof value!=='string'||value.indexOf('&')===-1){
+            return value;
+        }
+        const textarea=document.createElement('textarea');
+        textarea.innerHTML=value;
+        return textarea.value;
     }
 
-    // Use worldCopyJump for seamless horizontal panning; Canvas renderer for better path perf
-    const map=L.map('flightMap',{center:[20,0],zoom:2,worldCopyJump:true});
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
-    const renderer=L.canvas({padding:0.2});
+    function readFlights(dataId){
+        const resolvedDataId=dataId||currentDataId||'flightMapData';
+        const el=document.getElementById(resolvedDataId);
+        if(!el){return [];}
+        const raw=(el.textContent||'[]').trim();
+        if(!raw){return [];}
 
-    const layers={past:L.layerGroup().addTo(map),upcoming:L.layerGroup().addTo(map)};
-    const flightIndex=new Map();
-    let lastFilterKeys=[];
+        try{
+            const parsed=JSON.parse(raw);
+            return Array.isArray(parsed)?parsed:[];
+        }
+        catch(_){
+            try{
+                const decoded=decodeHtmlEntities(raw);
+                const parsed=JSON.parse(decoded);
+                return Array.isArray(parsed)?parsed:[];
+            }
+            catch(e){
+                console.warn('[flight-map] JSON parse error',e);
+                return [];
+            }
+        }
+    }
+
     const highlight={
         past:{color:colorHighlight,weight:5,opacity:0.95},
         upcoming:{radius:9,color:colorHighlight,fillColor:colorHighlight,fillOpacity:1,weight:2}
@@ -35,22 +100,41 @@
 
     // Ensure the map resizes to its container height; handle flex/layout changes.
     function scheduleInvalidate(){
+        if(!map){return;}
         try{ map.invalidateSize(false); }catch(_){ }
         if('requestAnimationFrame' in window){ requestAnimationFrame(()=>{ try{ map.invalidateSize(false);}catch(_){ } }); }
         [16,100,300,800,1500].forEach(ms=>setTimeout(()=>{ try{ map.invalidateSize(false);}catch(_){ } }, ms));
     }
-    if('ResizeObserver' in window){
-        try{ new ResizeObserver(()=>scheduleInvalidate()).observe(mapEl); }catch(_){ }
+    function ensureGlobalEvents(){
+        if(eventsBound){return;}
+        eventsBound=true;
+        window.addEventListener('resize', scheduleInvalidate);
+        window.addEventListener('load', scheduleInvalidate);
+        document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') scheduleInvalidate(); });
+        window.addEventListener('flightMap:invalidate', scheduleInvalidate);
     }
-    window.addEventListener('resize', scheduleInvalidate);
-    window.addEventListener('load', scheduleInvalidate);
-    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') scheduleInvalidate(); });
-    window.addEventListener('flightMap:invalidate', scheduleInvalidate);
 
-    function render(){
+    function observeElement(){
+        if(!mapEl||!('ResizeObserver' in window)){return;}
+        if(!resizeObserver){
+            try{ resizeObserver=new ResizeObserver(()=>scheduleInvalidate()); }catch(_){ resizeObserver=null; }
+        }
+        if(!resizeObserver){return;}
+        if(observedMapEl&&observedMapEl!==mapEl){
+            try{ resizeObserver.unobserve(observedMapEl); }catch(_){ }
+        }
+        observedMapEl=mapEl;
+        try{ resizeObserver.observe(mapEl); }catch(_){ }
+    }
+
+    function render(mapId,dataId){
+        currentDataId=dataId||currentDataId||'flightMapData';
+        if(!ensureMap(mapId)){return;}
+        ensureGlobalEvents();
+        observeElement();
         layers.past.clearLayers();layers.upcoming.clearLayers();flightIndex.clear();
-        const flights=readFlights();
-        if(!flights.length){console.log('[flight-map] no flights');return;}
+        const flights=readFlights(currentDataId);
+        if(!flights.length){return;}
         const polys=[];const markers=[];
         // Utility: create a geodesic (great-circle) arc as a polyline between two lat/lon points
         // Ensures continuity across the antimeridian by unwrapping longitudes.
@@ -125,16 +209,21 @@
 
     window.flightMapClearFilter=function(){};
     window.flightMapFilter=function(term){
+        if(!ensureMap(currentMapId)){return;}
         if(lastFilterKeys.length){ lastFilterKeys.forEach(k=>{ const e=flightIndex.get(k); if(!e) return; if(e.type==='past'){ e.layer.setStyle(normal.past);} else { e.layer.setStyle(normal.upcoming);} }); }
         if(!term){ lastFilterKeys=[]; return; }
         const termLc=term.toLowerCase();
         lastFilterKeys=Array.from(flightIndex.keys()).filter(k=>k.toLowerCase().includes(termLc));
         lastFilterKeys.forEach(k=>{ const e=flightIndex.get(k); if(!e)return; if(e.type==='past'){ e.layer.setStyle(highlight.past);} else { e.layer.setStyle(highlight.upcoming);} });
     };
-    window.flightMapZoomToSelection=function(key){ const e=flightIndex.get(key); if(!e)return; if(e.type==='past'){ map.fitBounds(e.layer.getBounds().pad(0.3)); } else { const ll=e.layer.getLatLng(); map.setView(ll, Math.max(map.getZoom(),6)); e.layer.openPopup(); } };
-    window.flightMapZoomToFiltered=function(){ if(!lastFilterKeys.length)return; let b=null; lastFilterKeys.forEach(k=>{ const e=flightIndex.get(k); if(!e)return; if(e.type==='past'){ b=b?b.extend(e.layer.getBounds()):e.layer.getBounds(); } else { const ll=e.layer.getLatLng(); b=b?b.extend(ll):L.latLngBounds(ll,ll); } }); if(b) map.fitBounds(b.pad(0.2)); };
+    window.flightMapZoomToSelection=function(key){ if(!ensureMap(currentMapId)){return;} const e=flightIndex.get(key); if(!e)return; if(e.type==='past'){ map.fitBounds(e.layer.getBounds().pad(0.3)); } else { const ll=e.layer.getLatLng(); map.setView(ll, Math.max(map.getZoom(),6)); e.layer.openPopup(); } };
+    window.flightMapZoomToFiltered=function(){ if(!ensureMap(currentMapId)){return;} if(!lastFilterKeys.length)return; let b=null; lastFilterKeys.forEach(k=>{ const e=flightIndex.get(k); if(!e)return; if(e.type==='past'){ b=b?b.extend(e.layer.getBounds()):e.layer.getBounds(); } else { const ll=e.layer.getLatLng(); b=b?b.extend(ll):L.latLngBounds(ll,ll); } }); if(b) map.fitBounds(b.pad(0.2)); };
 
-    render();
-    scheduleInvalidate();
+    window.flightMapInitOrReload=function(mapId,dataId){
+        render(mapId,dataId);
+        scheduleInvalidate();
+    };
+
+    window.flightMapInitOrReload(currentMapId,currentDataId);
     window.flightMap={reload:render,zoomToSelection:window.flightMapZoomToSelection,zoomToFiltered:window.flightMapZoomToFiltered};
 })();

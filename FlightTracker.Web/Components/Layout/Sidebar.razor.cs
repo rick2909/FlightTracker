@@ -2,10 +2,11 @@ using System.Security.Claims;
 using FlightTracker.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Routing;
 
 namespace FlightTracker.Web.Components.Layout;
 
-public partial class Sidebar
+public partial class Sidebar : IDisposable
 {
     [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
@@ -21,6 +22,11 @@ public partial class Sidebar
     private string Initials { get; set; } = "GU";
 
     private string? ProfileImageUrl { get; set; }
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += HandleLocationChanged;
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -69,6 +75,16 @@ public partial class Sidebar
         return current.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
             ? "is-active"
             : string.Empty;
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged;
     }
 
     private static string BuildInitials(string name)
