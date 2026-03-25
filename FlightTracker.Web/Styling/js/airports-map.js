@@ -1,65 +1,78 @@
 // Airports overview map
 (function(){
-  if(!window.L){ try{ console.error('[airports-map] Leaflet missing'); }catch{} return; }
-
-  const el = document.getElementById('airportsMap');
-  if(!el){ return; }
-
-  const map = L.map('airportsMap', { center:[20,0], zoom:4, worldCopyJump:true });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-
-  const markersLayer = L.layerGroup().addTo(map);
-  let lastReq = 0;
-  let markerIndex = new Map();
+  let map = null;
+  let mapEl = null;
+  let markersLayer = null;
+  let selectedAirport = null;
   let selectedMarker = null;
+  let markerIndex = new Map();
+  let lastReq = 0;
+  let useLive = false;
+  let dotNetRef = null;
+
+  function ensureMap(){
+    if(!window.L){ try{ console.error('[airports-map] Leaflet missing'); }catch{} return false; }
+
+    const currentEl = document.getElementById('airportsMap');
+    if(!currentEl){ return false; }
+
+    const requiresRecreate = !map || mapEl !== currentEl;
+    if(requiresRecreate && map){
+      try{ map.remove(); }catch(_){ }
+      map = null;
+      markersLayer = null;
+      selectedAirport = null;
+      selectedMarker = null;
+      markerIndex = new Map();
+    }
+
+    mapEl = currentEl;
+
+    if(!map){
+      map = L.map(mapEl, { center:[20,0], zoom:4, worldCopyJump:true });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      markersLayer = L.layerGroup().addTo(map);
+      map.on('moveend zoomend', () => loadAirports());
+    }
+
+    return true;
+  }
 
   function boundsQuery(){
+    if(!map){ return ''; }
     const b = map.getBounds();
     const z = map.getZoom();
     return `north=${b.getNorth()}&south=${b.getSouth()}&east=${b.getEast()}&west=${b.getWest()}&zoom=${z}`;
   }
 
   async function loadAirports(){
+    if(!ensureMap()){ return; }
+    if(!dotNetRef){ return; }
     const reqId = ++lastReq;
-    const url = '/api/v1/airports';
+    const b = map.getBounds();
+    const z = map.getZoom();
     try{
-      const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      const airports = await res.json();
-      const b = map.getBounds();
-      const z = map.getZoom();
-      const north = b.getNorth();
-      const south = b.getSouth();
-      const east = b.getEast();
-      const west = b.getWest();
-      const crossesAntimeridian = east < west;
-
-      const list = z <= 3
-        ? []
-        : (airports || []).filter(a => {
-            if(a.latitude == null || a.longitude == null) return false;
-            const lat = a.latitude;
-            const lon = a.longitude;
-            const withinLat = lat <= north && lat >= south;
-            const withinLon = crossesAntimeridian
-              ? (lon >= west || lon <= east)
-              : (lon >= west && lon <= east);
-            if(!withinLat || !withinLon) return false;
-            if(z >= 4 && z < 6) return !!a.iataCode;
-            if(z >= 6 && z < 8) return !!a.iataCode || !!a.city;
-            return true;
-        }).map(a => ({
-            id: a.id,
-            name: a.name,
-            city: a.city,
-            country: a.country,
-            iata: a.iataCode,
-            icao: a.icaoCode,
-            lat: a.latitude,
-            lon: a.longitude
-        }));
+      const airports = await dotNetRef.invokeMethodAsync(
+        'GetAirportsForMapAsync',
+        b.getNorth(),
+        b.getSouth(),
+        b.getEast(),
+        b.getWest(),
+        z
+      );
+      const list = (airports || []).map(a => ({
+        id: a.id,
+        name: a.name,
+        city: a.city,
+        country: a.country,
+        iata: a.iata,
+        icao: a.icao,
+        lat: a.lat,
+        lon: a.lon
+      }));
       if(reqId !== lastReq) return; // stale
       markersLayer.clearLayers();
       markerIndex = new Map();
@@ -97,8 +110,6 @@
   }catch(e){ try{ console.error('[airports-map] load error', e); }catch{} }
   }
 
-  let selectedAirport = null;
-
   function getCssVar(name){
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
@@ -118,6 +129,7 @@
   }
 
   async function selectAirport(a){
+    if(!a){ return; }
     selectedAirport = a;
     if(selectedMarker){ setMarkerSelected(selectedMarker, false); }
     const m = markerIndex.get(a.id);
@@ -164,12 +176,14 @@
   }
 
   async function loadFlights(airport){
-    const code = airport.iata || airport.icao || airport.name;
-    const url = `/api/v1/airports/${encodeURIComponent(code)}/flights?live=${useLive}`;
+    if(!airport){ return; }
+    if(!dotNetRef){ return; }
     try{
-      const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      const data = await res.json();
+      const data = await dotNetRef.invokeMethodAsync(
+        'GetFlightsForAirportAsync',
+        airport.id,
+        useLive
+      );
       const depEl = document.getElementById('departingList');
       const arrEl = document.getElementById('arrivingList');
       depEl.innerHTML = '';
@@ -184,10 +198,20 @@
     useLive = !!toggle.checked;
     toggle.addEventListener('change', () => {
       useLive = !!toggle.checked;
-      if(selectedAirport){ loadFlights(selectedAirport.id); }
+      if(selectedAirport){ loadFlights(selectedAirport); }
     });
   }
 
-  map.on('moveend zoomend', () => loadAirports());
-  loadAirports();
+  function initOrReload(dotNet){
+    dotNetRef = dotNet || dotNetRef;
+    if(!ensureMap()){ return; }
+    loadAirports();
+    try{ map.invalidateSize(false); }catch(_){ }
+    if('requestAnimationFrame' in window){
+      requestAnimationFrame(() => { try{ map.invalidateSize(false); }catch(_){ } });
+    }
+  }
+
+  window.airportsMapInitOrReload = initOrReload;
+  initOrReload(null);
 })();

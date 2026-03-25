@@ -24,7 +24,6 @@ using FlightTracker.Web.Api.Clients;
 using FlightTracker.Web.Models.ViewModels;
 using FlightTracker.Domain.Enums;
 using FlightTracker.Application.Dtos;
-using FlightTracker.Domain.Entities;
 using AutoMapper;
 
 var builder = WebApplication.CreateBuilder(args);
