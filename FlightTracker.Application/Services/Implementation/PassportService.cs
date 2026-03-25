@@ -228,18 +228,27 @@ public class PassportService : IPassportService
         }
     }
 
+    // Maps non-standard or legacy 2-letter codes to valid ISO 3166-1 alpha-2 codes.
+    private static readonly Dictionary<string, string> s_Iso2Aliases =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["uk"] = "GB"
+        };
+
     private string? ToIso2(string? country)
     {
         if (string.IsNullOrWhiteSpace(country)) return null;
-        var key = country.Trim().ToLowerInvariant();
+        var key = country.Trim();
 
-        // Already ISO-2?
+        // Already 2-letter code — normalise aliases before returning.
         if (key.Length == 2 && key.All(char.IsLetter))
-            return key.ToUpperInvariant();
+        {
+            return s_Iso2Aliases.TryGetValue(key, out var mapped)
+                ? mapped
+                : key.ToUpperInvariant();
+        }
 
-        // Normalize and convert to ISO-2
-        key = key.ToLowerInvariant();
-        return key.Length == 2 ? key : TryRegionInfoFallback(key);
+        return TryRegionInfoFallback(key.ToLowerInvariant());
     }
 
     private string? TryRegionInfoFallback(string value)

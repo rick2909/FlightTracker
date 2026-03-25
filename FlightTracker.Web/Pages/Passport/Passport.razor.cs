@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json;
 using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Enums;
@@ -9,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.JSInterop;
 using YourApp.Models;
 
 namespace FlightTracker.Web.Pages;
@@ -25,6 +25,9 @@ public partial class Passport
     [Inject]
     private IUserPreferencesService UserPreferencesService { get; set; } = default!;
 
+    [Inject]
+    private IJSRuntime JsRuntime { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -33,13 +36,9 @@ public partial class Passport
 
     protected PassportViewModel? Model { get; private set; }
 
-    protected string FlightsPerYearJson { get; private set; } = "{}";
-
-    protected string FlightsByAirlineJson { get; private set; } = "{}";
-
-    protected string FlightsByAircraftTypeJson { get; private set; } = "{}";
-
     protected string Initials { get; private set; } = "GU";
+
+    private bool _chartsInitialized;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -113,9 +112,47 @@ public partial class Passport
         };
 
         Initials = BuildInitials(displayName);
-        FlightsPerYearJson = JsonSerializer.Serialize(Model.FlightsPerYear);
-        FlightsByAirlineJson = JsonSerializer.Serialize(Model.FlightsByAirline);
-        FlightsByAircraftTypeJson = JsonSerializer.Serialize(Model.FlightsByAircraftType);
+        _chartsInitialized = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Model is null || _chartsInitialized)
+        {
+            return;
+        }
+
+        try
+        {
+            await JsRuntime.InvokeVoidAsync(
+                "Passport.initPassportChart",
+                Model.FlightsPerYear);
+
+            if (Model.ShowAirlines)
+            {
+                await JsRuntime.InvokeVoidAsync(
+                    "Passport.initPie",
+                    "passport-airlines-pie",
+                    Model.FlightsByAirline,
+                    "Airlines");
+            }
+
+            await JsRuntime.InvokeVoidAsync(
+                "Passport.initPie",
+                "passport-aircraft-pie",
+                Model.FlightsByAircraftType,
+                "Aircraft");
+
+            _chartsInitialized = true;
+        }
+        catch (JSDisconnectedException)
+        {
+            // Ignore transient disconnects during navigation/teardown.
+        }
+        catch (TaskCanceledException)
+        {
+            // Ignore canceled invocations during rapid route changes.
+        }
     }
 
     private async Task<int> GetCurrentUserIdAsync()
@@ -146,5 +183,20 @@ public partial class Passport
         }
 
         return string.Concat(char.ToUpperInvariant(parts[0][0]), char.ToUpperInvariant(parts[1][0]));
+    }
+
+    private static string BuildFlagClass(string? iso2Code)
+    {
+        var flagCode = (iso2Code ?? string.Empty).ToLowerInvariant();
+        return "fi fi-" + flagCode;
+    }
+
+    private static string BuildAvatarFallbackStyle(string? avatarUrl)
+    {
+        var displayValue = string.IsNullOrWhiteSpace(avatarUrl)
+            ? "inline-flex"
+            : "none";
+
+        return $"display:{displayValue};align-items:center;justify-content:center;width:100%;height:100%;font-weight:600;";
     }
 }
