@@ -33,11 +33,17 @@ public partial class FlightMapPanel
 
     protected MarkupString FlightsJsonMarkup { get; private set; } = new("[]");
 
+    private bool _mapInitialized;
+
+    private int _mapInitAttempts;
+
+    private const int MaxMapInitAttempts = 25;
+
     protected string MapClass => "flight-map__map" + (Sticky ? " flight-map__map--sticky" : string.Empty);
 
     protected string MapStyle => Sticky
-        ? $"height:{Height};"
-        : $"height:clamp({MinHeight}, {Height}, {MaxVh}); max-height:clamp({MinHeight}, {Height}, {MaxVh});";
+        ? $"width:100%;min-height:{MinHeight};height:{Height};"
+        : $"width:100%;min-height:{MinHeight};height:{Height};max-height:{MaxVh};";
 
     protected override void OnParametersSet()
     {
@@ -50,16 +56,41 @@ public partial class FlightMapPanel
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
         FlightsJsonMarkup = new MarkupString(flightsJson);
+
+        _mapInitialized = false;
+        _mapInitAttempts = 0;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (_mapInitialized)
+        {
+            return;
+        }
+
         try
         {
-            await JsRuntime.InvokeVoidAsync(
+            var initialized = await JsRuntime.InvokeAsync<bool>(
                 "flightMapInitOrReload",
                 MapElementId,
                 MapDataElementId);
+
+            if (initialized)
+            {
+                _mapInitialized = true;
+            }
+            else
+            {
+                await RetryMapInitAsync();
+            }
+        }
+        catch (JSException)
+        {
+            await RetryMapInitAsync();
+        }
+        catch (InvalidOperationException)
+        {
+            await RetryMapInitAsync();
         }
         catch (JSDisconnectedException)
         {
@@ -69,5 +100,17 @@ public partial class FlightMapPanel
         {
             // Ignore canceled invocations during rapid route changes.
         }
+    }
+
+    private async Task RetryMapInitAsync()
+    {
+        _mapInitAttempts++;
+        if (_mapInitAttempts >= MaxMapInitAttempts)
+        {
+            return;
+        }
+
+        await Task.Delay(200);
+        await InvokeAsync(StateHasChanged);
     }
 }

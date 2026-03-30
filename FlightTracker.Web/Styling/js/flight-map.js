@@ -22,6 +22,20 @@
         if(!currentEl){
             return false;
         }
+
+        const rect=currentEl.getBoundingClientRect();
+        if(rect.width < 24 || rect.height < 24){
+            currentEl.style.width='100%';
+            if(!currentEl.style.minHeight){
+                currentEl.style.minHeight='320px';
+            }
+            const currentHeight=parseFloat(currentEl.style.height||'0');
+            if(Number.isNaN(currentHeight) || currentHeight < 24){
+                currentEl.style.height='420px';
+            }
+            return false;
+        }
+
         if(!window.L){
             console.warn('[flight-map] Leaflet missing while map element exists');
             return false;
@@ -129,12 +143,15 @@
 
     function render(mapId,dataId){
         currentDataId=dataId||currentDataId||'flightMapData';
-        if(!ensureMap(mapId)){return;}
+        if(!ensureMap(mapId)){return false;}
         ensureGlobalEvents();
         observeElement();
         layers.past.clearLayers();layers.upcoming.clearLayers();flightIndex.clear();
         const flights=readFlights(currentDataId);
-        if(!flights.length){return;}
+        if(!flights.length){
+            scheduleInvalidate();
+            return true;
+        }
         const polys=[];const markers=[];
         // Utility: create a geodesic (great-circle) arc as a polyline between two lat/lon points
         // Ensures continuity across the antimeridian by unwrapping longitudes.
@@ -205,6 +222,7 @@
         });
     let bounds=null;polys.forEach(pl=>bounds=bounds?bounds.extend(pl.getBounds()):pl.getBounds());markers.forEach(m=>{const ll=m.getLatLng();bounds=bounds?bounds.extend(ll):L.latLngBounds(ll,ll);});if(bounds)map.fitBounds(bounds.pad(0.15));
     scheduleInvalidate();
+    return true;
     }
 
     window.flightMapClearFilter=function(){};
@@ -220,8 +238,12 @@
     window.flightMapZoomToFiltered=function(){ if(!ensureMap(currentMapId)){return;} if(!lastFilterKeys.length)return; let b=null; lastFilterKeys.forEach(k=>{ const e=flightIndex.get(k); if(!e)return; if(e.type==='past'){ b=b?b.extend(e.layer.getBounds()):e.layer.getBounds(); } else { const ll=e.layer.getLatLng(); b=b?b.extend(ll):L.latLngBounds(ll,ll); } }); if(b) map.fitBounds(b.pad(0.2)); };
 
     window.flightMapInitOrReload=function(mapId,dataId){
-        render(mapId,dataId);
-        scheduleInvalidate();
+        const ok=render(mapId,dataId);
+        if(ok){
+            scheduleInvalidate();
+        }
+
+        return !!ok;
     };
 
     window.flightMapInitOrReload(currentMapId,currentDataId);

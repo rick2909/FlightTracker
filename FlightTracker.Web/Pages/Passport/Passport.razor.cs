@@ -38,6 +38,30 @@ public partial class Passport
 
     protected string Initials { get; private set; } = "GU";
 
+    protected int UniqueRoutesCount =>
+        Model?.Routes
+            .Select(r => $"{r.DepartureAirportCode}->{r.ArrivalAirportCode}")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count() ?? 0;
+
+    protected int UpcomingRoutesCount =>
+        Model?.Routes.Count(r => r.IsUpcoming) ?? 0;
+
+    protected int FlightsThisYearCount
+    {
+        get
+        {
+            if (Model?.FlightsPerYear is null)
+            {
+                return 0;
+            }
+
+            return Model.FlightsPerYear.TryGetValue(DateTime.UtcNow.Year, out var count)
+                ? count
+                : 0;
+        }
+    }
+
     private bool _chartsInitialized;
 
     protected override async Task OnParametersSetAsync()
@@ -62,7 +86,9 @@ public partial class Passport
         }
 
         var shownPreferences = shownPreferencesResult.Value;
-        if (currentUserId != userId && shownPreferences.ProfileVisibility == ProfileVisibilityLevel.Private)
+        var isOwner = currentUserId == userId;
+
+        if (!isOwner && shownPreferences.ProfileVisibility == ProfileVisibilityLevel.Private)
         {
             return;
         }
@@ -75,40 +101,45 @@ public partial class Passport
 
         var data = dataResult.Value;
         var displayName = displayedUser.UserName ?? "Guest User";
+        var showTotalMiles = isOwner || shownPreferences.ShowTotalMiles;
+        var showAirlines = isOwner || shownPreferences.ShowAirlines;
+        var showCountries = isOwner || shownPreferences.ShowCountries;
+        var showMapRoutes = isOwner || shownPreferences.ShowMapRoutes;
+
         Model = new PassportViewModel
         {
             UserName = displayName,
             TotalFlights = data.TotalFlights,
-            TotalMiles = shownPreferences.ShowTotalMiles ? data.TotalMiles : 0,
-            TotalDistanceDisplay = shownPreferences.ShowTotalMiles
+            TotalMiles = showTotalMiles ? data.TotalMiles : 0,
+            TotalDistanceDisplay = showTotalMiles
                 ? PreferenceFormatter.FormatDistanceFromMiles(data.TotalMiles, shownPreferences.DistanceUnit)
                 : "Hidden",
-            FavoriteAirline = shownPreferences.ShowAirlines ? data.FavoriteAirline : string.Empty,
+            FavoriteAirline = showAirlines ? data.FavoriteAirline : string.Empty,
             FavoriteAirport = data.FavoriteAirport,
             MostFlownAircraftType = data.MostFlownAircraftType,
             FavoriteClass = data.FavoriteClass,
-            LongestFlightMiles = shownPreferences.ShowTotalMiles ? data.LongestFlightMiles : 0,
-            ShortestFlightMiles = shownPreferences.ShowTotalMiles ? data.ShortestFlightMiles : 0,
-            LongestDistanceDisplay = shownPreferences.ShowTotalMiles
+            LongestFlightMiles = showTotalMiles ? data.LongestFlightMiles : 0,
+            ShortestFlightMiles = showTotalMiles ? data.ShortestFlightMiles : 0,
+            LongestDistanceDisplay = showTotalMiles
                 ? PreferenceFormatter.FormatDistanceFromMiles(data.LongestFlightMiles, shownPreferences.DistanceUnit)
                 : "Hidden",
-            ShortestDistanceDisplay = shownPreferences.ShowTotalMiles
+            ShortestDistanceDisplay = showTotalMiles
                 ? PreferenceFormatter.FormatDistanceFromMiles(data.ShortestFlightMiles, shownPreferences.DistanceUnit)
                 : "Hidden",
             DistanceUnit = shownPreferences.DistanceUnit,
             DateFormat = shownPreferences.DateFormat,
             TimeFormat = shownPreferences.TimeFormat,
-            ShowTotalMiles = shownPreferences.ShowTotalMiles,
-            ShowAirlines = shownPreferences.ShowAirlines,
-            ShowCountries = shownPreferences.ShowCountries,
-            ShowMapRoutes = shownPreferences.ShowMapRoutes,
-            AirlinesVisited = shownPreferences.ShowAirlines ? data.AirlinesVisited : [],
+            ShowTotalMiles = showTotalMiles,
+            ShowAirlines = showAirlines,
+            ShowCountries = showCountries,
+            ShowMapRoutes = showMapRoutes,
+            AirlinesVisited = showAirlines ? data.AirlinesVisited : [],
             AirportsVisited = data.AirportsVisited,
-            CountriesVisitedIso2 = shownPreferences.ShowCountries ? data.CountriesVisitedIso2 : [],
+            CountriesVisitedIso2 = showCountries ? data.CountriesVisitedIso2 : [],
             FlightsPerYear = data.FlightsPerYear,
-            FlightsByAirline = shownPreferences.ShowAirlines ? data.FlightsByAirline : new Dictionary<string, int>(),
+            FlightsByAirline = showAirlines ? data.FlightsByAirline : new Dictionary<string, int>(),
             FlightsByAircraftType = data.FlightsByAircraftType,
-            Routes = shownPreferences.ShowMapRoutes ? data.Routes : []
+            Routes = showMapRoutes ? data.Routes : []
         };
 
         Initials = BuildInitials(displayName);
