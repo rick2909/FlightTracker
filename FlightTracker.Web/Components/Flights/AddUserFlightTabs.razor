@@ -113,7 +113,7 @@
                         </div>
                         <div class="ft-form__field">
                             <label>Departure (local)</label>
-                            <RadzenDatePicker TValue="DateTime?" @bind-Value="validation.DepartureTimeLocal" DateFormat="dd-MM-yyyy HH:mm" ShowTime="true" Style="width:100%" />
+                            <RadzenDatePicker TValue="DateTime?" Value="validation.DepartureTimeLocal" Change="OnDepartureTimeChanged" DateFormat="dd-MM-yyyy HH:mm" ShowTime="true" Style="width:100%" />
                             <ValidationMessage For="() => validation.DepartureTimeLocal" />
                         </div>
                     </div>
@@ -459,6 +459,12 @@
         {
             await SearchByRoute();
         }
+    }
+
+    private void OnDepartureTimeChanged(DateTime? departureTimeLocal)
+    {
+        validation.DepartureTimeLocal = departureTimeLocal;
+        validation.ArrivalTimeLocal = departureTimeLocal;
     }
 
     private async Task OnCancelClicked()
