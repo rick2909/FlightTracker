@@ -1,0 +1,29 @@
+@namespace FlightTracker.Web.Pages
+@page "/Settings"
+@attribute [Authorize]
+
+@if (Model is null)
+{
+    <div class="rz-p-4">Loading settings...</div>
+}
+else
+{
+    <FlightTracker.Web.Components.Settings.SettingsForm
+        FullName="@Model.FullName"
+        UserName="@Model.UserName"
+        Email="@Model.Email"
+        UserId="@UserId"
+        ProfileVisibility="@Model.ProfileVisibility"
+        Theme="@Model.Theme"
+        DistanceUnit="@Model.Preferences.DistanceUnit"
+        TemperatureUnit="@Model.Preferences.TemperatureUnit"
+        TimeFormat="@Model.Preferences.TimeFormat"
+        DateFormat="@Model.Preferences.DateFormat"
+        ProfileVisibilityLevel="@Model.Preferences.ProfileVisibilityLevel"
+        ShowTotalMiles="@Model.Preferences.ShowTotalMiles"
+        ShowAirlines="@Model.Preferences.ShowAirlines"
+        ShowCountries="@Model.Preferences.ShowCountries"
+        ShowMapRoutes="@Model.Preferences.ShowMapRoutes"
+        EnableActivityFeed="@Model.Preferences.EnableActivityFeed"
+        PersonalAccessTokens="@Model.PersonalAccessTokens" />
+}

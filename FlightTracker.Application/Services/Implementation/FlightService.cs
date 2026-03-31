@@ -35,7 +35,7 @@ public class FlightService(IFlightRepository flightRepository, ILogger<FlightSer
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading flight with ID {FlightId}", id);
+            _logger.LogError(ex, "Error loading flight by identifier.");
             return Result<Flight>.Failure(
             "Unable to load the requested flight.",
                 "flight.by_id.load_failed");
@@ -65,7 +65,7 @@ public class FlightService(IFlightRepository flightRepository, ILogger<FlightSer
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading upcoming flights from {FromUtc} with window {Window}", fromUtc, window);
+            _logger.LogError(ex, "Error loading upcoming flights.");
             return Result<IReadOnlyList<Flight>>.Failure(
             "Unable to load upcoming flights.",
                 "flight.upcoming.load_failed");
@@ -88,7 +88,7 @@ public class FlightService(IFlightRepository flightRepository, ILogger<FlightSer
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error adding flight with number {FlightNumber}", flight.FlightNumber);
+            _logger.LogError(ex, "Error adding flight.");
             return Result<Flight>.Failure(
             "Unable to add the flight.",
                 "flight.add.failed");
@@ -108,7 +108,7 @@ public class FlightService(IFlightRepository flightRepository, ILogger<FlightSer
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating flight with ID {FlightId}", flight.Id);
+            _logger.LogError(ex, "Error updating flight.");
             return Result.Failure(
             "Unable to update the flight.",
                 "flight.update.failed");
@@ -128,7 +128,7 @@ public class FlightService(IFlightRepository flightRepository, ILogger<FlightSer
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting flight with ID {FlightId}", id);
+            _logger.LogError(ex, "Error deleting flight.");
             return Result.Failure(
                 "Unable to delete the flight.",
                 "flight.delete.failed");

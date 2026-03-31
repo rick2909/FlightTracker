@@ -17,11 +17,21 @@ using Polly.Contrib.WaitAndRetry;
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Authentication;
+using FlightTracker.Web.Configuration;
+using FlightTracker.Web.Services.Interfaces;
+using FlightTracker.Web.Services.Implementation;
+using FlightTracker.Web.Api.Clients;
+using FlightTracker.Web.Models.ViewModels;
+using FlightTracker.Domain.Enums;
+using FlightTracker.Application.Dtos;
+using AutoMapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages();
 builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection(AuthSettings.SectionName));
+builder.Services.Configure<FlightTrackerApiOptions>(
+    builder.Configuration.GetSection(FlightTrackerApiOptions.SectionName));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddServerSideBlazor().AddCircuitOptions(o =>
 {
@@ -39,72 +49,72 @@ builder.Services.AddDbContext<FlightTrackerDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite") ?? "Data Source=flighttracker.dev.db"));
 
 // Register repositories
-builder.Services.AddScoped<IAirportRepository, AirportRepository>();
 builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 builder.Services.AddScoped<IUserFlightRepository, UserFlightRepository>();
-builder.Services.AddScoped<IAircraftRepository, AircraftRepository>();
-builder.Services.AddScoped<IAirlineRepository, AirlineRepository>();
-builder.Services.AddScoped<IUserPreferencesRepository, UserPreferencesRepository>();
 
 // Register application services
 builder.Services.AddSingleton<IClock, UtcClock>();
-builder.Services.AddScoped<IAirportService, AirportService>();
-builder.Services.AddScoped<IFlightService, FlightService>();
-builder.Services.AddScoped<IUserFlightService, UserFlightService>();
+builder.Services.AddScoped<IUserFlightService, ApiBackedUserFlightService>();
 builder.Services.AddScoped<IMapFlightService, MapFlightService>();
 builder.Services.AddScoped<IFlightStatsService, FlightStatsService>();
-builder.Services.AddScoped<IPassportService, PassportService>();
-builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
-builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
-builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
+builder.Services.AddScoped<IPassportService, ApiBackedPassportService>();
+builder.Services.AddScoped<IUserPreferencesService, ApiBackedUserPreferencesService>();
+builder.Services.AddTransient<FirstPartyApiBearerTokenHandler>();
+builder.Services.AddHttpClient<IAirportsApiClient, AirportsApiClient>((sp, client) =>
 {
-    c.Timeout = TimeSpan.FromSeconds(3);
+    var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+    {
+        client.BaseAddress = baseUri;
+    }
 })
-.AddPolicyHandler(
-    Policy<HttpResponseMessage>
-        .Handle<HttpRequestException>()
-        .OrResult(r => (int)r.StatusCode is >= 500 or 429)
-        .WaitAndRetryAsync(
-            Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(100), 2),
-            onRetry: (outcome, delay, attempt, ctx) => { }
-        )
-);
+.AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
+builder.Services.AddHttpClient<IUserFlightsApiClient, UserFlightsApiClient>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+    {
+        client.BaseAddress = baseUri;
+    }
+})
+.AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
+builder.Services.AddHttpClient<IPassportApiClient, PassportApiClient>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+    {
+        client.BaseAddress = baseUri;
+    }
+})
+.AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
+builder.Services.AddHttpClient<IUserPreferencesApiClient, UserPreferencesApiClient>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+    {
+        client.BaseAddress = baseUri;
+    }
+})
+.AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
+builder.Services.AddHttpClient<IPersonalAccessTokensApiClient, PersonalAccessTokensApiClient>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+    {
+        client.BaseAddress = baseUri;
+    }
+})
+.AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
+builder.Services.AddHttpClient<IAccountApiClient, AccountApiClient>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+    {
+        client.BaseAddress = baseUri;
+    }
+})
+.AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
 builder.Services.AddScoped<IFlightLookupService, FlightLookupService>();
-builder.Services.AddHttpClient<IAirportLiveService, AviationstackService>(c =>
-{
-    c.Timeout = TimeSpan.FromSeconds(6);
-})
-// Basic transient fault-handling: retry a few times with exponential backoff + jitter
-.AddPolicyHandler(
-    Policy<HttpResponseMessage>
-        .Handle<HttpRequestException>()
-        .OrResult(r => (int)r.StatusCode is >= 500 or 429)
-        .WaitAndRetryAsync(
-            Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(200), 3),
-            onRetry: (outcome, delay, attempt, ctx) =>
-            {
-                // no logging in Presentation per guidelines; rely on provider/internal logs if needed
-            }
-        )
-);
-
-// ADSBdb route lookup and metadata provisioner
-builder.Services.AddHttpClient<AdsBdbClient>(c =>
-{
-    c.Timeout = TimeSpan.FromSeconds(6);
-});
-builder.Services.AddScoped<IFlightRouteLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
-builder.Services.AddScoped<IAircraftLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
-builder.Services.AddScoped<IFlightMetadataProvisionService, FlightMetadataProvisionService>();
-
-// AirportDB client for airport enrichment
-builder.Services.AddHttpClient<AirportDbClient>(c =>
-{
-    c.Timeout = TimeSpan.FromSeconds(6);
-});
-builder.Services.AddScoped<IAirportLookupClient>(sp => sp.GetRequiredService<AirportDbClient>());
-builder.Services.AddScoped<IAirportEnrichmentService, AirportEnrichmentService>();
-
 // External provider(s)
 builder.Services.AddScoped<IFlightDataProvider, OpenSkyClient>();
 
@@ -178,7 +188,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler("/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
@@ -210,13 +220,10 @@ app.UseAuthorization();
 
 app.MapStaticAssets();
 
-// Route authenticated users to Dashboard, unauthenticated to Home
-app.MapControllerRoute(
-        name: "default",
-        pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+app.MapRazorPages().WithStaticAssets();
 
 app.MapBlazorHub();
+app.MapFallbackToPage("/_Host");
 
 if (app.Environment.IsDevelopment())
 {
@@ -255,5 +262,54 @@ if (app.Environment.IsDevelopment())
         return Results.Redirect("/Dashboard");
     });
 }
+
+app.MapPost("/logout", async (
+    HttpContext httpContext,
+    SignInManager<ApplicationUser> signInManager) =>
+{
+    await signInManager.SignOutAsync();
+    return Results.Redirect("/");
+});
+
+app.MapGet("/api/aircraft-photos", async (
+    string? modeSCode,
+    string? registration,
+    int maxResults,
+    IAircraftPhotoService aircraftPhotoService,
+    CancellationToken cancellationToken) =>
+{
+    const int MinResults = 1;
+    const int MaxResults = 5;
+
+    if (string.IsNullOrWhiteSpace(modeSCode) && string.IsNullOrWhiteSpace(registration))
+    {
+        return Results.BadRequest(new { error = "Either modeSCode or registration must be provided" });
+    }
+
+    if (maxResults < MinResults || maxResults > MaxResults)
+    {
+        return Results.BadRequest(new { error = $"maxResults must be between {MinResults} and {MaxResults}." });
+    }
+
+    AircraftPhotoResultDto? result;
+    try
+    {
+        result = await aircraftPhotoService.GetAircraftPhotosAsync(
+            modeSCode,
+            registration,
+            maxResults,
+            cancellationToken);
+    }
+    catch (Exception)
+    {
+        return Results.Problem(
+            title: "Unable to fetch aircraft photos",
+            statusCode: StatusCodes.Status500InternalServerError);
+    }
+
+    return result is null
+        ? Results.NotFound(new { error = "No photos found" })
+        : Results.Ok(result);
+});
 
 app.Run();

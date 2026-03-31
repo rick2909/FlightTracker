@@ -75,3 +75,4 @@ node_modules/
 *.sql
 
 FlightTracker.Web/appsettings.Development.json
+FlightTracker.Api/appsettings.Development.json

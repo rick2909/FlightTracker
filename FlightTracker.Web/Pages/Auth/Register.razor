@@ -1,0 +1,72 @@
+@namespace FlightTracker.Web.Pages
+@page "/register"
+
+<div class="login-page">
+    <div class="login-card">
+        <div class="login-card__header">
+            <h1 class="login-card__title">Create your account</h1>
+            <p class="login-card__subtitle">Join FlightTracker and start logging every journey.</p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(RegistrationError))
+        {
+            <div class="login-form__errors" role="alert">
+                <span class="material-icons login-form__errors-icon" aria-hidden="true">error</span>
+                <div>@RegistrationError</div>
+            </div>
+        }
+
+        <EditForm class="login-form" Model="Model" OnValidSubmit="RegisterAsync" novalidate>
+            <DataAnnotationsValidator />
+
+            <div class="login-form__field">
+                <label class="login-form__label" for="FullName">Full Name</label>
+                <InputText class="login-form__input" id="FullName" @bind-Value="Model.FullName" autocomplete="name" />
+                <ValidationMessage For="() => Model.FullName" class="login-form__error" />
+            </div>
+            <div class="login-form__field">
+                <label class="login-form__label" for="UserName">Username</label>
+                <InputText class="login-form__input" id="UserName" @bind-Value="Model.UserName" autocomplete="username" />
+                <ValidationMessage For="() => Model.UserName" class="login-form__error" />
+            </div>
+            <div class="login-form__field">
+                <label class="login-form__label" for="Email">Email</label>
+                <InputText class="login-form__input" id="Email" @bind-Value="Model.Email" autocomplete="email" type="email" />
+                <ValidationMessage For="() => Model.Email" class="login-form__error" />
+            </div>
+            <div class="login-form__field">
+                <label class="login-form__label" for="Password">Password</label>
+                <InputText class="login-form__input" id="Password" @bind-Value="Model.Password" autocomplete="new-password" type="password" />
+                <ValidationMessage For="() => Model.Password" class="login-form__error" />
+            </div>
+            <div class="login-form__field">
+                <label class="login-form__label" for="ConfirmPassword">Confirm password</label>
+                <InputText class="login-form__input" id="ConfirmPassword" @bind-Value="Model.ConfirmPassword" autocomplete="new-password" type="password" />
+                <ValidationMessage For="() => Model.ConfirmPassword" class="login-form__error" />
+            </div>
+            <div class="login-form__row">
+                <label class="login-form__checkbox">
+                    <InputCheckbox class="login-form__checkbox-input" @bind-Value="Model.AcceptTerms" />
+                    <span class="login-form__checkbox-box" aria-hidden="true"></span>
+                    <span class="login-form__checkbox-text">I agree to the Terms and Privacy Policy</span>
+                </label>
+            </div>
+            <ValidationMessage For="() => Model.AcceptTerms" class="login-form__error" />
+
+            <div class="login-form__actions">
+                <button class="login-form__button" type="submit">
+                    <span class="material-icons" aria-hidden="true">person_add</span>
+                    Create account
+                </button>
+                <a class="login-form__link" href="/login">Already have an account?</a>
+            </div>
+        </EditForm>
+
+        @if (EnableDevBypass)
+        {
+            <form method="post" action="/dev-login" class="login-form__dev-login-form">
+                <button class="login-form__link login-form__dev-login-button" type="submit">Dev sign in</button>
+            </form>
+        }
+    </div>
+</div>

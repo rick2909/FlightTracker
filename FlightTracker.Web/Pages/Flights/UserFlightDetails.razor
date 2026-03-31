@@ -1,0 +1,210 @@
+@namespace FlightTracker.Web.Pages
+@page "/UserFlights/Details/{Id:int}"
+@attribute [Authorize]
+@using FlightTracker.Web.Formatting
+
+@if (Flight is null)
+{
+    <div class="rz-p-4">Loading flight...</div>
+}
+else
+{
+    <div style="max-width: 900px; margin: 0 auto; padding: 1rem 1rem 4rem 1rem;">
+        <!-- Flight Header Card -->
+        <div class="rz-card mb-4">
+            <div class="rz-card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0;">@Flight.FlightNumber</h3>
+                    <p style="margin: 0; color: var(--rz-text-secondary);">@(Flight.OperatingAirlineName ?? "Unknown Airline")</p>
+                </div>
+                <span class="badge bg-secondary fs-6">@Flight.FlightStatus</span>
+            </div>
+        </div>
+
+        <div style="display: grid; gap: 1.5rem;">
+            <!-- Route & Booking -->
+            <div>
+                <!-- Route Card -->
+                <div class="rz-card mb-3">
+                    <div class="rz-card-body">
+                        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 2rem; align-items: start;">
+                            <!-- Departure -->
+                            <div>
+                                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Departure</div>
+                                <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">
+                                    @(Flight.DepartureIataCode ?? Flight.DepartureIcaoCode ?? Flight.DepartureAirportCode)
+                                </div>
+                                <div style="font-size: 0.9rem; color: var(--rz-text-secondary); margin-bottom: 1rem;">
+                                    @Flight.DepartureAirportName
+                                    @if (!string.IsNullOrWhiteSpace(Flight.DepartureCity))
+                                    {
+                                        <span>, @Flight.DepartureCity</span>
+                                    }
+                                </div>
+                                <div style="font-size: 0.95rem; font-weight: 600;">@PreferenceFormatter.FormatLocalDateTime(Flight.DepartureTimeUtc, Flight.DepartureTimeZoneId, DateFormat, TimeFormat)</div>
+                                <div style="font-size: 0.8rem; color: var(--rz-text-secondary);">@PreferenceFormatter.FormatUtcDateTime(Flight.DepartureTimeUtc, DateFormat, TimeFormat)</div>
+                            </div>
+
+                            <!-- Arrow -->
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                                <span class="material-icons" style="font-size: 2rem; color: var(--rz-text-secondary); margin-top: 2.5rem;">arrow_forward</span>
+                            </div>
+
+                            <!-- Arrival -->
+                            <div>
+                                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Arrival (local)</div>
+                                <div style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">
+                                    @(Flight.ArrivalIataCode ?? Flight.ArrivalIcaoCode ?? Flight.ArrivalAirportCode)
+                                </div>
+                                <div style="font-size: 0.9rem; color: var(--rz-text-secondary); margin-bottom: 1rem;">
+                                    @Flight.ArrivalAirportName
+                                    @if (!string.IsNullOrWhiteSpace(Flight.ArrivalCity))
+                                    {
+                                        <span>, @Flight.ArrivalCity</span>
+                                    }
+                                </div>
+                                <div style="font-size: 0.95rem; font-weight: 600;">@PreferenceFormatter.FormatLocalDateTime(Flight.ArrivalTimeUtc, Flight.ArrivalTimeZoneId, DateFormat, TimeFormat)</div>
+                                <div style="font-size: 0.8rem; color: var(--rz-text-secondary);">@PreferenceFormatter.FormatUtcDateTime(Flight.ArrivalTimeUtc, DateFormat, TimeFormat)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Booking Details Card -->
+                <div class="rz-card">
+                    <div class="rz-card-header">
+                        <h5 style="margin: 0;">Booking Details</h5>
+                    </div>
+                    <div class="rz-card-body">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem;">
+                            <div>
+                                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Cabin Class</div>
+                                <div style="font-size: 1.1rem; font-weight: 600;">@Flight.FlightClass</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Seat</div>
+                                <div style="font-size: 1.1rem; font-weight: 600;">@(string.IsNullOrWhiteSpace(Flight.SeatNumber) ? "-" : Flight.SeatNumber)</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Booked</div>
+                                <div style="font-size: 1.1rem; font-weight: 600;">@PreferenceFormatter.FormatDate(Flight.BookedOnUtc, DateFormat)</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Status</div>
+                                <div style="font-size: 1.1rem; font-weight: 600;">@(Flight.DidFly ? "✓ Completed" : "✗ Cancelled")</div>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Flight.Notes))
+                        {
+                            <hr style="margin: 1.5rem 0;" />
+                            <div>
+                                <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Notes</div>
+                                <div style="color: var(--rz-text-secondary); word-break: break-word;">@Flight.Notes</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aircraft Details Card -->
+            <div class="rz-card">
+                <div class="rz-card-header">
+                    <h5 style="margin: 0;">Aircraft Details</h5>
+                </div>
+                <div class="rz-card-body">
+                    <div style="display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: start;">
+                        <div>
+                            @if (Flight.Aircraft is not null)
+                            {
+                                <div class="mb-3">
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Type</div>
+                                    <div style="font-size: 1rem; font-weight: 600;">@Flight.Aircraft.Manufacturer @Flight.Aircraft.Model</div>
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(Flight.Aircraft.Registration))
+                                {
+                                    <div class="mb-3">
+                                        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Registration</div>
+                                        <div style="font-family: monospace; font-weight: 600;">@Flight.Aircraft.Registration</div>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(Flight.Aircraft.IcaoTypeCode))
+                                {
+                                    <div class="mb-3">
+                                        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">ICAO Type</div>
+                                        <div style="font-family: monospace;">@Flight.Aircraft.IcaoTypeCode</div>
+                                    </div>
+                                }
+
+                                @if (Flight.Aircraft.AirlineName is not null)
+                                {
+                                    <div class="mb-3">
+                                        <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--rz-text-secondary); font-weight: 600; margin-bottom: 0.5rem;">Operating Airline</div>
+                                        <div>@Flight.Aircraft.AirlineName</div>
+                                        @if (!string.IsNullOrWhiteSpace(Flight.Aircraft.AirlineIcaoCode))
+                                        {
+                                            <div style="font-size: 0.9rem; color: var(--rz-text-secondary);">@Flight.Aircraft.AirlineIcaoCode</div>
+                                        }
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <span style="color: var(--rz-text-secondary);">No aircraft information available.</span>
+                            }
+                        </div>
+
+                        <!-- Aircraft Photo -->
+                        <div style="width: 220px; background: var(--rz-surface); border-radius: 8px; padding: 0.8rem; text-align: center; border: 1px solid rgba(0,0,0,0.05);">
+                            @if (PhotoLoading)
+                            {
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <div class="mt-2" style="font-size: 0.75rem; color: var(--rz-text-secondary);">Photo...</div>
+                            }
+                            else if (AircraftPhoto is not null)
+                            {
+                                <a href="@AircraftPhoto.Link" target="_blank" rel="noopener noreferrer" style="display: inline-block;">
+                                    <img src="@AircraftPhoto.Image" alt="Aircraft" style="max-width: 100%; height: auto; max-height: 160px; border-radius: 6px; margin-bottom: 0.5rem;" />
+                                </a>
+                                <div style="font-size: 0.65rem; color: var(--rz-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Photo by @AircraftPhoto.Photographer</div>
+                                <div style="font-size: 0.6rem; color: var(--rz-text-secondary);">
+                                    <a href="@AircraftPhoto.Link" target="_blank" rel="noopener noreferrer">Source: airport-data.com</a>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="material-icons" style="font-size: 1.5rem; color: var(--rz-text-secondary);">image_not_supported</span>
+                                <div style="font-size: 0.7rem; color: var(--rz-text-secondary); margin-top: 0.25rem;">No photo</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Route Map -->
+            @if (MapFlight is not null)
+            {
+                <FlightMapPanel MapFlights="@(new[] { MapFlight })" Height="320px" MinHeight="280px" ShowHeader="false" />
+            }
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row g-2 mt-3">
+            <div class="col-12 col-sm-auto">
+                <a class="btn btn-primary" href="@($"/UserFlights/Edit/{Flight.Id}")" style="width: 100%;">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 0.5rem;">edit</span>
+                    Edit Flight
+                </a>
+            </div>
+            <div class="col-12 col-sm-auto">
+                <a class="btn btn-outline-secondary" href="/UserFlights" style="width: 100%;">
+                    <span class="material-icons" style="vertical-align: middle; margin-right: 0.5rem;">arrow_back</span>
+                    Back to Flights
+                </a>
+            </div>
+        </div>
+    </div>
+}

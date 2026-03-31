@@ -40,6 +40,10 @@ public record UserFlightDto
     public string? ArrivalIcaoCode { get; init; }
     public string ArrivalAirportName { get; init; } = string.Empty;
     public string ArrivalCity { get; init; } = string.Empty;
+    public double? DepartureLat { get; init; }
+    public double? DepartureLon { get; init; }
+    public double? ArrivalLat { get; init; }
+    public double? ArrivalLon { get; init; }
     public string? DepartureTimeZoneId { get; init; }
     public string? ArrivalTimeZoneId { get; init; }
 

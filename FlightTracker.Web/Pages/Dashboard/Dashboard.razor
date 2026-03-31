@@ -1,0 +1,14 @@
+@namespace FlightTracker.Web.Pages
+@page "/Dashboard"
+@attribute [Authorize]
+
+<div class="remove__header"></div>
+
+<FlightTracker.Web.Components.Maps.FlightMapPanel MapFlights="Model.MapFlights" Height="75vh" Sticky="true" />
+
+@if (State is not null)
+{
+    <div style="margin-top:1rem">
+        <FlightTracker.Web.Components.Flights.FlightStateSheet Model="State" Compact="true" />
+    </div>
+}

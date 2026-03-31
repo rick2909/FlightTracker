@@ -24,6 +24,37 @@ window.FlightTracker.applyTheme = function(value) {
     }
 };
 
+window.FlightTracker.setCookie = function(name, value, days) {
+    try {
+        const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+        document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+    } catch (error) {
+        console.error('Cookie write failed:', error);
+    }
+};
+
+window.FlightTracker.downloadBase64 = function(fileName, contentType, base64) {
+    try {
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+
+        const blob = new Blob([bytes], { type: contentType });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = fileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('Download failed:', error);
+    }
+};
+
 /**
  * Submit a form with anti-forgery token protection
  * @param {string} url - The endpoint URL

@@ -21,6 +21,7 @@ Describe the change clearly. What problem does it solve?
 - [ ] Added/updated DTOs (if crossing Application -> Presentation)
 - [ ] Updated SeedData only if necessary (and idempotent)
 - [ ] Added/updated tests (unit / integration as appropriate)
+- [ ] Built changed projects locally (for API/Web changes: `dotnet build FlightTracker.sln -c Debug`)
 - [ ] Updated documentation / Plan.md if scope impacts roadmap
 - [ ] No unrelated formatting noise in diff
 

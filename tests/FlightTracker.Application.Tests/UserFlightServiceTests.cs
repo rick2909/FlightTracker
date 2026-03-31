@@ -131,6 +131,112 @@ public class UserFlightServiceTests
 
         flightService.Verify(s => s.AddFlightAsync(It.IsAny<Flight>(), It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task AddUserFlightAsync_UsesExternalAirline_WhenNotInLocalRepository()
+    {
+        var baseTime = new DateTime(2025, 01, 01, 08, 00, 00, DateTimeKind.Utc);
+        var createDto = new CreateUserFlightDto
+        {
+            FlightId = 0,
+            FlightNumber = "MSI123",
+            OperatingAirlineCode = "MSI",
+            DepartureAirportCode = "JFK",
+            ArrivalAirportCode = "LAX",
+            DepartureTimeUtc = baseTime,
+            ArrivalTimeUtc = baseTime.AddHours(5),
+            FlightClass = FlightClass.Business,
+            SeatNumber = "2C",
+            DidFly = true
+        };
+
+        var userFlightRepository = new Mock<IUserFlightRepository>();
+        userFlightRepository
+            .Setup(r => r.HasUserFlownFlightAsync(7, It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        userFlightRepository
+            .Setup(r => r.AddAsync(It.IsAny<UserFlight>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserFlight uf, CancellationToken _) =>
+            {
+                uf.Id = 100;
+                return uf;
+            });
+        userFlightRepository
+            .Setup(r => r.GetByIdAsync(100, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new UserFlight { Id = 100, UserId = 7, FlightId = 77, Flight = new Flight { Id = 77 } });
+
+        var airportService = new Mock<IAirportService>();
+        airportService
+            .Setup(s => s.GetAirportByCodeAsync("JFK", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Airport>.Success(new Airport { Id = 1, IataCode = "JFK" }));
+        airportService
+            .Setup(s => s.GetAirportByCodeAsync("LAX", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<Airport>.Success(new Airport { Id = 2, IataCode = "LAX" }));
+        airportService
+            .Setup(s => s.GetTimeZoneIdByAirportCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<string?>.Success(null));
+
+        var metadata = new Mock<IFlightMetadataProvisionService>();
+        metadata
+            .Setup(s => s.EnsureAirlineAndAirportsForCallsignAsync("MSI123", It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var airlineRepository = new Mock<IAirlineRepository>();
+        airlineRepository
+            .Setup(r => r.GetByIataAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Airline?)null);
+        airlineRepository
+            .Setup(r => r.GetByIcaoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Airline?)null);
+        airlineRepository
+            .Setup(r => r.AddAsync(It.IsAny<Airline>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Airline a, CancellationToken _) =>
+            {
+                a.Id = 55;
+                return a;
+            });
+
+        var airlineLookupClient = new Mock<IAirlineLookupClient>();
+        airlineLookupClient
+            .Setup(c => c.GetAirlineByCodeAsync("MSI", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AirlineLookupResult(
+                Name: "Motor Sich",
+                Icao: "MSI",
+                Iata: "M9",
+                Country: "Ukraine",
+                CountryIso: "UA",
+                Callsign: "MOTOR SICH"));
+
+        Flight? createdFlight = null;
+        var flightService = new Mock<IFlightService>();
+        flightService
+            .Setup(s => s.AddFlightAsync(It.IsAny<Flight>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Flight flight, CancellationToken _) =>
+            {
+                createdFlight = flight;
+                return Result<Flight>.Success(new Flight { Id = 77 });
+            });
+
+        var mapper = CreateMapper();
+
+        var service = CreateService(
+            userFlightRepository.Object,
+            new Mock<IFlightRepository>().Object,
+            flightService.Object,
+            mapper,
+            airportService.Object,
+            metadata.Object,
+            null,
+            airlineRepository.Object,
+            airlineLookupClient.Object);
+
+        await service.AddUserFlightAsync(7, createDto);
+
+        Assert.NotNull(createdFlight);
+        Assert.Equal(55, createdFlight!.OperatingAirlineId);
+        airlineRepository.Verify(r => r.AddAsync(It.IsAny<Airline>(), It.IsAny<CancellationToken>()), Times.Once);
+        airlineLookupClient.Verify(c => c.GetAirlineByCodeAsync("MSI", It.IsAny<CancellationToken>()), Times.Once);
+    }
     [Fact]
     public async Task GetUserFlightStatsAsync_ComputesTotals_AndIgnoresNoShows()
     {
@@ -276,6 +382,7 @@ public class UserFlightServiceTests
             new Mock<IFlightService>().Object,
             new Mock<IFlightMetadataProvisionService>().Object,
             new Mock<IAirlineRepository>().Object,
+            new Mock<IAirlineLookupClient>().Object,
             new Mock<IAircraftRepository>().Object,
             new Mock<IAircraftLookupClient>().Object,
             new Mock<IAirportEnrichmentService>().Object,
@@ -290,7 +397,9 @@ public class UserFlightServiceTests
         IMapper mapper,
         IAirportService? airportService = null,
         IFlightMetadataProvisionService? metadataProvisionService = null,
-        IClock? clock = null)
+        IClock? clock = null,
+        IAirlineRepository? airlineRepository = null,
+        IAirlineLookupClient? airlineLookupClient = null)
     {
         if (clock is null)
         {
@@ -309,7 +418,8 @@ public class UserFlightServiceTests
             resolvedAirportService,
             flightService,
             metadataProvisionService ?? new Mock<IFlightMetadataProvisionService>().Object,
-            new Mock<IAirlineRepository>().Object,
+            airlineRepository ?? new Mock<IAirlineRepository>().Object,
+            airlineLookupClient ?? new Mock<IAirlineLookupClient>().Object,
             new Mock<IAircraftRepository>().Object,
             new Mock<IAircraftLookupClient>().Object,
             new Mock<IAirportEnrichmentService>().Object,

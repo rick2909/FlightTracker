@@ -77,6 +77,22 @@ public class FlightProfile : Profile
                     : string.Empty))
             .ForMember(dest => dest.Aircraft,
                 opt => opt.MapFrom(src => src.Flight != null ? src.Flight.Aircraft : null))
+            .ForMember(dest => dest.DepartureLat,
+                opt => opt.MapFrom(src => src.Flight != null && src.Flight.DepartureAirport != null
+                    ? src.Flight.DepartureAirport.Latitude
+                    : (double?)null))
+            .ForMember(dest => dest.DepartureLon,
+                opt => opt.MapFrom(src => src.Flight != null && src.Flight.DepartureAirport != null
+                    ? src.Flight.DepartureAirport.Longitude
+                    : (double?)null))
+            .ForMember(dest => dest.ArrivalLat,
+                opt => opt.MapFrom(src => src.Flight != null && src.Flight.ArrivalAirport != null
+                    ? src.Flight.ArrivalAirport.Latitude
+                    : (double?)null))
+            .ForMember(dest => dest.ArrivalLon,
+                opt => opt.MapFrom(src => src.Flight != null && src.Flight.ArrivalAirport != null
+                    ? src.Flight.ArrivalAirport.Longitude
+                    : (double?)null))
             .ForMember(dest => dest.DepartureTimeZoneId,
                 opt => opt.MapFrom((_, __, ___, ctx) =>
                     ctx.Items.TryGetValue("DepartureTimeZoneId", out var value) ? value as string : null))

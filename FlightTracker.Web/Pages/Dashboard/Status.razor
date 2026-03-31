@@ -1,0 +1,11 @@
+@namespace FlightTracker.Web.Pages
+@page "/Dashboard/Status"
+@attribute [Authorize]
+
+<div class="remove__header"></div>
+
+<FlightTracker.Web.Components.Maps.FlightMapPanel MapFlights="Model.MapFlights" Height="70vh" MinHeight="420px" MaxVh="88vh" />
+
+<div class="rz-mt-2">
+    <FlightTracker.Web.Components.Flights.FlightStateSheet Model="Model.State" Compact="false" />
+</div>

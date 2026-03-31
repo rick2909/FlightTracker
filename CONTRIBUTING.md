@@ -17,11 +17,11 @@ This document explains how to create Issues and Pull Requests using the provided
 ## 1. Workflow Overview
 1. Create an Issue using the Issue Form (Task / Feature / Bug / Refactor / Documentation).
 2. Add clear Acceptance Criteria before starting implementation.
-3. Create a feature branch from `master` (or `main` once renamed).
+3. Create a feature branch from `main`.
 4. Implement changes with small, focused commits.
 5. Open a Pull Request referencing the Issue (`Closes #<issue-number>`).
 6. Ensure checklist in PR is satisfied (tests, DTO rules, architecture boundaries).
-7. Merge only after review + green build (future CI).
+7. Merge only after review + green build/test checks.
 
 ---
 ## 2. Branching Convention
@@ -144,7 +144,7 @@ A: Not unless explicitly needed; focused repositories are clearer for now.
 A: Infrastructure (implement interface defined in Application).
 
 **Q: Can UI projects reference Infrastructure?**  
-A: Prefer not. UI → Application; Infrastructure injected via DI in API host. (For Blazor WASM, call API instead of referencing Infrastructure.)
+A: Prefer not. UI -> Application; Infrastructure injected via DI in the API host. For Blazor Server Web, consume APIs through typed clients.
 
 ---
 ## Next Improvements to This Guide

@@ -15,7 +15,7 @@ namespace FlightTracker.Infrastructure.Data.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.2");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.5");
 
             modelBuilder.Entity("FlightTracker.Domain.Entities.Aircraft", b =>
                 {
@@ -232,6 +232,60 @@ namespace FlightTracker.Infrastructure.Data.Migrations
                     b.HasIndex("OperatingAirlineId");
 
                     b.ToTable("Flights");
+                });
+
+            modelBuilder.Entity("FlightTracker.Domain.Entities.PersonalAccessToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastUsedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Scopes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TokenPrefix")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "RevokedAtUtc");
+
+                    b.ToTable("PersonalAccessTokens");
                 });
 
             modelBuilder.Entity("FlightTracker.Domain.Entities.UserFlight", b =>
@@ -571,6 +625,15 @@ namespace FlightTracker.Infrastructure.Data.Migrations
                     b.Navigation("DepartureAirport");
 
                     b.Navigation("OperatingAirline");
+                });
+
+            modelBuilder.Entity("FlightTracker.Domain.Entities.PersonalAccessToken", b =>
+                {
+                    b.HasOne("FlightTracker.Infrastructure.Data.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("FlightTracker.Domain.Entities.UserFlight", b =>

@@ -11,19 +11,23 @@
 ![xUnit](https://img.shields.io/badge/xUnit-5A2B81?style=for-the-badge&logo=xunit&logoColor=white)
 [![Coverage](https://img.shields.io/codecov/c/github/rick2909/FlightTracker?branch=main&style=for-the-badge&logo=codecov)](https://app.codecov.io/gh/rick2909/FlightTracker)
 
-A modern, multi-platform flight tracking application (web, desktop, mobile) built with .NET and Clean Architecture principles. Designed to evolve from a simple flight & airport data core into a richer experience (live map, passport/stats, playback, provider adapters like OpenSky and FR24).
+A modern, multi-platform flight tracking application (web, desktop, mobile) built with .NET and Clean Architecture principles. The active presentation architecture is FlightTracker.Api + Blazor Server (FlightTracker.Web), with typed API clients used by the web UI.
 
 ## Status
 
-Early foundation in place:
+Current status (March 2026):
 
-- Domain entities: Flight, Airport
-- Application service interfaces (Flight & Airport)
-- Infrastructure: EF Core DbContext (with Identity), repositories, seed data
-- Development guidelines & contribution docs
-- Task plan: see `doc/Plan.md`
+- FlightTracker.Api is active with versioned v1 controllers, Swagger, PAT auth support, and rate limiting.
+- FlightTracker.Web is active as a Blazor Server app and consumes the API through typed HttpClient clients.
+- Core slices are implemented end-to-end: airports, flights, user flights, passport/stats, preferences, and PAT management.
+- Infrastructure includes EF Core + Identity, SQLite migrations, deterministic seed data, and provider integrations (Aviationstack, timeapi.io, ADSBdb).
+- Solution and project builds are green in Debug.
 
-> Next focus: Provider hardening (Aviationstack key via user-secrets, retries), tests for merge logic, OpenSky adapter stub.
+Current focus:
+
+- Provider resilience and config hardening.
+- Expand targeted tests (especially cancellation and branch-heavy service paths).
+- Continue API contract refinement and client parity improvements.
 
 ## Architecture (Clean Architecture Inspired)
 
@@ -61,12 +65,17 @@ FlightTracker/
 │  ├─ External/
 │  ├─ Repositories/
 │  └─ Time/
+├─ FlightTracker.Api/
+│  ├─ Contracts/
+│  ├─ Controllers/V1/
+│  └─ Infrastructure/
 ├─ FlightTracker.Web/
+│  ├─ Api/Clients/
 │  ├─ Components/
-│  ├─ Controllers/
 │  ├─ Models/
+│  ├─ Pages/
+│  ├─ Services/
 │  ├─ Styling/
-│  ├─ Views/
 │  └─ wwwroot/
 ├─ Tests/
 │  ├─ FlightTracker.Application.Tests/
@@ -94,7 +103,7 @@ FlightTracker/
 - Logging & persistence in Infrastructure only.
 - Repositories and low-level external clients return raw data/null/collections; Application services map outcomes to `Result`/`Result<T>`.
 
-See `doc/Repository-Result-Policy.md` for the authoritative return-contract policy.
+See `doc/Architecture.md` for the repository and Result return-contract policy.
 
 ## Technology (Current / Planned)
 
@@ -103,7 +112,7 @@ See `doc/Repository-Result-Policy.md` for the authoritative return-contract poli
 | Language | C# 13 / .NET 10 |
 | Auth | ASP.NET Core Identity (int keys) |
 | ORM | EF Core 10 |
-| UI (current) | ASP.NET Core MVC + Blazor Server, Radzen, ApexCharts |
+| UI (current) | ASP.NET Core API + Blazor Server (default), Radzen, ApexCharts |
 | Realtime (planned) | SignalR |
 | Mapping | AutoMapper |
 | External Flight Data (current/planned) | timeapi.io (current); Aviationstack (airport live departures/arrivals); ADSBdb (aircraft metadata); OpenSky/FR24 (planned) |
@@ -215,6 +224,77 @@ npm run build
 npm run watch
 ```
 
+## Database Migrations (Root SQLite)
+
+FlightTracker uses the solution-root SQLite file:
+
+- Path: `./flighttracker.dev.db`
+- API runtime (cwd = `FlightTracker.Api`) points to `../flighttracker.dev.db`
+
+Run migrations explicitly against the root DB:
+
+```powershell
+dotnet ef database update \
+  --project .\FlightTracker.Infrastructure\FlightTracker.Infrastructure.csproj \
+  --startup-project .\FlightTracker.Api\FlightTracker.Api.csproj \
+  --context FlightTrackerDbContext \
+  --connection "Data Source=$((Resolve-Path .\flighttracker.dev.db).Path)"
+```
+
+Create a new migration in Infrastructure:
+
+```powershell
+dotnet ef migrations add <MigrationName> \
+  --project .\FlightTracker.Infrastructure\FlightTracker.Infrastructure.csproj \
+  --startup-project .\FlightTracker.Api\FlightTracker.Api.csproj \
+  --context FlightTrackerDbContext \
+  --output-dir Data\Migrations
+```
+
+## Merge Old API-local DB Into Root DB
+
+If you have data in `FlightTracker.Api/flighttracker.dev.db` and want to merge into `./flighttracker.dev.db`:
+
+1. Back up both files first.
+2. Use SQLite attach + table copy (examples below).
+3. Keep root DB as source of truth going forward.
+
+Example with sqlite3:
+
+```powershell
+sqlite3 .\flighttracker.dev.db "ATTACH DATABASE './FlightTracker.Api/flighttracker.dev.db' AS old; \
+PRAGMA foreign_keys=OFF; \
+INSERT OR IGNORE INTO Airports SELECT * FROM old.Airports; \
+INSERT OR IGNORE INTO Airlines SELECT * FROM old.Airlines; \
+INSERT OR IGNORE INTO Aircraft SELECT * FROM old.Aircraft; \
+INSERT OR IGNORE INTO Flights SELECT * FROM old.Flights; \
+INSERT OR IGNORE INTO AspNetUsers SELECT * FROM old.AspNetUsers; \
+INSERT OR IGNORE INTO AspNetRoles SELECT * FROM old.AspNetRoles; \
+INSERT OR IGNORE INTO AspNetUserRoles SELECT * FROM old.AspNetUserRoles; \
+INSERT OR IGNORE INTO AspNetUserClaims SELECT * FROM old.AspNetUserClaims; \
+INSERT OR IGNORE INTO AspNetRoleClaims SELECT * FROM old.AspNetRoleClaims; \
+INSERT OR IGNORE INTO AspNetUserLogins SELECT * FROM old.AspNetUserLogins; \
+INSERT OR IGNORE INTO AspNetUserTokens SELECT * FROM old.AspNetUserTokens; \
+INSERT OR IGNORE INTO UserPreferences SELECT * FROM old.UserPreferences; \
+INSERT OR IGNORE INTO UserFlights SELECT * FROM old.UserFlights; \
+INSERT OR IGNORE INTO PersonalAccessTokens SELECT * FROM old.PersonalAccessTokens; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM Airports) WHERE name='Airports'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM Airlines) WHERE name='Airlines'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM Aircraft) WHERE name='Aircraft'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM Flights) WHERE name='Flights'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM AspNetUsers) WHERE name='AspNetUsers'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM UserPreferences) WHERE name='UserPreferences'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM UserFlights) WHERE name='UserFlights'; \
+UPDATE sqlite_sequence SET seq = (SELECT IFNULL(MAX(Id),0) FROM PersonalAccessTokens) WHERE name='PersonalAccessTokens'; \
+DETACH DATABASE old; \
+PRAGMA foreign_keys=ON;"
+```
+
+Notes:
+
+- `INSERT OR IGNORE` keeps existing rows in root DB when primary keys collide.
+- If both DBs changed the same row and you need field-level conflict resolution, use a custom merge script instead of `OR IGNORE`.
+
 Notes:
 
 - `FlightTracker.Web.csproj` already runs Sass/JS asset targets during `dotnet build`.
@@ -233,7 +313,7 @@ Notes:
   - Provider hardening (config, retries/backoff, resilient fallbacks)
   - Expand Application tests (cancellation token and aggregation scenarios)
   - Preference-aware formatting across Passport and Flight details
-  - API project scaffolding (`FlightTracker.Api`) with DI and controllers
+  - API-first presentation flow (`FlightTracker.Api`) with versioned contracts and Blazor typed clients
 - Next phase
   - OpenSky adapter implementation behind `IFlightDataProvider`
   - Flight track persistence and playback interpolation
@@ -251,10 +331,10 @@ See `CONTRIBUTING.md` for full process and pitfalls.
 
 ## Repository Conventions
 
-- Repositories currently located in Infrastructure (Interfaces + Implementation) — scheduled to move interfaces inward per plan.
+- Repository interfaces live in FlightTracker.Application and are implemented in FlightTracker.Infrastructure.
 - Seed data is idempotent; do not embed production credentials or PII.
 - Avoid premature generic repositories; prefer focused ones per aggregate root.
-- Return contracts follow `doc/Repository-Result-Policy.md` (raw repository/client contracts, Result mapping in Application services).
+- Return contracts follow the policy documented in `doc/Architecture.md` (raw repository/client contracts, Result mapping in Application services).
 
 ## Planned Entities (Beyond MVP)
 

@@ -75,31 +75,78 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Aviationstack provider adapter (IAirportLiveService implementation) for airport departures/arrivals
 - [ ] FR24 provider adapter (Deferred)
 
-## 5. Presentation – API (to be created)
+## 5. Presentation – API
 
-- [ ] Create `FlightTracker.Api` project
-- [ ] Configure DI (DbContext, Identity, Repositories, Services, Providers)
-- [ ] Controllers: FlightsController, AirportsController, StatsController
-- [ ] Model binding & validation responses (ProblemDetails)
+- [x] Create `FlightTracker.Api` project
+- [x] Configure DI (DbContext, Identity, Repositories, Services, Providers)
+- [x] Controllers: FlightsController, AirportsController, StatsController (+ Passport, Preferences, Account, PAT, UserFlights)
+- [x] Model binding & validation responses (ProblemDetails)
 - [ ] Global exception handling middleware
-- [ ] Authentication & authorization (JWT or cookie) baseline
-- [ ] Swagger / OpenAPI setup
-- [ ] Versioning strategy (route or header) placeholder
+- [x] Authentication & authorization (JWT bearer + PAT bearer) baseline
+- [x] Swagger / OpenAPI setup
+- [x] Versioning strategy (route-based `/api/v1`) placeholder
 - [ ] SignalR hub for live flight position updates
 - [ ] Health checks endpoint
 
+### 5A. MVC → Blazor + API Migration (single PR, staged)
+
+- Goal: complete API + Blazor migration first. MAUI starts only after Step 5 is done.
+
+- [x] **Step 1 — API-first boundary (Blazor is first client)**
+  - [x] Add `FlightTracker.Api` with versioned routes (`/api/v1/...`) and OpenAPI
+  - [x] Keep Application services as the only orchestration layer; controllers remain thin
+  - [x] Define stable request/response DTO contracts for Flights, Airports, Passport/Stats, Preferences
+  - [x] Keep existing MVC endpoints/pages available during transition window (completed and retired)
+- [x] **Step 2 — Move Web to API consumption (feature-by-feature)**
+  - [x] Add typed API clients in `FlightTracker.Web` (`HttpClient` + interface wrappers)
+  - [x] Migrate one vertical slice at a time (Airports, Flights, Passport, Settings)
+  - [x] Add per-slice parity checklist (same validation, errors, and auth behavior as before)
+  - [x] Gate rollout with a config flag to allow fallback until parity is complete
+- [x] **Step 3 — Future client readiness (MAUI/other apps)**
+  - [x] Keep API stateless and client-agnostic; no Web-only assumptions in contracts
+  - [x] Standardize auth for API clients (Bearer tokens for first-party apps)
+  - [x] Add explicit API versioning policy and deprecation notes for non-breaking evolution
+  - [x] Document minimal client SDK surface (or shared typed client package) for reuse
+- [x] **Step 4 — Third-party frontend support (user-managed access keys)**
+  - [x] Add Personal Access Token flow in Settings (create, view-once, revoke, expire)
+  - [x] Store token hashes only (never raw token); show last-used timestamp and label
+  - [x] Start with scoped permissions (`read:flights`, `write:flights`, `read:stats`)
+  - [x] Add rate limits + audit log entries for token-based calls
+  - [x] Reserve stronger option for later: OAuth2/OIDC app registration for external apps
+  - [ ] Add plan-based quotas and paywall enforcement for API usage (Deferred)
+- [x] **Step 5 — Complete migration inside one PR**
+  - [x] Mark MVC controllers/views as deprecated and remove once API + Blazor parity is proven
+  - [x] Update routing, auth config, and docs to API + Blazor as default architecture
+  - [x] Add focused tests for API contracts, auth paths, and Blazor API client integration
+  - [x] Keep PR scope controlled: no new business features, migration-only changes
+
+### 5B. Prompt-driven execution order (archived)
+
+- [x] **Run Order (strict):** 5A Step 1 → Step 2 → Step 3 → Step 4 → Step 5 → then Section 7 (MAUI)
+- [ ] **Per-step completion template (apply to every step before moving on):**
+  - [ ] Scope locked to one step only
+  - [ ] Files changed listed
+  - [ ] Build/tests run for touched area
+  - [ ] Plan checkboxes updated
+  - [ ] Next step proposed
+- [ ] **Reusable prompt format:**
+  - [ ] "Using `doc/Plan.md`, implement only `<section + step>`. Respect Clean Architecture boundaries, update checkboxes, run relevant tests/build, and stop after summarizing changed files and next step."
+- [ ] **Stop conditions for each chat step:**
+  - [ ] Step work is complete and verified
+  - [ ] Or blocker is documented with 1 recommended workaround
+
 ## 6. Presentation – Web (Blazor Server)
 
-- [x] Create `FlightTracker.Web` project (WASM)
+- [x] Create `FlightTracker.Web` project (Blazor Server)
 - [x] Integrate Radzen components (only UI layer)
 - [x] Choose charting library: ApexCharts
-- [ ] *Integrate ApexCharts for stats (passport charts)*
+- [x] Integrate ApexCharts for stats (passport charts)
 - [x] Map component via JS interop (MapLibre or Leaflet) spike
 - [x] Flight list & selection panel (Airports page: departing/arriving)
 - [x] Airport overview/detail page (map + lists; initial version with live toggle)
 - [x] Settings page (profile, password, display & units preferences, privacy & sharing, CSV/JSON export)
 - [x] Wire Airports UI to AirportOverviewService with optional Aviationstack live data
-- [ ] NEW: Passport details view (more in-depth stats inside Passport)
+- [x] NEW: Passport details view (more in-depth stats inside Passport)
   - [x] Route: `/Passport/{id?}` gains a "Details" tab/section (or `/Passport/{id?}/Details` action)
   - [x] Two ApexCharts pie charts
     - [x] Airlines flown (click to filter list)
@@ -122,9 +169,15 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 ## 7. Presentation – Desktop & Mobile (Future)
 
-- [ ] Create MAUI Blazor Hybrid project (Deferred)
-- [ ] Create MAUI Mobile project (shared Razor components) (Deferred)
-- [ ] Platform-specific packaging / icons (Deferred)
+- [ ] Start only after 5A Step 5 is complete
+- [ ] Create native `FlightTracker.Maui` app (Android, iOS, Windows)
+- [ ] Use native UI (XAML/MVVM) while reusing shared API contracts/client logic
+- [ ] Add shared client package for API DTOs + typed HTTP clients + auth/session handling
+- [ ] Implement OAuth2/OIDC (PKCE) for MAUI first-party auth
+- [ ] Add offline sync foundation (local store, queue, retry, conflict policy)
+- [ ] Build parity slices in order: Airports → Flights → Passport → Settings
+- [ ] Keep MAUI scope separate from migration PR (follow-up PR series)
+- [ ] Platform-specific packaging / capabilities checklist
 
 ## 8. External Data & Realtime
 
@@ -143,9 +196,9 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Define stats aggregation queries (total hours, routes, aircraft types placeholder)
 - [x] Implement IFlightStatsService
 - [ ] Add background job or on-demand recompute strategy
-- [ ] Expose API endpoint /stats/user/{id}
+- [x] Expose API endpoint for user stats (v1 routes)
 - [ ] Provide chart-friendly DTOs (MonthlyFlightCounts etc.)
-- [ ] Integrate charts in UI (ApexCharts) once Web project exists
+- [x] Integrate charts in UI (ApexCharts) once Web project exists
 - [x] Implement IPassportService returning PassportDataDto (aggregates + routes)
 - [x] Wire Web to DB (replace mock): `PassportController` maps PassportDataDto => PassportViewModel
 - [x] Routing: support `/passport/{id?}` with fallback to current user or redirect when unauthenticated
@@ -238,9 +291,9 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] README draft (project purpose, quick start)
 - [ ] Add solution-level build script (format, test, coverage)
 - [ ] EditorConfig for consistent style
-- [ ] GitHub Actions CI (build + test)
+- [x] GitHub Actions CI (build + test)
 - [ ] Dependabot / NuGet package update workflow
-- [ ] Issue templates / PR template
+- [x] Issue templates / PR template
 - [ ] Code coverage badge & threshold enforcement (Deferred)
 
 ## 15. Documentation & Diagrams
@@ -267,10 +320,10 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 ## Immediate Next Suggested Focus
 
-1. Optional: Add Result wrapper for APIs; improve error surface in Presentation.
-2. Provider hardening: ensure config key set via appsettings; keep Polly retry/backoff and consider a simple enable/disable flag for live providers.
-3. Expand Application tests: add broader cancellation-token propagation coverage and additional stats aggregation scenarios.
-4. Implement preference-aware formatting helpers and apply them in Passport/Flight details (distance + date/time).
-5. Start API project scaffolding (`FlightTracker.Api`) with baseline DI + controllers.
+1. Add API and service-level health checks and a global exception handling pipeline.
+2. Expand high-signal tests for Application services and provider integration boundaries.
+3. Implement query pagination for large flight and airport result sets.
+4. Add OpenSky adapter completion tasks (normalization and resilience polish).
+5. Start MAUI client track as a separate follow-up effort after API contract freeze.
 
 Keep this file updated; prune completed groups to maintain clarity.

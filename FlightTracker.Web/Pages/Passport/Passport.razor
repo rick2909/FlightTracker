@@ -1,0 +1,320 @@
+@namespace FlightTracker.Web.Pages
+@page "/Passport"
+@page "/Passport/{Id:int}"
+@attribute [Authorize]
+
+@if (Model is null)
+{
+    <div class="rz-p-4">Loading passport...</div>
+}
+else
+{
+    <div class="ft-toolbar">
+        <h2 class="layout__title" style="margin:0">My Passport</h2>
+        <div class="ft-toolbar__actions">
+            <select aria-label="Filter by Year" class="rz-textbox" style="padding:.5rem .75rem;border:1px solid var(--rz-input-border, #E0E0E0);border-radius:12px;min-width:140px;">
+                <option value="">Filter by Year</option>
+                @foreach (var kv in Model.FlightsPerYear.OrderBy(k => k.Key))
+                {
+                    <option value="@kv.Key">@kv.Key</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="passport-section">
+        <div class="rz-card">
+            <div class="rz-card-body" style="display:flex;align-items:center;gap:2rem;flex-wrap:wrap;padding:2rem;">
+                <div class="passport-card__avatar">
+                    @if (!string.IsNullOrWhiteSpace(Model.AvatarUrl))
+                    {
+                        <img src="@Model.AvatarUrl"
+                             alt="@Model.UserName"
+                             onerror="this.style.display='none'; var f=this.nextElementSibling; if(f) f.style.display='inline-flex';" />
+                    }
+                    <span style="@BuildAvatarFallbackStyle(Model.AvatarUrl)">
+                        @Initials
+                    </span>
+                </div>
+                <div style="flex:1;min-width:250px;">
+                    <div style="font-weight:600;font-size:1.4rem;margin-bottom:1rem;color:var(--rz-text-color);">@Model.UserName</div>
+                    <div class="passport-card__stats">
+                        <div class="stat-item">
+                            <span class="material-icons">flight</span>
+                            <span class="stat-value">@Model.TotalFlights</span>
+                            <span>Flights</span>
+                        </div>
+                        @if (Model.ShowAirlines)
+                        {
+                            <div class="stat-item">
+                                <span class="material-icons">apartment</span>
+                                <span class="stat-value">@Model.AirlinesVisited.Count</span>
+                                <span>Airlines</span>
+                            </div>
+                        }
+                        <div class="stat-item">
+                            <span class="material-icons">location_city</span>
+                            <span class="stat-value">@Model.AirportsVisited.Count</span>
+                            <span>Airports</span>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.ShowCountries)
+                {
+                    <div class="passport-flags" style="margin-left:auto;">
+                        @foreach (var cc in Model.CountriesVisitedIso2)
+                        {
+                            <span class="@BuildFlagClass(cc)" title="@cc" aria-label="@cc"></span>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="rz-card-footer">
+                Profile overview
+                @if (Model.ShowCountries)
+                {
+                    <span>&bull; @Model.CountriesVisitedIso2.Count countries visited</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="passport-section">
+        <div class="rz-card">
+            <div class="rz-card-header">
+                <h3><span class="material-icons" aria-hidden="true">public</span>Flight Routes</h3>
+            </div>
+            <div class="rz-card-body">
+                <FlightTracker.Web.Components.Maps.FlightMapPanel MapFlights="Model.Routes" Height="56vh" MinHeight="380px" MaxVh="78vh" />
+            </div>
+            <div class="rz-card-footer">
+                @if (Model.ShowMapRoutes)
+                {
+                    <span>Routes drawn from recorded flights</span>
+                }
+                else
+                {
+                    <span>Route sharing is disabled for this profile</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="ft-passport-grid" style="margin:1rem 0">
+        <div class="ft-passport-grid__cards">
+            <div class="ft-stats-grid">
+                @if (Model.ShowTotalMiles)
+                {
+                    <div class="ft-stats-grid__item">
+                        <div class="rz-card">
+                            <div class="rz-card-body">
+                                <div style="display:flex;align-items:center;gap:1rem">
+                                    <span class="material-icons">timeline</span>
+                                    <div>
+                                        <div class="stat-label">Total Distance</div>
+                                        <div class="stat-value">@Model.TotalDistanceDisplay</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ft-stats-grid__item">
+                        <div class="rz-card">
+                            <div class="rz-card-body">
+                                <div style="display:flex;align-items:center;gap:1rem">
+                                    <span class="material-icons">trending_up</span>
+                                    <div>
+                                        <div class="stat-label">Longest Flight</div>
+                                        <div class="stat-value">@Model.LongestDistanceDisplay</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ft-stats-grid__item">
+                        <div class="rz-card">
+                            <div class="rz-card-body">
+                                <div style="display:flex;align-items:center;gap:1rem">
+                                    <span class="material-icons">trending_down</span>
+                                    <div>
+                                        <div class="stat-label">Shortest Flight</div>
+                                        <div class="stat-value">@Model.ShortestDistanceDisplay</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.ShowAirlines)
+                {
+                    <div class="ft-stats-grid__item">
+                        <div class="rz-card">
+                            <div class="rz-card-body">
+                                <div style="display:flex;align-items:center;gap:1rem">
+                                    <span class="material-icons">airlines</span>
+                                    <div>
+                                        <div class="stat-label">Favorite Airline</div>
+                                        <div class="stat-value">@Model.FavoriteAirline</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.ShowCountries)
+                {
+                    <div class="ft-stats-grid__item">
+                        <div class="rz-card">
+                            <div class="rz-card-body">
+                                <div style="display:flex;align-items:center;gap:1rem">
+                                    <span class="material-icons">public</span>
+                                    <div>
+                                        <div class="stat-label">Countries Visited</div>
+                                        <div class="stat-value">@Model.CountriesVisitedIso2.Count</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="ft-stats-grid__item">
+                    <div class="rz-card">
+                        <div class="rz-card-body">
+                            <div style="display:flex;align-items:center;gap:1rem">
+                                <span class="material-icons">flight_land</span>
+                                <div>
+                                    <div class="stat-label">Airports Visited</div>
+                                    <div class="stat-value">@Model.AirportsVisited.Count</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ft-stats-grid__item">
+                    <div class="rz-card">
+                        <div class="rz-card-body">
+                            <div style="display:flex;align-items:center;gap:1rem">
+                                <span class="material-symbols-outlined">multiple_airports</span>
+                                <div>
+                                    <div class="stat-label">Favorite Airport</div>
+                                    <div class="stat-value">@(string.IsNullOrWhiteSpace(Model.FavoriteAirport) ? "None" : Model.FavoriteAirport)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ft-stats-grid__item">
+                    <div class="rz-card">
+                        <div class="rz-card-body">
+                            <div style="display:flex;align-items:center;gap:1rem">
+                                <span class="material-icons">flight</span>
+                                <div>
+                                    <div class="stat-label">Most flown aircraft type</div>
+                                    <div class="stat-value">@(string.IsNullOrWhiteSpace(Model.MostFlownAircraftType) ? "None" : Model.MostFlownAircraftType)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ft-stats-grid__item">
+                    <div class="rz-card">
+                        <div class="rz-card-body">
+                            <div style="display:flex;align-items:center;gap:1rem">
+                                <span class="material-icons">flight_class</span>
+                                <div>
+                                    <div class="stat-label">Favorite class</div>
+                                    <div class="stat-value">@(string.IsNullOrWhiteSpace(Model.FavoriteClass) ? "None" : Model.FavoriteClass)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ft-stats-grid__item">
+                    <div class="rz-card">
+                        <div class="rz-card-body">
+                            <div style="display:flex;align-items:center;gap:1rem">
+                                <span class="material-icons">alt_route</span>
+                                <div>
+                                    <div class="stat-label">Unique routes</div>
+                                    <div class="stat-value">@UniqueRoutesCount</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ft-stats-grid__item">
+                    <div class="rz-card">
+                        <div class="rz-card-body">
+                            <div style="display:flex;align-items:center;gap:1rem">
+                                <span class="material-icons">event_upcoming</span>
+                                <div>
+                                    <div class="stat-label">Upcoming flights</div>
+                                    <div class="stat-value">@UpcomingRoutesCount</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ft-stats-grid__item">
+                    <div class="rz-card">
+                        <div class="rz-card-body">
+                            <div style="display:flex;align-items:center;gap:1rem">
+                                <span class="material-icons">calendar_month</span>
+                                <div>
+                                    <div class="stat-label">Flights this year</div>
+                                    <div class="stat-value">@FlightsThisYearCount</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="ft-passport-grid__charts">
+            @if (Model.ShowAirlines)
+            {
+                <div class="rz-card">
+                    <div class="rz-card-header">
+                        <h3><span class="material-icons" aria-hidden="true">apartment</span>Airlines Flown</h3>
+                    </div>
+                    <div class="rz-card-body">
+                        <div id="passport-airlines-pie" style="min-height:260px"></div>
+                    </div>
+                </div>
+            }
+
+            <div class="rz-card">
+                <div class="rz-card-header">
+                    <h3><span class="material-icons" aria-hidden="true">flight</span>Aircraft Types</h3>
+                </div>
+                <div class="rz-card-body">
+                    <div id="passport-aircraft-pie" style="min-height:260px"></div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <div class="passport-section">
+        <div class="rz-card">
+            <div class="rz-card-header">
+                <h3><span class="material-icons" aria-hidden="true">bar_chart</span>Flights Per Year</h3>
+            </div>
+            <div class="rz-card-body">
+                <div id="passport-chart" style="min-height:300px"></div>
+            </div>
+            <div class="rz-card-footer">Yearly flight counts</div>
+        </div>
+    </div>
+}

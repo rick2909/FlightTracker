@@ -17,6 +17,8 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
     public DbSet<Aircraft> Aircraft => Set<Aircraft>();
     public DbSet<Airline> Airlines => Set<Airline>();
     public DbSet<UserPreferences> UserPreferences => Set<UserPreferences>();
+    public DbSet<PersonalAccessToken> PersonalAccessTokens =>
+        Set<PersonalAccessToken>();
 
     public override int SaveChanges()
     {
@@ -238,6 +240,34 @@ public class FlightTrackerDbContext(DbContextOptions<FlightTrackerDbContext> opt
                   .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(p => p.UserId).IsUnique();
+        });
+
+        builder.Entity<PersonalAccessToken>(entity =>
+        {
+            entity.Property(t => t.Label)
+                .HasMaxLength(128)
+                .IsRequired();
+
+            entity.Property(t => t.TokenPrefix)
+                .HasMaxLength(24)
+                .IsRequired();
+
+            entity.Property(t => t.TokenHash)
+                .HasMaxLength(64)
+                .IsRequired();
+
+            entity.Property(t => t.Scopes)
+                .HasConversion<int>()
+                .IsRequired();
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(t => t.UserId);
+            entity.HasIndex(t => t.TokenHash).IsUnique();
+            entity.HasIndex(t => new { t.UserId, t.RevokedAtUtc });
         });
     }
 }

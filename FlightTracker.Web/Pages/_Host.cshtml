@@ -1,0 +1,102 @@
+@page "/"
+@namespace FlightTracker.Web.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FlightTracker</title>
+    <base href="~/" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <link rel="stylesheet" href="/_content/Radzen.Blazor/css/material.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.1.0/css/flag-icons.min.css" />
+    <link rel="stylesheet" href="css/styles.css" asp-append-version="true" />
+</head>
+<body>
+    <component type="typeof(App)" render-mode="ServerPrerendered" />
+
+    <script>
+        (function () {
+            try {
+                var m = document.cookie.match(/(?:^|; )ft_theme=([^;]+)/);
+                var v = m ? decodeURIComponent(m[1]) : 'system';
+                var cl = document.documentElement.classList;
+                cl.remove('theme-dark', 'theme-light');
+                if (v === 'dark') cl.add('theme-dark');
+                if (v === 'light') cl.add('theme-light');
+            } catch (e) {
+            }
+        })();
+    </script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+    <script src="js/ft-add-flight.js" asp-append-version="true"></script>
+    <script src="js/flight-map.js" asp-append-version="true"></script>
+    <script src="js/airports-map.js" asp-append-version="true"></script>
+    <script src="js/passport.js" asp-append-version="true"></script>
+    <script src="js/form-helper.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        (function () {
+            const sidebar = document.querySelector('[data-sidebar]');
+            const toggle = document.querySelector('[data-sidebar-toggle]');
+            const nav = document.querySelector('[data-sidebar-nav]');
+            if (sidebar && toggle) {
+                function setState(collapsed) {
+                    sidebar.classList.toggle('sidebar--collapsed', collapsed);
+                    toggle.setAttribute('aria-expanded', (!collapsed).toString());
+                }
+
+                toggle.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    setState(!sidebar.classList.contains('sidebar--collapsed'));
+                });
+
+                sidebar.addEventListener('click', function (e) {
+                    if (!sidebar.classList.contains('sidebar--collapsed')) {
+                        return;
+                    }
+
+                    const target = e.target;
+                    if (target.closest('button, a')) {
+                        return;
+                    }
+
+                    setState(false);
+                });
+
+                nav?.addEventListener('click', function (e) {
+                    if (e.target.closest('a') && sidebar.classList.contains('sidebar--collapsed')) {
+                        setState(false);
+                    }
+                });
+            }
+
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-in');
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.stat-card, .feature-card').forEach(function (el) {
+                observer.observe(el);
+            });
+        })();
+    </script>
+    <script src="_framework/blazor.server.js"></script>
+</body>
+</html>

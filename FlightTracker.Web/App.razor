@@ -7,7 +7,11 @@
 	<RadzenTooltip />
 	<Router AppAssembly="@typeof(App).Assembly">
 		<Found Context="routeData">
-			<RouteView RouteData="@routeData" DefaultLayout="null" />
+			<AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(FlightTracker.Web.Components.Layout.MainLayout)">
+				<NotAuthorized>
+					<FlightTracker.Web.Pages.LoginRedirect />
+				</NotAuthorized>
+			</AuthorizeRouteView>
 		</Found>
 		<NotFound>
 			<p class="radzen-text">Component not found.</p>

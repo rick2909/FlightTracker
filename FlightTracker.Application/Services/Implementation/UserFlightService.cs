@@ -23,6 +23,7 @@ public class UserFlightService : IUserFlightService
     private readonly IFlightService _flightService;
     private readonly IFlightMetadataProvisionService _metadataProvisionService;
     private readonly IAirlineRepository _airlineRepository;
+    private readonly IAirlineLookupClient _airlineLookupClient;
     private readonly IAircraftRepository _aircraftRepository;
     private readonly IAircraftLookupClient _aircraftLookupClient;
     private readonly IAirportEnrichmentService _airportEnrichmentService;
@@ -36,6 +37,7 @@ public class UserFlightService : IUserFlightService
         IFlightService flightService,
         IFlightMetadataProvisionService metadataProvisionService,
         IAirlineRepository airlineRepository,
+        IAirlineLookupClient airlineLookupClient,
         IAircraftRepository aircraftRepository,
         IAircraftLookupClient aircraftLookupClient,
         IAirportEnrichmentService airportEnrichmentService,
@@ -48,6 +50,7 @@ public class UserFlightService : IUserFlightService
         _flightService = flightService;
         _metadataProvisionService = metadataProvisionService;
         _airlineRepository = airlineRepository;
+        _airlineLookupClient = airlineLookupClient;
         _aircraftRepository = aircraftRepository;
         _aircraftLookupClient = aircraftLookupClient;
         _airportEnrichmentService = airportEnrichmentService;
@@ -447,27 +450,10 @@ public class UserFlightService : IUserFlightService
             ArrivalTimeUtc = dto.ArrivalTimeUtc!.Value
         };
 
-        // Resolve operating airline from code or flight number prefix
-        var airlineCode = dto.OperatingAirlineCode;
-        if (string.IsNullOrWhiteSpace(airlineCode))
-        {
-            // Try to extract from flight number
-            var prefix = new string(dto.FlightNumber!.TakeWhile(char.IsLetter).ToArray()).ToUpperInvariant();
-            if (!string.IsNullOrWhiteSpace(prefix))
-            {
-                airlineCode = prefix;
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(airlineCode))
-        {
-            var al = await _airlineRepository.GetByIataAsync(airlineCode, cancellationToken)
-                     ?? await _airlineRepository.GetByIcaoAsync(airlineCode, cancellationToken);
-            if (al is not null)
-            {
-                flight.OperatingAirlineId = al.Id;
-            }
-        }
+        flight.OperatingAirlineId = await ResolveOperatingAirlineIdAsync(
+            dto.OperatingAirlineCode,
+            dto.FlightNumber!,
+            cancellationToken);
 
         // Handle aircraft registration
         if (!string.IsNullOrWhiteSpace(dto.AircraftRegistration))
@@ -510,23 +496,10 @@ public class UserFlightService : IUserFlightService
         flight.DepartureTimeUtc = schedule.DepartureTimeUtc;
         flight.ArrivalTimeUtc = schedule.ArrivalTimeUtc;
 
-        // Resolve operating airline from code or flight number prefix
-        var airlineCode = schedule.OperatingAirlineCode;
-        if (string.IsNullOrWhiteSpace(airlineCode))
-        {
-            var prefix = new string(schedule.FlightNumber.TakeWhile(char.IsLetter).ToArray()).ToUpperInvariant();
-            if (!string.IsNullOrWhiteSpace(prefix))
-            {
-                airlineCode = prefix;
-            }
-        }
-
-        if (!string.IsNullOrWhiteSpace(airlineCode))
-        {
-            var al = await _airlineRepository.GetByIataAsync(airlineCode, cancellationToken)
-                     ?? await _airlineRepository.GetByIcaoAsync(airlineCode, cancellationToken);
-            flight.OperatingAirlineId = al?.Id;
-        }
+        flight.OperatingAirlineId = await ResolveOperatingAirlineIdAsync(
+            schedule.OperatingAirlineCode,
+            schedule.FlightNumber,
+            cancellationToken);
 
         // Handle aircraft registration
         if (!string.IsNullOrWhiteSpace(schedule.AircraftRegistration))
@@ -562,6 +535,104 @@ public class UserFlightService : IUserFlightService
         {
             throw new ArgumentException("Arrival time must be after departure time.");
         }
+    }
+
+    private async Task<int?> ResolveOperatingAirlineIdAsync(
+        string? operatingAirlineCode,
+        string flightNumber,
+        CancellationToken cancellationToken)
+    {
+        var airlineCode = operatingAirlineCode;
+        if (string.IsNullOrWhiteSpace(airlineCode))
+        {
+            var prefix = new string(flightNumber
+                .TakeWhile(char.IsLetter)
+                .ToArray())
+                .ToUpperInvariant();
+            if (!string.IsNullOrWhiteSpace(prefix))
+            {
+                airlineCode = prefix;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(airlineCode))
+        {
+            return null;
+        }
+
+        var normalizedCode = airlineCode.Trim().ToUpperInvariant();
+        var localAirline = await _airlineRepository.GetByIataAsync(
+                normalizedCode,
+                cancellationToken)
+            ?? await _airlineRepository.GetByIcaoAsync(
+                normalizedCode,
+                cancellationToken);
+
+        if (localAirline is not null)
+        {
+            return localAirline.Id;
+        }
+
+        AirlineLookupResult? externalAirline = null;
+        try
+        {
+            externalAirline = await _airlineLookupClient.GetAirlineByCodeAsync(
+                normalizedCode,
+                cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            return null;
+        }
+        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return null;
+        }
+
+        if (externalAirline is null)
+        {
+            return null;
+        }
+
+        var icao = TruncateOrNull(externalAirline.Icao, 3)
+            ?.ToUpperInvariant();
+        var iata = TruncateOrNull(externalAirline.Iata, 2)
+            ?.ToUpperInvariant();
+
+        if (string.IsNullOrWhiteSpace(icao))
+        {
+            return null;
+        }
+
+        var existing = await _airlineRepository.GetByIcaoAsync(
+            icao,
+            cancellationToken);
+        if (existing is null && !string.IsNullOrWhiteSpace(iata))
+        {
+            existing = await _airlineRepository.GetByIataAsync(
+                iata,
+                cancellationToken);
+        }
+
+        if (existing is not null)
+        {
+            return existing.Id;
+        }
+
+        var newAirline = new Airline
+        {
+            Name = TruncateOrDefault(externalAirline.Name, 128, icao),
+            IcaoCode = icao,
+            IataCode = iata,
+            Country = TruncateOrDefault(externalAirline.Country, 100, "Unknown"),
+            Active = true
+        };
+
+        var created = await _airlineRepository.AddAsync(
+            newAirline,
+            cancellationToken);
+
+        return created.Id;
     }
 
     private async Task<int> ResolveAirportIdOrThrowAsync(string code, CancellationToken cancellationToken)
