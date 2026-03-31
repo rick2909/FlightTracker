@@ -144,13 +144,41 @@ public partial class Dashboard
     private static string FormatDuration(TimeSpan ts)
     {
         if (ts < TimeSpan.Zero)
-        {
             ts = -ts;
+
+        var totalDays = (int)ts.TotalDays;
+
+        if (totalDays >= 30)
+        {
+            var months = totalDays / 30;
+            var remainingDays = totalDays % 30;
+            return remainingDays > 0
+                ? $"{months}mo {remainingDays}d"
+                : $"{months}mo";
+        }
+
+        if (totalDays >= 7)
+        {
+            var weeks = totalDays / 7;
+            var remainingDays = totalDays % 7;
+            return remainingDays > 0
+                ? $"{weeks}w {remainingDays}d"
+                : $"{weeks}w";
+        }
+
+        if (totalDays >= 1)
+        {
+            var hours = ts.Hours;
+            return hours > 0
+                ? $"{totalDays}d {hours}h"
+                : $"{totalDays}d";
         }
 
         if (ts.TotalHours >= 1)
         {
-            return $"{(int)ts.TotalHours}h {ts.Minutes}m";
+            return ts.Minutes > 0
+                ? $"{(int)ts.TotalHours}h {ts.Minutes}m"
+                : $"{(int)ts.TotalHours}h";
         }
 
         return $"{ts.Minutes}m";
