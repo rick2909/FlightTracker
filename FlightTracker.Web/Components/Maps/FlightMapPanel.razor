@@ -1,13 +1,16 @@
 @using FlightTracker.Web.Components
 
 <div class="flight-map" data-flight-map data-map-flight-count="@MapFlightCount">
-    <div class="flight-map__header">
-        <h1 class="flight-map__title">Flight Overview</h1>
-        <div class="flight-map__search">
-            <script>window.flightMapFilter = window.flightMapFilter || function () { };</script>
-            <FlightMapSearch MapFlights="MapFlights" />
+    @if (ShowHeader)
+    {
+        <div class="flight-map__header">
+            <h1 class="flight-map__title">Flight Overview</h1>
+            <div class="flight-map__search">
+                <script>window.flightMapFilter = window.flightMapFilter || function () { };</script>
+                <FlightMapSearch MapFlights="MapFlights" />
+            </div>
         </div>
-    </div>
+    }
     <div id="@MapElementId" class="@MapClass" style="@MapStyle" aria-label="Flight map" role="region"></div>
     <script type="application/json" id="@MapDataElementId">@FlightsJsonMarkup</script>
 </div>

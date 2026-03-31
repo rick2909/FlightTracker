@@ -25,6 +25,9 @@ public partial class FlightMapPanel
     [Parameter]
     public string MaxVh { get; set; } = "85vh";
 
+    [Parameter]
+    public bool ShowHeader { get; set; } = true;
+
     protected int MapFlightCount { get; private set; }
 
     protected string MapElementId { get; } = $"flightMap-{Guid.NewGuid():N}";
