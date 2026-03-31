@@ -23,6 +23,10 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "overrides": {
+    "picomatch": "^4.0.4",
+    "immutable": "^5.1.5"
+  },
   "bugs": {
     "url": "https://github.com/rick2909/FlightTracker/issues"
   },
