@@ -19,7 +19,8 @@ public sealed class AirportDbClient(HttpClient http, IConfiguration configuratio
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        NumberHandling = JsonNumberHandling.AllowReadingFromString
     };
 
     public async Task<AirportEnrichmentDto?> GetAirportAsync(
