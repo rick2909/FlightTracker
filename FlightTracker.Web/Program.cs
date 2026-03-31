@@ -49,28 +49,16 @@ builder.Services.AddDbContext<FlightTrackerDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite") ?? "Data Source=flighttracker.dev.db"));
 
 // Register repositories
-builder.Services.AddScoped<IAirportRepository, AirportRepository>();
 builder.Services.AddScoped<IFlightRepository, FlightRepository>();
 builder.Services.AddScoped<IUserFlightRepository, UserFlightRepository>();
-builder.Services.AddScoped<IAircraftRepository, AircraftRepository>();
-builder.Services.AddScoped<IAirlineRepository, AirlineRepository>();
-builder.Services.AddScoped<IUserPreferencesRepository, UserPreferencesRepository>();
 
 // Register application services
 builder.Services.AddSingleton<IClock, UtcClock>();
-builder.Services.AddScoped<IAirportService, AirportService>();
-builder.Services.AddScoped<FlightService>();
-builder.Services.AddScoped<IFlightService>(sp => sp.GetRequiredService<FlightService>());
-builder.Services.AddScoped<UserFlightService>();
 builder.Services.AddScoped<IUserFlightService, ApiBackedUserFlightService>();
 builder.Services.AddScoped<IMapFlightService, MapFlightService>();
 builder.Services.AddScoped<IFlightStatsService, FlightStatsService>();
-builder.Services.AddScoped<PassportService>();
 builder.Services.AddScoped<IPassportService, ApiBackedPassportService>();
-builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
-builder.Services.AddScoped<UserPreferencesService>();
 builder.Services.AddScoped<IUserPreferencesService, ApiBackedUserPreferencesService>();
-builder.Services.AddScoped<IAirportsSliceGateway, AirportsSliceGateway>();
 builder.Services.AddTransient<FirstPartyApiBearerTokenHandler>();
 builder.Services.AddHttpClient<IAirportsApiClient, AirportsApiClient>((sp, client) =>
 {
@@ -126,55 +114,7 @@ builder.Services.AddHttpClient<IAccountApiClient, AccountApiClient>((sp, client)
     }
 })
 .AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
-builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
-{
-    c.Timeout = TimeSpan.FromSeconds(3);
-})
-.AddPolicyHandler(
-    Policy<HttpResponseMessage>
-        .Handle<HttpRequestException>()
-        .OrResult(r => (int)r.StatusCode is >= 500 or 429)
-        .WaitAndRetryAsync(
-            Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(100), 2),
-            onRetry: (outcome, delay, attempt, ctx) => { }
-        )
-);
 builder.Services.AddScoped<IFlightLookupService, FlightLookupService>();
-builder.Services.AddHttpClient<IAirportLiveService, AviationstackService>(c =>
-{
-    c.Timeout = TimeSpan.FromSeconds(6);
-})
-// Basic transient fault-handling: retry a few times with exponential backoff + jitter
-.AddPolicyHandler(
-    Policy<HttpResponseMessage>
-        .Handle<HttpRequestException>()
-        .OrResult(r => (int)r.StatusCode is >= 500 or 429)
-        .WaitAndRetryAsync(
-            Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(200), 3),
-            onRetry: (outcome, delay, attempt, ctx) =>
-            {
-                // no logging in Presentation per guidelines; rely on provider/internal logs if needed
-            }
-        )
-);
-
-// ADSBdb route lookup and metadata provisioner
-builder.Services.AddHttpClient<AdsBdbClient>(c =>
-{
-    c.Timeout = TimeSpan.FromSeconds(6);
-});
-builder.Services.AddScoped<IFlightRouteLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
-builder.Services.AddScoped<IAircraftLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
-builder.Services.AddScoped<IFlightMetadataProvisionService, FlightMetadataProvisionService>();
-
-// AirportDB client for airport enrichment
-builder.Services.AddHttpClient<AirportDbClient>(c =>
-{
-    c.Timeout = TimeSpan.FromSeconds(6);
-});
-builder.Services.AddScoped<IAirportLookupClient>(sp => sp.GetRequiredService<AirportDbClient>());
-builder.Services.AddScoped<IAirportEnrichmentService, AirportEnrichmentService>();
-
 // External provider(s)
 builder.Services.AddScoped<IFlightDataProvider, OpenSkyClient>();
 
