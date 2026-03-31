@@ -89,7 +89,7 @@ public class PersonalAccessTokensController(
         }
 
         return CreatedAtAction(
-            nameof(ListAsync),
+            nameof(ListAsync)[..^"Async".Length],
             new { userId },
             new CreatePersonalAccessTokenResponse(
                 Map(result.Value.Token),

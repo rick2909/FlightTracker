@@ -136,7 +136,7 @@ public class UserFlightsController(
         }
 
         return CreatedAtAction(
-            nameof(GetByIdAsync),
+            nameof(GetByIdAsync)[..^"Async".Length],
             new { id = result.Value.Id },
             result.Value);
     }
