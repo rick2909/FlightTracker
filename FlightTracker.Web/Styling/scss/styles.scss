@@ -29,7 +29,7 @@
 .layout__header:has(.remove__header) { padding: 0 !important; }
 .layout__title { margin: 0; font-size: 1.25rem; font-weight: 600; }
 .layout__content { flex: 1 0 auto; padding: .5rem 1.25rem 2rem; }
-.layout__footer { margin-top: auto; padding: 1rem 1.25rem; font-size: .8rem; color: $color-text-secondary; border-top: 1px solid $color-divider; }
+.layout__footer { padding: 1rem 1.25rem; font-size: .8rem; color: $color-text-secondary; border-top: 1px solid $color-divider; flex-shrink: 0; }
 
 body {
   margin: 0;
