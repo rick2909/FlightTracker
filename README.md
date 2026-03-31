@@ -11,19 +11,23 @@
 ![xUnit](https://img.shields.io/badge/xUnit-5A2B81?style=for-the-badge&logo=xunit&logoColor=white)
 [![Coverage](https://img.shields.io/codecov/c/github/rick2909/FlightTracker?branch=main&style=for-the-badge&logo=codecov)](https://app.codecov.io/gh/rick2909/FlightTracker)
 
-A modern, multi-platform flight tracking application (web, desktop, mobile) built with .NET and Clean Architecture principles. The default presentation architecture is API + Blazor, with temporary MVC compatibility controllers during migration.
+A modern, multi-platform flight tracking application (web, desktop, mobile) built with .NET and Clean Architecture principles. The active presentation architecture is FlightTracker.Api + Blazor Server (FlightTracker.Web), with typed API clients used by the web UI.
 
 ## Status
 
-Early foundation in place:
+Current status (March 2026):
 
-- Domain entities: Flight, Airport
-- Application service interfaces (Flight & Airport)
-- Infrastructure: EF Core DbContext (with Identity), repositories, seed data
-- Development guidelines & contribution docs
-- Task plan: see `doc/Plan.md`
+- FlightTracker.Api is active with versioned v1 controllers, Swagger, PAT auth support, and rate limiting.
+- FlightTracker.Web is active as a Blazor Server app and consumes the API through typed HttpClient clients.
+- Core slices are implemented end-to-end: airports, flights, user flights, passport/stats, preferences, and PAT management.
+- Infrastructure includes EF Core + Identity, SQLite migrations, deterministic seed data, and provider integrations (Aviationstack, timeapi.io, ADSBdb).
+- Solution and project builds are green in Debug.
 
-> Next focus: Provider hardening (Aviationstack key via user-secrets, retries), tests for merge logic, OpenSky adapter stub.
+Current focus:
+
+- Provider resilience and config hardening.
+- Expand targeted tests (especially cancellation and branch-heavy service paths).
+- Continue API contract refinement and client parity improvements.
 
 ## Architecture (Clean Architecture Inspired)
 
@@ -61,12 +65,17 @@ FlightTracker/
 │  ├─ External/
 │  ├─ Repositories/
 │  └─ Time/
+├─ FlightTracker.Api/
+│  ├─ Contracts/
+│  ├─ Controllers/V1/
+│  └─ Infrastructure/
 ├─ FlightTracker.Web/
+│  ├─ Api/Clients/
 │  ├─ Components/
-│  ├─ Controllers/
 │  ├─ Models/
+│  ├─ Pages/
+│  ├─ Services/
 │  ├─ Styling/
-│  ├─ Views/
 │  └─ wwwroot/
 ├─ Tests/
 │  ├─ FlightTracker.Application.Tests/
@@ -94,7 +103,7 @@ FlightTracker/
 - Logging & persistence in Infrastructure only.
 - Repositories and low-level external clients return raw data/null/collections; Application services map outcomes to `Result`/`Result<T>`.
 
-See `doc/Repository-Result-Policy.md` for the authoritative return-contract policy.
+See `doc/Architecture.md` for the repository and Result return-contract policy.
 
 ## Technology (Current / Planned)
 
@@ -322,10 +331,10 @@ See `CONTRIBUTING.md` for full process and pitfalls.
 
 ## Repository Conventions
 
-- Repositories currently located in Infrastructure (Interfaces + Implementation) — scheduled to move interfaces inward per plan.
+- Repository interfaces live in FlightTracker.Application and are implemented in FlightTracker.Infrastructure.
 - Seed data is idempotent; do not embed production credentials or PII.
 - Avoid premature generic repositories; prefer focused ones per aggregate root.
-- Return contracts follow `doc/Repository-Result-Policy.md` (raw repository/client contracts, Result mapping in Application services).
+- Return contracts follow the policy documented in `doc/Architecture.md` (raw repository/client contracts, Result mapping in Application services).
 
 ## Planned Entities (Beyond MVP)
 

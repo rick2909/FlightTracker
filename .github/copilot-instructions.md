@@ -14,7 +14,7 @@ Adopt Clean Architecture with inward dependencies only:
 	- EF Core DbContext, configurations, repositories, external API clients.
 	- Implements interfaces from Domain/Application.
 4. Presentation
-	- API (ASP.NET Core Web API), Web (Blazor WASM + Radzen + ApexCharts), Desktop/Mobile (MAUI Blazor Hybrid / MAUI).
+	- API (ASP.NET Core Web API), Web (Blazor Server + Radzen + ApexCharts), Desktop/Mobile (MAUI Blazor Hybrid / MAUI).
 
 Dependency Rule:
 - No layer depends outward. Domain is independent.
@@ -129,7 +129,6 @@ Application/
 	Services/Implementation/ (application logic only)
 Infrastructure/
 	Data/ (DbContext, Migrations, SeedData)
-	Repositories/Interfaces/
 	Repositories/Implementation/
 Presentation/
 	Api/

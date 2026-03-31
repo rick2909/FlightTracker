@@ -75,16 +75,16 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Aviationstack provider adapter (IAirportLiveService implementation) for airport departures/arrivals
 - [ ] FR24 provider adapter (Deferred)
 
-## 5. Presentation – API (to be created)
+## 5. Presentation – API
 
-- [ ] Create `FlightTracker.Api` project
-- [ ] Configure DI (DbContext, Identity, Repositories, Services, Providers)
-- [ ] Controllers: FlightsController, AirportsController, StatsController
-- [ ] Model binding & validation responses (ProblemDetails)
+- [x] Create `FlightTracker.Api` project
+- [x] Configure DI (DbContext, Identity, Repositories, Services, Providers)
+- [x] Controllers: FlightsController, AirportsController, StatsController (+ Passport, Preferences, Account, PAT, UserFlights)
+- [x] Model binding & validation responses (ProblemDetails)
 - [ ] Global exception handling middleware
-- [ ] Authentication & authorization (JWT or cookie) baseline
-- [ ] Swagger / OpenAPI setup
-- [ ] Versioning strategy (route or header) placeholder
+- [x] Authentication & authorization (JWT bearer + PAT bearer) baseline
+- [x] Swagger / OpenAPI setup
+- [x] Versioning strategy (route-based `/api/v1`) placeholder
 - [ ] SignalR hub for live flight position updates
 - [ ] Health checks endpoint
 
@@ -96,7 +96,7 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
   - [x] Add `FlightTracker.Api` with versioned routes (`/api/v1/...`) and OpenAPI
   - [x] Keep Application services as the only orchestration layer; controllers remain thin
   - [x] Define stable request/response DTO contracts for Flights, Airports, Passport/Stats, Preferences
-  - [ ] Keep existing MVC endpoints/pages available during transition window (no hard cut yet)
+  - [x] Keep existing MVC endpoints/pages available during transition window (completed and retired)
 - [x] **Step 2 — Move Web to API consumption (feature-by-feature)**
   - [x] Add typed API clients in `FlightTracker.Web` (`HttpClient` + interface wrappers)
   - [x] Migrate one vertical slice at a time (Airports, Flights, Passport, Settings)
@@ -120,9 +120,9 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
   - [x] Add focused tests for API contracts, auth paths, and Blazor API client integration
   - [x] Keep PR scope controlled: no new business features, migration-only changes
 
-### 5B. Prompt-driven execution order (use this in future chats)
+### 5B. Prompt-driven execution order (archived)
 
-- [ ] **Run Order (strict):** 5A Step 1 → Step 2 → Step 3 → Step 4 → Step 5 → then Section 7 (MAUI)
+- [x] **Run Order (strict):** 5A Step 1 → Step 2 → Step 3 → Step 4 → Step 5 → then Section 7 (MAUI)
 - [ ] **Per-step completion template (apply to every step before moving on):**
   - [ ] Scope locked to one step only
   - [ ] Files changed listed
@@ -140,13 +140,13 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Create `FlightTracker.Web` project (Blazor Server)
 - [x] Integrate Radzen components (only UI layer)
 - [x] Choose charting library: ApexCharts
-- [ ] *Integrate ApexCharts for stats (passport charts)*
+- [x] Integrate ApexCharts for stats (passport charts)
 - [x] Map component via JS interop (MapLibre or Leaflet) spike
 - [x] Flight list & selection panel (Airports page: departing/arriving)
 - [x] Airport overview/detail page (map + lists; initial version with live toggle)
 - [x] Settings page (profile, password, display & units preferences, privacy & sharing, CSV/JSON export)
 - [x] Wire Airports UI to AirportOverviewService with optional Aviationstack live data
-- [ ] NEW: Passport details view (more in-depth stats inside Passport)
+- [x] NEW: Passport details view (more in-depth stats inside Passport)
   - [x] Route: `/Passport/{id?}` gains a "Details" tab/section (or `/Passport/{id?}/Details` action)
   - [x] Two ApexCharts pie charts
     - [x] Airlines flown (click to filter list)
@@ -196,9 +196,9 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] Define stats aggregation queries (total hours, routes, aircraft types placeholder)
 - [x] Implement IFlightStatsService
 - [ ] Add background job or on-demand recompute strategy
-- [ ] Expose API endpoint /stats/user/{id}
+- [x] Expose API endpoint for user stats (v1 routes)
 - [ ] Provide chart-friendly DTOs (MonthlyFlightCounts etc.)
-- [ ] Integrate charts in UI (ApexCharts) once Web project exists
+- [x] Integrate charts in UI (ApexCharts) once Web project exists
 - [x] Implement IPassportService returning PassportDataDto (aggregates + routes)
 - [x] Wire Web to DB (replace mock): `PassportController` maps PassportDataDto => PassportViewModel
 - [x] Routing: support `/passport/{id?}` with fallback to current user or redirect when unauthenticated
@@ -291,9 +291,9 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 - [x] README draft (project purpose, quick start)
 - [ ] Add solution-level build script (format, test, coverage)
 - [ ] EditorConfig for consistent style
-- [ ] GitHub Actions CI (build + test)
+- [x] GitHub Actions CI (build + test)
 - [ ] Dependabot / NuGet package update workflow
-- [ ] Issue templates / PR template
+- [x] Issue templates / PR template
 - [ ] Code coverage badge & threshold enforcement (Deferred)
 
 ## 15. Documentation & Diagrams
@@ -320,11 +320,10 @@ Purpose: Track actionable work items only. Checked items = completed. Keep this 
 
 ## Immediate Next Suggested Focus
 
-1. Execute **5A Step 1** only: scaffold `FlightTracker.Api` with versioned routes and OpenAPI.
-2. Execute **5A Step 2** only: connect `FlightTracker.Web` via typed API clients for one vertical slice first.
-3. Execute **5A Step 3** only: harden API contracts/versioning for future MAUI and other clients.
-4. Execute **5A Step 4** only: add user-managed Personal Access Tokens (secure hash storage + scopes + revoke).
-5. Execute **5A Step 5** only: finalize migration, deprecate MVC, and keep PR migration-only.
-6. After 5A is fully done, start Section 7 (`FlightTracker.Maui`) as a separate follow-up track.
+1. Add API and service-level health checks and a global exception handling pipeline.
+2. Expand high-signal tests for Application services and provider integration boundaries.
+3. Implement query pagination for large flight and airport result sets.
+4. Add OpenSky adapter completion tasks (normalization and resilience polish).
+5. Start MAUI client track as a separate follow-up effort after API contract freeze.
 
 Keep this file updated; prune completed groups to maintain clarity.

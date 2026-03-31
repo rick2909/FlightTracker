@@ -15,7 +15,14 @@
 - Application layer returns DTOs only across boundaries — never EF entities or Identity models.
 
 Default presentation architecture: **API + Blazor Server**.
-Legacy MVC compatibility controllers are deprecated and retained only during the API migration window.
+
+## Current Status Snapshot (March 2026)
+
+- Active API host: `FlightTracker.Api` with versioned v1 controllers.
+- Active web host: `FlightTracker.Web` (Blazor Server) using typed API clients.
+- Authentication supports first-party JWT bearer flows and PAT bearer tokens.
+- Core slices implemented: airports, flights, user flights, passport/stats, preferences, and account/PAT management.
+- Swagger/OpenAPI and per-client rate limits are enabled in the API host.
 
 ---
 
@@ -103,6 +110,7 @@ Auth header: `Authorization: Bearer {token}`
 | Stats | `GET /stats/users/{userId}/passport-details` |
 | Preferences | `GET /preferences/users/{userId}`, `PUT /preferences/users/{userId}` |
 | User Flights | `GET /users/{userId}/flights`, `POST /users/{userId}/flights`, `GET /users/{userId}/flights/stats`, `GET /user-flights/{id}`, `PUT /user-flights/{id}`, `DELETE /user-flights/{id}` |
+| Account | `GET /users/{userId}/account`, `PUT /users/{userId}/account`, `POST /users/{userId}/account/change-password`, `GET /users/{userId}/account/export/flights.csv`, `GET /users/{userId}/account/export/all.json` |
 | Access Tokens | `GET /users/{userId}/access-tokens`, `POST /users/{userId}/access-tokens`, `POST /users/{userId}/access-tokens/revoke` |
 
 Contracts: `FlightTracker.Api/Contracts/V1`
