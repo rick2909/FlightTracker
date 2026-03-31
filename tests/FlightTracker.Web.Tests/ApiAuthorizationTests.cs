@@ -80,6 +80,8 @@ public class ApiAuthorizationTests
     public async Task UserFlights_GetByIdAsync_ReturnsForbid_WhenFlightBelongsToAnotherUser()
     {
         var service = new Mock<IUserFlightService>();
+        var lookupService = new Mock<IFlightLookupService>(MockBehavior.Strict);
+        var flightService = new Mock<IFlightService>(MockBehavior.Strict);
         service
             .Setup(s => s.GetByIdAsync(11, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<UserFlightDto>.Success(new UserFlightDto
@@ -88,7 +90,10 @@ public class ApiAuthorizationTests
                 UserId = 99
             }));
 
-        var controller = new UserFlightsController(service.Object)
+        var controller = new UserFlightsController(
+            service.Object,
+            lookupService.Object,
+            flightService.Object)
         {
             ControllerContext = new ControllerContext
             {
