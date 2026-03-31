@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -9,7 +10,7 @@ using FlightTracker.Application.Dtos;
 
 namespace FlightTracker.Infrastructure.External;
 
-public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient, IAircraftLookupClient
+public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient, IAircraftLookupClient, IAirlineLookupClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -105,6 +106,58 @@ public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient, IA
         );
     }
 
+    public async Task<AirlineLookupResult?> GetAirlineByCodeAsync(string airlineCode, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(airlineCode))
+        {
+            return null;
+        }
+
+        var url = $"https://api.adsbdb.com/v0/airline/{Uri.EscapeDataString(airlineCode)}";
+        using var res = await http.GetAsync(url, cancellationToken);
+        if (!res.IsSuccessStatusCode)
+        {
+            return null;
+        }
+
+        await using var stream = await res.Content.ReadAsStreamAsync(cancellationToken);
+        var root = await JsonSerializer.DeserializeAsync<AirlineLookupRoot>(stream, JsonOptions, cancellationToken);
+        if (root?.Response is null)
+        {
+            return null;
+        }
+
+        AirlineLookupItemJson? airline = null;
+        foreach (var item in root.Response)
+        {
+            if (item is null)
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.Icao)
+                || !string.IsNullOrWhiteSpace(item.Iata))
+            {
+                airline = item;
+                break;
+            }
+        }
+
+        if (airline is null)
+        {
+            return null;
+        }
+
+        return new AirlineLookupResult(
+            Name: airline.Name,
+            Icao: airline.Icao,
+            Iata: airline.Iata,
+            Country: airline.Country,
+            CountryIso: airline.CountryIso,
+            Callsign: airline.Callsign
+        );
+    }
+
     private sealed class AircraftRoot
     {
         [JsonPropertyName("response")] public AircraftResponseJson? Response { get; set; }
@@ -162,5 +215,21 @@ public sealed class AdsBdbClient(HttpClient http) : IFlightRouteLookupClient, IA
         [JsonPropertyName("latitude")] public double? Latitude { get; set; }
         [JsonPropertyName("longitude")] public double? Longitude { get; set; }
         [JsonPropertyName("elevation")] public int? Elevation { get; set; }
+    }
+
+    private sealed class AirlineLookupRoot
+    {
+        [JsonPropertyName("response")]
+        public List<AirlineLookupItemJson?>? Response { get; set; }
+    }
+
+    private sealed class AirlineLookupItemJson
+    {
+        [JsonPropertyName("name")] public string? Name { get; set; }
+        [JsonPropertyName("icao")] public string? Icao { get; set; }
+        [JsonPropertyName("iata")] public string? Iata { get; set; }
+        [JsonPropertyName("country")] public string? Country { get; set; }
+        [JsonPropertyName("country_iso")] public string? CountryIso { get; set; }
+        [JsonPropertyName("callsign")] public string? Callsign { get; set; }
     }
 }

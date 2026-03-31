@@ -254,6 +254,7 @@ builder.Services.AddHttpClient<AdsBdbClient>(c =>
 });
 builder.Services.AddScoped<IFlightRouteLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
 builder.Services.AddScoped<IAircraftLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
+builder.Services.AddScoped<IAirlineLookupClient>(sp => sp.GetRequiredService<AdsBdbClient>());
 
 builder.Services.AddHttpClient<AirportDbClient>(c =>
 {
