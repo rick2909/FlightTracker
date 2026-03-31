@@ -31,6 +31,10 @@ public sealed class TokenAuditMiddleware(
         }
 
         var requiredScope = GetRequiredScope(context.Request.Method, context.Request.Path);
+        var auditTarget = GetAuditTarget(context.Request.Path);
+        var auditOperation = GetAuditOperation(
+            context.Request.Method,
+            requiredScope);
         var validationResult = await tokenService.ValidateTokenAsync(
             token,
             requiredScope,
@@ -39,9 +43,9 @@ public sealed class TokenAuditMiddleware(
         if (validationResult.IsFailure)
         {
             _logger.LogWarning(
-                "PAT validation failed for {Method} {Path}. Error: {ErrorCode}",
-                context.Request.Method,
-                context.Request.Path,
+                "PAT validation failed. Operation={Operation} Target={Target} Error={ErrorCode}",
+                auditOperation,
+                auditTarget,
                 validationResult.ErrorCode);
 
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
@@ -56,9 +60,9 @@ public sealed class TokenAuditMiddleware(
         if (validationResult.Value is null)
         {
             _logger.LogWarning(
-                "PAT rejected for {Method} {Path}",
-                context.Request.Method,
-                context.Request.Path);
+                "PAT rejected. Operation={Operation} Target={Target}",
+                auditOperation,
+                auditTarget);
 
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             await context.Response.WriteAsJsonAsync(new
@@ -88,20 +92,20 @@ public sealed class TokenAuditMiddleware(
         await tokenService.RecordUsageAsync(validationResult.Value.Id, context.RequestAborted);
 
         _logger.LogInformation(
-            "PAT access accepted. TokenId={TokenId} UserId={UserId} Method={Method} Path={Path}",
+            "PAT access accepted. TokenId={TokenId} UserId={UserId} Operation={Operation} Target={Target}",
             validationResult.Value.Id,
             validationResult.Value.UserId,
-            context.Request.Method,
-            context.Request.Path);
+            auditOperation,
+            auditTarget);
 
         await _next(context);
 
         _logger.LogInformation(
-            "PAT access completed. TokenId={TokenId} StatusCode={StatusCode} Method={Method} Path={Path}",
+            "PAT access completed. TokenId={TokenId} StatusCode={StatusCode} Operation={Operation} Target={Target}",
             validationResult.Value.Id,
             context.Response.StatusCode,
-            context.Request.Method,
-            context.Request.Path);
+            auditOperation,
+            auditTarget);
     }
 
     private static string? ExtractBearerToken(string headerValue)
@@ -131,5 +135,59 @@ public sealed class TokenAuditMiddleware(
         }
 
         return PersonalAccessTokenScopes.WriteFlights;
+    }
+
+    private static string GetAuditOperation(
+        string method,
+        PersonalAccessTokenScopes requiredScope)
+    {
+        if (HttpMethods.IsGet(method))
+        {
+            return requiredScope == PersonalAccessTokenScopes.ReadStats
+                ? "read-stats"
+                : "read-flights";
+        }
+
+        return "write-flights";
+    }
+
+    private static string GetAuditTarget(PathString path)
+    {
+        if (path.StartsWithSegments("/api/v1/personal-access-tokens"))
+        {
+            return "personal-access-tokens";
+        }
+
+        if (path.StartsWithSegments("/api/v1/passport"))
+        {
+            return "passport";
+        }
+
+        if (path.StartsWithSegments("/api/v1/stats"))
+        {
+            return "stats";
+        }
+
+        if (path.StartsWithSegments("/api/v1/userflights"))
+        {
+            return "userflights";
+        }
+
+        if (path.StartsWithSegments("/api/v1/flights"))
+        {
+            return "flights";
+        }
+
+        if (path.StartsWithSegments("/api/v1/airports"))
+        {
+            return "airports";
+        }
+
+        if (path.StartsWithSegments("/api/v1/account"))
+        {
+            return "account";
+        }
+
+        return "unknown-api-target";
     }
 }
