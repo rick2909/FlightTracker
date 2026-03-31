@@ -15,9 +15,13 @@ namespace FlightTracker.Api.Controllers.V1;
 [Authorize]
 [Route("api/v1")]
 public class UserFlightsController(
-    IUserFlightService userFlightService) : ControllerBase
+    IUserFlightService userFlightService,
+    IFlightLookupService flightLookupService,
+    IFlightService flightService) : ControllerBase
 {
     private readonly IUserFlightService _userFlightService = userFlightService;
+    private readonly IFlightLookupService _flightLookupService = flightLookupService;
+    private readonly IFlightService _flightService = flightService;
 
     
     /// <summary>Returns all tracked flights for the authenticated user.</summary>
@@ -176,6 +180,109 @@ public class UserFlightsController(
         }
 
         return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Looks up updated schedule/route data for a user-flight and returns potential changes.
+    /// </summary>
+    [HttpPost("user-flights/{id:int}/lookup-refresh")]
+    [ProducesResponseType(typeof(UserFlightLookupRefreshResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UserFlightLookupRefreshResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<UserFlightLookupRefreshResponse>> LookupRefreshAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        var callerId = GetCallerUserId();
+        if (callerId is null)
+        {
+            return Unauthorized();
+        }
+
+        var dtoResult = await _userFlightService.GetByIdAsync(id, cancellationToken);
+        if (dtoResult.IsFailure)
+        {
+            return this.ToFailure(dtoResult);
+        }
+
+        var dto = dtoResult.Value;
+        if (dto is null)
+        {
+            return NotFound(new UserFlightLookupRefreshResponse(
+                "not_found",
+                "User flight not found.",
+                null));
+        }
+
+        if (dto.UserId != callerId.Value)
+        {
+            return Forbid();
+        }
+
+        var date = DateOnly.FromDateTime(dto.DepartureTimeUtc);
+        var candidateResult = await _flightLookupService.ResolveFlightAsync(
+            dto.FlightNumber,
+            date,
+            cancellationToken);
+
+        if (candidateResult.IsFailure)
+        {
+            return this.ToFailure(candidateResult);
+        }
+
+        var candidate = candidateResult.Value;
+        if (candidate is null)
+        {
+            return NotFound(new UserFlightLookupRefreshResponse(
+                "not_found",
+                "No flight found via lookup.",
+                null));
+        }
+
+        var currentFlightResult = await _flightService.GetFlightByIdAsync(
+            dto.FlightId,
+            cancellationToken);
+
+        if (currentFlightResult.IsFailure)
+        {
+            return this.ToFailure(currentFlightResult);
+        }
+
+        var currentFlight = currentFlightResult.Value;
+        if (currentFlight is null)
+        {
+            return NotFound(new UserFlightLookupRefreshResponse(
+                "not_found",
+                "Current flight not found.",
+                null));
+        }
+
+        if (currentFlight.HasSameScheduleAndRoute(candidate))
+        {
+            return Ok(new UserFlightLookupRefreshResponse(
+                "no_changes",
+                "No changes found.",
+                null));
+        }
+
+        var depCode = candidate.DepartureAirport?.IataCode
+            ?? candidate.DepartureAirport?.IcaoCode;
+        var arrCode = candidate.ArrivalAirport?.IataCode
+            ?? candidate.ArrivalAirport?.IcaoCode;
+
+        var changes = new UserFlightLookupRefreshChangesResponse(
+            candidate.FlightNumber,
+            candidate.DepartureTimeUtc,
+            candidate.ArrivalTimeUtc,
+            candidate.DepartureAirportId,
+            candidate.ArrivalAirportId,
+            depCode,
+            arrCode);
+
+        return Ok(new UserFlightLookupRefreshResponse(
+            "changes",
+            "New flight data found.",
+            changes));
     }
 
     /// <summary>Updates the user-flight and its associated flight schedule in a single request.</summary>

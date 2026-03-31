@@ -86,4 +86,14 @@ public sealed class UserFlightsApiClient(HttpClient httpClient)
 
         return response?.HasFlown ?? false;
     }
+
+    public Task<UserFlightLookupRefreshResponse?> LookupRefreshAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        return _httpClient.SendRequiredAsync<UserFlightLookupRefreshResponse>(
+            HttpMethod.Post,
+            $"/api/v1/user-flights/{id}/lookup-refresh",
+            cancellationToken: cancellationToken);
+    }
 }

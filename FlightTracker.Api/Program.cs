@@ -224,11 +224,13 @@ builder.Services.AddScoped<IFlightStatsService, FlightStatsService>();
 builder.Services.AddScoped<IPassportService, PassportService>();
 builder.Services.AddScoped<IAirportOverviewService, AirportOverviewService>();
 builder.Services.AddScoped<IUserPreferencesService, UserPreferencesService>();
+builder.Services.AddScoped<IFlightLookupService, FlightLookupService>();
 builder.Services.AddScoped<IPersonalAccessTokenService, PersonalAccessTokenService>();
 builder.Services.AddScoped<IUsernameValidationService, UsernameValidationService>();
 builder.Services.AddScoped<IAirportEnrichmentService, AirportEnrichmentService>();
 builder.Services.AddScoped<IFlightMetadataProvisionService, FlightMetadataProvisionService>();
 builder.Services.AddSingleton<IDistanceCalculator, DistanceCalculator>();
+builder.Services.AddScoped<IFlightDataProvider, OpenSkyClient>();
 
 builder.Services.AddHttpClient<ITimeApiService, TimeApiService>(c =>
 {

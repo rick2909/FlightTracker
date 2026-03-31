@@ -20,3 +20,19 @@ public sealed record DeleteUserFlightResponse(
 /// <param name="HasFlown"><see langword="true"/> if at least one user-flight record exists.</param>
 public sealed record HasUserFlownResponse(
     bool HasFlown);
+
+/// <summary>Change payload returned when flight lookup detects schedule or route updates.</summary>
+public sealed record UserFlightLookupRefreshChangesResponse(
+    string? FlightNumber,
+    DateTime? DepartureTimeUtc,
+    DateTime? ArrivalTimeUtc,
+    int? DepartureAirportId,
+    int? ArrivalAirportId,
+    string? DepartureAirportCode,
+    string? ArrivalAirportCode);
+
+/// <summary>Response of a user-flight lookup refresh operation.</summary>
+public sealed record UserFlightLookupRefreshResponse(
+    string Status,
+    string? Message,
+    UserFlightLookupRefreshChangesResponse? Changes);

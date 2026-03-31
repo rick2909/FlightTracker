@@ -1,4 +1,5 @@
 using FlightTracker.Application.Dtos;
+using FlightTracker.Web.Api.Contracts;
 
 namespace FlightTracker.Web.Services.Interfaces;
 
@@ -34,5 +35,9 @@ public interface IUserFlightsApiClient
     Task<bool> HasUserFlownFlightAsync(
         int userId,
         int flightId,
+        CancellationToken cancellationToken = default);
+
+    Task<UserFlightLookupRefreshResponse?> LookupRefreshAsync(
+        int id,
         CancellationToken cancellationToken = default);
 }
