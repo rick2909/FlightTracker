@@ -73,9 +73,35 @@
         if(typeof value!=='string'||value.indexOf('&')===-1){
             return value;
         }
-        const textarea=document.createElement('textarea');
-        textarea.innerHTML=value;
-        return textarea.value;
+        const namedEntities={
+            amp:'&',
+            lt:'<',
+            gt:'>',
+            quot:'"',
+            apos:"'",
+            nbsp:' '
+        };
+
+        return value.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g,(_,entity)=>{
+            const lower=entity.toLowerCase();
+
+            if(Object.prototype.hasOwnProperty.call(namedEntities,lower)){
+                return namedEntities[lower];
+            }
+
+            if(lower.charAt(0)==='#'){
+                const isHex=lower.charAt(1)==='x';
+                const digits=isHex?lower.slice(2):lower.slice(1);
+                const base=isHex?16:10;
+                const codePoint=parseInt(digits,base);
+
+                if(Number.isInteger(codePoint)&&codePoint>=0&&codePoint<=0x10FFFF){
+                    try{return String.fromCodePoint(codePoint);}catch(_){ }
+                }
+            }
+
+            return `&${entity};`;
+        });
     }
 
     function readFlights(dataId){
