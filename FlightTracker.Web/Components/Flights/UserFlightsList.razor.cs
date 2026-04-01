@@ -1,85 +1,29 @@
-@using FlightTracker.Application.Dtos
-@using FlightTracker.Domain.Enums
-@using FlightTracker.Application.Services.Interfaces
-@using Radzen
-@using Radzen.Blazor
-@using Microsoft.AspNetCore.WebUtilities
-@using FlightTracker.Web.Components.Cards
-@using FlightTracker.Web.Components.Flights
-@using FlightTracker.Web.Formatting
-@inject NavigationManager Nav
-@inject IUserFlightService UserFlightService
-@inject DialogService DialogService
-@inject NotificationService NotificationService
+using FlightTracker.Application.Dtos;
+using FlightTracker.Application.Services.Interfaces;
+using FlightTracker.Domain.Enums;
+using FlightTracker.Web.Components.Cards;
+using FlightTracker.Web.Components.Flights;
+using FlightTracker.Web.Formatting;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.WebUtilities;
+using Radzen;
 
-@if (Flights is null || !Flights.Any())
-{
-    <div class="rz-p-4 rz-text-center rz-text-secondary">No flights.</div>
-}
-else
-{
-    @if (ShowFilters)
-    {
-        <div class="rz-pb-2 rz-pr-2 rz-pl-2">
-            <RadzenRow Gap="2">
-                <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="3">
-                    <label>Flight number</label>
-                    <RadzenTextBox @bind-Value="filterFlightNumber" Style="width:100%" Placeholder="e.g., AA123" Change="@(args => OnFiltersChanged())" />
-                </RadzenColumn>
-                <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="2">
-                    <label>Class</label>
-                    <RadzenDropDown TValue="FlightClass?"
-                                    @bind-Value="filterClass"
-                                    Data="@flightClassOptions"
-                                    TextProperty="Text"
-                                    ValueProperty="Value"
-                                    AllowClear="true"
-                                    Placeholder="All"
-                                    Style="width:100%" Change="@(args => OnFiltersChanged())" />
-                </RadzenColumn>
-                <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="2">
-                    <label>Status</label>
-                    <RadzenDropDown TValue="bool?"
-                                    @bind-Value="filterDidFly"
-                                    Data="@didFlyOptions"
-                                    TextProperty="Text"
-                                    ValueProperty="Value"
-                                    AllowClear="true"
-                                    Placeholder="All"
-                                    Style="width:100%" Change="@(args => OnFiltersChanged())" />
-                </RadzenColumn>
-                <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="2">
-                    <label>From (UTC)</label>
-                    <RadzenDatePicker TValue="DateTime?" @bind-Value="filterFromUtc" DateFormat="@DatePattern" Style="width:100%" Change="@(args => OnFiltersChanged())" />
-                </RadzenColumn>
-                <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="2">
-                    <label>To (UTC)</label>
-                    <RadzenDatePicker TValue="DateTime?" @bind-Value="filterToUtc" DateFormat="@DatePattern" Style="width:100%" Change="@(args => OnFiltersChanged())" />
-                </RadzenColumn>
-                <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="1" class="filters__actions">
-                    <RadzenButton Style="width:100%" ButtonStyle="ButtonStyle.Secondary" Click="@ClearFilters" Text="Clear" />
-                </RadzenColumn>
-            </RadzenRow>
-        </div>
-    }
-    <RadzenDataList Data="@FlightsOrdered"
-                    TItem="UserFlightDto"
-                    AllowPaging="true"
-                    PageSize="20"
-                    PagerHorizontalAlign="HorizontalAlign.Left"
-                    ShowPagingSummary="true"
-                    WrapItems="true"
-                    AllowVirtualization="false">
-        <Template Context="flight">
-            <FlightCard Flight="@flight"
-                        DateFormat="@DateFormat"
-                        TimeFormat="@TimeFormat"
-                        OnDelete="HandleDeleteAsync" />
-        </Template>
-    </RadzenDataList>
-}
+namespace FlightTracker.Web.Components;
 
-@code {
+public partial class UserFlightsList
+{
+    [Inject]
+    private NavigationManager Nav { get; set; } = default!;
+
+    [Inject]
+    private IUserFlightService UserFlightService { get; set; } = default!;
+
+    [Inject]
+    private DialogService DialogService { get; set; } = default!;
+
+    [Inject]
+    private NotificationService NotificationService { get; set; } = default!;
+
     [Parameter]
     public IEnumerable<UserFlightDto>? Flights { get; set; }
 
@@ -98,9 +42,13 @@ else
     private string DatePattern => PreferenceFormatter.GetDatePattern(DateFormat);
 
     private string? filterFlightNumber;
+
     private FlightClass? filterClass;
+
     private bool? filterDidFly;
+
     private DateTime? filterFromUtc;
+
     private DateTime? filterToUtc;
 
     private sealed record Option<T>(string Text, T? Value);
@@ -125,30 +73,38 @@ else
 
     protected override void OnInitialized()
     {
-        // Parse filters from query string on initial load
         var uri = new Uri(Nav.Uri);
         var query = QueryHelpers.ParseQuery(uri.Query);
-        if (query.TryGetValue("q", out var q) && !string.IsNullOrWhiteSpace(q))
+
+        if (query.TryGetValue("q", out var q)
+            && !string.IsNullOrWhiteSpace(q))
         {
-            filterFlightNumber = q!;
+            filterFlightNumber = q;
         }
-        if (query.TryGetValue("class", out var cls) && Enum.TryParse<FlightClass>(cls!, out var parsedClass))
+
+        if (query.TryGetValue("class", out var cls)
+            && Enum.TryParse<FlightClass>(cls, out var parsedClass))
         {
             filterClass = parsedClass;
         }
-        if (query.TryGetValue("didFly", out var df) && bool.TryParse(df!, out var parsedDidFly))
+
+        if (query.TryGetValue("didFly", out var df)
+            && bool.TryParse(df, out var parsedDidFly))
         {
             filterDidFly = parsedDidFly;
         }
-        if (query.TryGetValue("fromUtc", out var from) && DateTime.TryParse(from!, out var fromDt))
+
+        if (query.TryGetValue("fromUtc", out var from)
+            && DateTime.TryParse(from, out var fromDt))
         {
             filterFromUtc = DateTime.SpecifyKind(fromDt.Date, DateTimeKind.Utc);
         }
-        if (query.TryGetValue("toUtc", out var to) && DateTime.TryParse(to!, out var toDt))
+
+        if (query.TryGetValue("toUtc", out var to)
+            && DateTime.TryParse(to, out var toDt))
         {
             filterToUtc = DateTime.SpecifyKind(toDt.Date, DateTimeKind.Utc);
         }
-    // no-op
     }
 
     private IEnumerable<UserFlightDto> FilteredFlights()
@@ -158,7 +114,8 @@ else
         if (!string.IsNullOrWhiteSpace(filterFlightNumber))
         {
             var term = filterFlightNumber.Trim();
-            source = source.Where(f => f.FlightNumber?.Contains(term, StringComparison.OrdinalIgnoreCase) == true);
+            source = source.Where(f =>
+                f.FlightNumber?.Contains(term, StringComparison.OrdinalIgnoreCase) == true);
         }
 
         if (filterClass.HasValue)
@@ -175,13 +132,13 @@ else
 
         if (filterFromUtc.HasValue)
         {
-            var from = filterFromUtc.Value.Date; // start of day UTC
+            var from = filterFromUtc.Value.Date;
             source = source.Where(f => f.DepartureTimeUtc >= from);
         }
 
         if (filterToUtc.HasValue)
         {
-            var to = filterToUtc.Value.Date.AddDays(1).AddTicks(-1); // end of day UTC
+            var to = filterToUtc.Value.Date.AddDays(1).AddTicks(-1);
             source = source.Where(f => f.DepartureTimeUtc <= to);
         }
 
@@ -209,11 +166,30 @@ else
         var basePath = uri.GetLeftPart(UriPartial.Path);
 
         var qs = new Dictionary<string, string?>();
-        if (!string.IsNullOrWhiteSpace(filterFlightNumber)) qs["q"] = filterFlightNumber;
-        if (filterClass.HasValue) qs["class"] = filterClass.Value.ToString();
-        if (filterDidFly.HasValue) qs["didFly"] = filterDidFly.Value.ToString();
-        if (filterFromUtc.HasValue) qs["fromUtc"] = filterFromUtc.Value.ToString("yyyy-MM-dd");
-        if (filterToUtc.HasValue) qs["toUtc"] = filterToUtc.Value.ToString("yyyy-MM-dd");
+        if (!string.IsNullOrWhiteSpace(filterFlightNumber))
+        {
+            qs["q"] = filterFlightNumber;
+        }
+
+        if (filterClass.HasValue)
+        {
+            qs["class"] = filterClass.Value.ToString();
+        }
+
+        if (filterDidFly.HasValue)
+        {
+            qs["didFly"] = filterDidFly.Value.ToString();
+        }
+
+        if (filterFromUtc.HasValue)
+        {
+            qs["fromUtc"] = filterFromUtc.Value.ToString("yyyy-MM-dd");
+        }
+
+        if (filterToUtc.HasValue)
+        {
+            qs["toUtc"] = filterToUtc.Value.ToString("yyyy-MM-dd");
+        }
 
         var newUrl = QueryHelpers.AddQueryString(basePath, qs);
         if (!string.Equals(Nav.Uri, newUrl, StringComparison.OrdinalIgnoreCase))
@@ -239,18 +215,27 @@ else
 
         var action = dialogResult as string;
         if (string.IsNullOrWhiteSpace(action)
-            || string.Equals(action, UserFlightDeleteDialog.CancelAction, StringComparison.Ordinal))
+            || string.Equals(
+                action,
+                UserFlightDeleteDialog.CancelAction,
+                StringComparison.Ordinal))
         {
             return;
         }
 
-        if (string.Equals(action, UserFlightDeleteDialog.DeleteAction, StringComparison.Ordinal))
+        if (string.Equals(
+                action,
+                UserFlightDeleteDialog.DeleteAction,
+                StringComparison.Ordinal))
         {
             await DeleteFlightAsync(flight.Id);
             return;
         }
 
-        if (string.Equals(action, UserFlightDeleteDialog.MarkDidNotFlyAction, StringComparison.Ordinal))
+        if (string.Equals(
+                action,
+                UserFlightDeleteDialog.MarkDidNotFlyAction,
+                StringComparison.Ordinal))
         {
             await MarkDidNotFlyAsync(flight);
         }
@@ -320,6 +305,4 @@ else
 
         await OnFlightsChanged.InvokeAsync();
     }
-
 }
-
