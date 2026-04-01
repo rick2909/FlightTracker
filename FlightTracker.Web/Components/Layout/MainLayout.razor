@@ -9,13 +9,6 @@
     }
 
     <div class="@(ShowSidebar ? "layout__main" : string.Empty)">
-        @if (ShowSidebar)
-        {
-            <header class="layout__header">
-                <p class="layout__subtitle">@PageTitle</p>
-            </header>
-        }
-
         <main role="main" class="@(ShowSidebar ? "layout__content" : string.Empty)">
             @Body
         </main>

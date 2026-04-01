@@ -33,6 +33,11 @@
             } catch (e) {
             }
         })();
+
+        window.flightTracker = window.flightTracker || {};
+        window.flightTracker.setDocumentTitle = function (title) {
+            document.title = title;
+        };
     </script>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
