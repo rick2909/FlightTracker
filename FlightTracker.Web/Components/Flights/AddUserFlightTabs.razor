@@ -1,6 +1,7 @@
 @using FlightTracker.Application.Dtos
 @using FlightTracker.Domain.Entities
 @using FlightTracker.Domain.Enums
+@using FlightTracker.Web.Api.Contracts
 @using Radzen
 @using Radzen.Blazor
 @using Microsoft.AspNetCore.Components.Forms
@@ -25,24 +26,27 @@
                         <RadzenButton Text="Search" Icon="search" Click="SearchByNumber" />
                     </div>
                 </div>
-                @if (numberNoDateMatches)
-                {
-                    <div class="rz-message rz-message-warning" style="margin:.5rem 0;">
-                        No flights found for that date. Showing all matches for this flight number.
-                    </div>
-                }
                 @if (numberResults.Any())
                 {
-                    <RadzenDataList Data="@numberResults" TItem="Flight" WrapItems="true" AllowPaging="true" PageSize="6" AllowVirtualization="false">
+                    <RadzenDataList Data="@numberResults" TItem="FlightLookupCandidateApiResponse" WrapItems="true" AllowPaging="true" PageSize="6" AllowVirtualization="false">
                         <Template Context="f">
                             <div class="ft-result">
                                 <div class="ft-result__main">
-                                    <div class="ft-result__title"><strong>@f.FlightNumber</strong> @(f.DepartureAirport?.IataCode ?? f.DepartureAirport?.IcaoCode) → @(f.ArrivalAirport?.IataCode ?? f.ArrivalAirport?.IcaoCode)</div>
-                                    <div class="ft-result__meta">@f.DepartureTimeUtc.ToUniversalTime().ToString("dd-MM-yyyy HH:mm") UTC</div>
+                                    <div class="ft-result__title"><strong>@f.FlightNumber</strong> @(f.DepartureCode ?? "-") → @(f.ArrivalCode ?? "-")</div>
+                                    <div class="ft-result__meta">
+                                        @if (f.DepartureTimeUtc.HasValue)
+                                        {
+                                            @f.DepartureTimeUtc.Value.ToUniversalTime().ToString("dd-MM-yyyy HH:mm") <span>UTC</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Schedule unknown (external lookup)</span>
+                                        }
+                                    </div>
                                 </div>
                                 <div class="ft-result__actions">
-                                    <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectFlightFullAsync(f)" />
-                                    <RadzenButton Size="ButtonSize.Small" Icon="event_busy" Text="No date" Click="() => SelectFlightNoDateAsync(f)" ButtonStyle="ButtonStyle.Light" />
+                                    <RadzenButton Size="ButtonSize.Small" Icon="done" Text="Select" Click="() => SelectLookupCandidateFullAsync(f)" />
+                                    <RadzenButton Size="ButtonSize.Small" Icon="event_busy" Text="No date" Click="() => SelectLookupCandidateNoDateAsync(f)" ButtonStyle="ButtonStyle.Light" />
                                 </div>
                             </div>
                         </Template>

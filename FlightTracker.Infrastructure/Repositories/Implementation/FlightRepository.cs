@@ -43,6 +43,7 @@ public class FlightRepository(FlightTrackerDbContext db) : IFlightRepository
         var query = db.Flights
             .Include(f => f.DepartureAirport)
             .Include(f => f.ArrivalAirport)
+            .Include(f => f.OperatingAirline)
             .AsNoTracking()
             .Where(f => !string.IsNullOrEmpty(normalized) && EF.Functions.Like(f.FlightNumber, $"%{normalized}%"));
 
@@ -66,6 +67,7 @@ public class FlightRepository(FlightTrackerDbContext db) : IFlightRepository
         var query = db.Flights
             .Include(f => f.DepartureAirport)
             .Include(f => f.ArrivalAirport)
+            .Include(f => f.OperatingAirline)
             .AsNoTracking()
             .AsQueryable();
 

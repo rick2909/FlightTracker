@@ -3,6 +3,7 @@ using FlightTracker.Application.Dtos;
 using FlightTracker.Application.Services.Interfaces;
 using FlightTracker.Domain.Entities;
 using FlightTracker.Domain.Enums;
+using FlightTracker.Web.Api.Contracts;
 using FlightTracker.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
@@ -24,6 +25,9 @@ public partial class AddUserFlightTabs
 
     [Parameter]
     public EventCallback OnCancel { get; set; }
+
+    [Inject]
+    public IFlightsApiClient FlightsApiClient { get; set; } = default!;
 
     [Inject]
     public IFlightLookupService Lookup { get; set; } = default!;
@@ -66,8 +70,7 @@ public partial class AddUserFlightTabs
     private int _tabIndex;
     private string? numberSearchNumber;
     private DateTime? numberSearchDate;
-    private bool numberNoDateMatches;
-    private List<Flight> numberResults = new();
+    private List<FlightLookupCandidateApiResponse> numberResults = new();
 
     private string? routeDep;
     private string? routeArr;
@@ -132,7 +135,6 @@ public partial class AddUserFlightTabs
 
     private async Task SearchByNumber()
     {
-        numberNoDateMatches = false;
         numberResults.Clear();
 
         if (string.IsNullOrWhiteSpace(numberSearchNumber))
@@ -140,38 +142,13 @@ public partial class AddUserFlightTabs
             return;
         }
 
-        IReadOnlyList<Flight> results;
+        DateOnly? dateOnly = numberSearchDate.HasValue
+            ? DateOnly.FromDateTime(numberSearchDate.Value.Date)
+            : null;
 
-        if (numberSearchDate.HasValue)
-        {
-            var dateOnly = DateOnly.FromDateTime(numberSearchDate.Value.Date);
-            var resultsWrapper = await Lookup.SearchByFlightNumberAsync(
-                numberSearchNumber,
-                dateOnly);
-            results = resultsWrapper.IsSuccess
-                ? resultsWrapper.Value ?? Array.Empty<Flight>()
-                : Array.Empty<Flight>();
-
-            if (results.Count == 0)
-            {
-                numberNoDateMatches = true;
-                var fallbackWrapper = await Lookup.SearchByFlightNumberAsync(
-                    numberSearchNumber,
-                    null);
-                results = fallbackWrapper.IsSuccess
-                    ? fallbackWrapper.Value ?? Array.Empty<Flight>()
-                    : Array.Empty<Flight>();
-            }
-        }
-        else
-        {
-            var resultsWrapper = await Lookup.SearchByFlightNumberAsync(
-                numberSearchNumber,
-                null);
-            results = resultsWrapper.IsSuccess
-                ? resultsWrapper.Value ?? Array.Empty<Flight>()
-                : Array.Empty<Flight>();
-        }
+        var results = await FlightsApiClient.LookupByDesignatorAsync(
+            numberSearchNumber,
+            dateOnly);
 
         numberResults = results.ToList();
     }
@@ -254,6 +231,42 @@ public partial class AddUserFlightTabs
             ?? flight.ArrivalAirport?.IcaoCode;
         validation.DepartureTimeLocal = null;
         validation.ArrivalTimeLocal = null;
+        _tabIndex = 2;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task SelectLookupCandidateFullAsync(FlightLookupCandidateApiResponse candidate)
+    {
+        flightId = candidate.FlightId ?? 0;
+        validation.FlightNumber = candidate.FlightNumber;
+        validation.DepartureAirportCode = candidate.DepartureCode;
+        validation.ArrivalAirportCode = candidate.ArrivalCode;
+        validation.OperatingAirlineCode = candidate.AirlineIcaoCode
+            ?? candidate.AirlineIataCode;
+
+        validation.DepartureTimeLocal = await ConvertUtcToLocalAsync(
+            candidate.DepartureTimeUtc,
+            validation.DepartureAirportCode);
+        validation.ArrivalTimeLocal = await ConvertUtcToLocalAsync(
+            candidate.ArrivalTimeUtc,
+            validation.ArrivalAirportCode);
+
+        _tabIndex = 2;
+        StateHasChanged();
+    }
+
+    private Task SelectLookupCandidateNoDateAsync(FlightLookupCandidateApiResponse candidate)
+    {
+        flightId = candidate.FlightId ?? 0;
+        validation.FlightNumber = candidate.FlightNumber;
+        validation.DepartureAirportCode = candidate.DepartureCode;
+        validation.ArrivalAirportCode = candidate.ArrivalCode;
+        validation.DepartureTimeLocal = null;
+        validation.ArrivalTimeLocal = null;
+        validation.OperatingAirlineCode = candidate.AirlineIcaoCode
+            ?? candidate.AirlineIataCode;
+
         _tabIndex = 2;
         StateHasChanged();
         return Task.CompletedTask;
