@@ -1,11 +1,16 @@
 @using FlightTracker.Application.Dtos
 @using FlightTracker.Domain.Enums
+@using FlightTracker.Application.Services.Interfaces
 @using Radzen
 @using Radzen.Blazor
 @using Microsoft.AspNetCore.WebUtilities
 @using FlightTracker.Web.Components.Cards
+@using FlightTracker.Web.Components.Flights
 @using FlightTracker.Web.Formatting
 @inject NavigationManager Nav
+@inject IUserFlightService UserFlightService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
 
 @if (Flights is null || !Flights.Any())
 {
@@ -28,6 +33,8 @@ else
                                     Data="@flightClassOptions"
                                     TextProperty="Text"
                                     ValueProperty="Value"
+                                    AllowClear="true"
+                                    Placeholder="All"
                                     Style="width:100%" Change="@(args => OnFiltersChanged())" />
                 </RadzenColumn>
                 <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="2">
@@ -37,6 +44,8 @@ else
                                     Data="@didFlyOptions"
                                     TextProperty="Text"
                                     ValueProperty="Value"
+                                    AllowClear="true"
+                                    Placeholder="All"
                                     Style="width:100%" Change="@(args => OnFiltersChanged())" />
                 </RadzenColumn>
                 <RadzenColumn Size="12" SizeSM="6" SizeMD="4" SizeLG="2">
@@ -62,7 +71,10 @@ else
                     WrapItems="true"
                     AllowVirtualization="false">
         <Template Context="flight">
-            <FlightCard Flight="@flight" DateFormat="@DateFormat" TimeFormat="@TimeFormat" />
+            <FlightCard Flight="@flight"
+                        DateFormat="@DateFormat"
+                        TimeFormat="@TimeFormat"
+                        OnDelete="HandleDeleteAsync" />
         </Template>
     </RadzenDataList>
 }
@@ -80,6 +92,9 @@ else
     [Parameter]
     public TimeFormat TimeFormat { get; set; } = TimeFormat.TwentyFourHour;
 
+    [Parameter]
+    public EventCallback OnFlightsChanged { get; set; }
+
     private string DatePattern => PreferenceFormatter.GetDatePattern(DateFormat);
 
     private string? filterFlightNumber;
@@ -92,7 +107,6 @@ else
 
     private readonly IEnumerable<Option<FlightClass>> flightClassOptions = new[]
     {
-        new Option<FlightClass>("All", default),
         new Option<FlightClass>("Economy", FlightClass.Economy),
         new Option<FlightClass>("Premium Economy", FlightClass.PremiumEconomy),
         new Option<FlightClass>("Business", FlightClass.Business),
@@ -101,7 +115,6 @@ else
 
     private readonly IEnumerable<Option<bool>> didFlyOptions = new[]
     {
-        new Option<bool>("All", default),
         new Option<bool>("Completed", true),
         new Option<bool>("No Show", false)
     };
@@ -207,6 +220,105 @@ else
         {
             Nav.NavigateTo(newUrl, replace: true);
         }
+    }
+
+    private async Task HandleDeleteAsync(UserFlightDto flight)
+    {
+        var dialogResult = await DialogService.OpenAsync<UserFlightDeleteDialog>(
+            "Manage Flight Record",
+            new Dictionary<string, object?>
+            {
+                [nameof(UserFlightDeleteDialog.FlightNumber)] = flight.FlightNumber
+            },
+            new DialogOptions
+            {
+                Width = "560px",
+                ShowClose = false,
+                CloseDialogOnEsc = true
+            });
+
+        var action = dialogResult as string;
+        if (string.IsNullOrWhiteSpace(action)
+            || string.Equals(action, UserFlightDeleteDialog.CancelAction, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (string.Equals(action, UserFlightDeleteDialog.DeleteAction, StringComparison.Ordinal))
+        {
+            await DeleteFlightAsync(flight.Id);
+            return;
+        }
+
+        if (string.Equals(action, UserFlightDeleteDialog.MarkDidNotFlyAction, StringComparison.Ordinal))
+        {
+            await MarkDidNotFlyAsync(flight);
+        }
+    }
+
+    private async Task DeleteFlightAsync(int userFlightId)
+    {
+        var result = await UserFlightService.DeleteUserFlightAsync(userFlightId);
+        if (result.IsFailure || !result.Value)
+        {
+            NotificationService.Notify(
+                NotificationSeverity.Error,
+                "Delete failed",
+                "The flight could not be deleted.");
+            return;
+        }
+
+        NotificationService.Notify(
+            NotificationSeverity.Success,
+            "Flight deleted",
+            "The flight record was permanently deleted.");
+
+        await OnFlightsChanged.InvokeAsync();
+    }
+
+    private async Task MarkDidNotFlyAsync(UserFlightDto flight)
+    {
+        var userFlightUpdate = new UpdateUserFlightDto
+        {
+            SeatNumber = flight.SeatNumber,
+            FlightClass = flight.FlightClass,
+            Notes = flight.Notes,
+            DidFly = false
+        };
+
+        var scheduleUpdate = new FlightScheduleUpdateDto
+        {
+            FlightId = flight.FlightId,
+            FlightNumber = flight.FlightNumber,
+            DepartureAirportCode = flight.DepartureAirportCode,
+            ArrivalAirportCode = flight.ArrivalAirportCode,
+            DepartureTimeUtc = flight.DepartureTimeUtc,
+            ArrivalTimeUtc = flight.ArrivalTimeUtc,
+            AircraftRegistration = flight.Aircraft?.Registration,
+            OperatingAirlineCode = flight.OperatingAirlineIataCode
+                ?? flight.OperatingAirlineIcaoCode
+        };
+
+        var result = await UserFlightService.UpdateUserFlightAndScheduleAsync(
+            flight.Id,
+            userFlightUpdate,
+            scheduleUpdate);
+
+        if (result.IsFailure || result.Value is null)
+        {
+            NotificationService.Notify(
+                NotificationSeverity.Error,
+                "Update failed",
+                "The flight could not be marked as not flown.");
+            return;
+        }
+
+        NotificationService.Notify(
+            NotificationSeverity.Success,
+            "Flight updated",
+            "Marked as not flown (DidFly = false).");
+
+        await OnFlightsChanged.InvokeAsync();
     }
 
 }

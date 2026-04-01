@@ -31,27 +31,39 @@ public partial class UserFlights
 
     protected string Title { get; private set; } = "My Flights";
 
+    private int _effectiveUserId;
+
     protected override async Task OnParametersSetAsync()
     {
-        var effectiveUserId = UserId ?? await GetCurrentUserIdAsync();
-        if (effectiveUserId <= 0)
+        _effectiveUserId = UserId ?? await GetCurrentUserIdAsync();
+        if (_effectiveUserId <= 0)
         {
             return;
         }
 
-        Title = UserId.HasValue ? $"User #{effectiveUserId} Flights" : "My Flights";
+        Title = UserId.HasValue ? $"User #{_effectiveUserId} Flights" : "My Flights";
 
-        var flightsResult = await UserFlightService.GetUserFlightsAsync(effectiveUserId);
-        if (!flightsResult.IsFailure && flightsResult.Value is not null)
-        {
-            Flights = flightsResult.Value.OrderByDescending(f => f.DepartureTimeUtc).ToList();
-        }
+        await ReloadFlightsAsync();
 
-        var preferencesResult = await UserPreferencesService.GetOrCreateAsync(effectiveUserId);
+        var preferencesResult = await UserPreferencesService.GetOrCreateAsync(_effectiveUserId);
         if (!preferencesResult.IsFailure && preferencesResult.Value is not null)
         {
             DateFormat = preferencesResult.Value.DateFormat;
             TimeFormat = preferencesResult.Value.TimeFormat;
+        }
+    }
+
+    protected async Task ReloadFlightsAsync()
+    {
+        if (_effectiveUserId <= 0)
+        {
+            return;
+        }
+
+        var flightsResult = await UserFlightService.GetUserFlightsAsync(_effectiveUserId);
+        if (!flightsResult.IsFailure && flightsResult.Value is not null)
+        {
+            Flights = flightsResult.Value.OrderByDescending(f => f.DepartureTimeUtc).ToList();
         }
     }
 

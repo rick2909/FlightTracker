@@ -1,0 +1,40 @@
+@using Radzen
+@using Radzen.Blazor
+@inject DialogService DialogService
+
+<div class="rz-p-3">
+    <p class="rz-mb-3">
+        Choose what to do with flight
+        <strong>@DisplayFlightNumber</strong>.
+    </p>
+    <p class="rz-text-secondary rz-mb-4">
+        You can cancel, permanently delete this record, or keep it and mark that you did not fly it.
+    </p>
+    <div class="rz-display-flex rz-align-items-center">
+        <RadzenButton Text="Delete"
+                      ButtonStyle="ButtonStyle.Danger"
+                      Icon="delete"
+                      Click="@(() => DialogService.Close(DeleteAction))" />
+        <RadzenButton Text="Did not fly"
+                      ButtonStyle="ButtonStyle.Warning"
+                      Icon="event_busy"
+                      class="rz-ml-3"
+                      Click="@(() => DialogService.Close(MarkDidNotFlyAction))" />
+        <RadzenButton Text="Cancel"
+                      ButtonStyle="ButtonStyle.Light"
+                      class="rz-ml-auto"
+                      Click="@(() => DialogService.Close(CancelAction))" />
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? FlightNumber { get; set; }
+
+    public const string CancelAction = "cancel";
+    public const string DeleteAction = "delete";
+    public const string MarkDidNotFlyAction = "markDidNotFly";
+
+    private string DisplayFlightNumber =>
+        string.IsNullOrWhiteSpace(FlightNumber) ? "(unknown flight)" : FlightNumber;
+}
