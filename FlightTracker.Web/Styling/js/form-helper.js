@@ -55,6 +55,18 @@ window.FlightTracker.downloadBase64 = function(fileName, contentType, base64) {
     }
 };
 
+window.FlightTracker.replaceUrl = function(url) {
+    try {
+        if (typeof url !== 'string' || url.length === 0) {
+            return;
+        }
+
+        window.history.replaceState(window.history.state, '', url);
+    } catch (error) {
+        console.error('URL replace failed:', error);
+    }
+};
+
 /**
  * Submit a form with anti-forgery token protection
  * @param {string} url - The endpoint URL

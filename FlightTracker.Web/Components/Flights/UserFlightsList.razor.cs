@@ -6,6 +6,7 @@ using FlightTracker.Web.Components.Flights;
 using FlightTracker.Web.Formatting;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.JSInterop;
 using Radzen;
 
 namespace FlightTracker.Web.Components;
@@ -23,6 +24,9 @@ public partial class UserFlightsList
 
     [Inject]
     private NotificationService NotificationService { get; set; } = default!;
+
+    [Inject]
+    private IJSRuntime JS { get; set; } = default!;
 
     [Parameter]
     public IEnumerable<UserFlightDto>? Flights { get; set; }
@@ -145,22 +149,22 @@ public partial class UserFlightsList
         return source;
     }
 
-    private void ClearFilters()
+    private async Task ClearFiltersAsync()
     {
         filterFlightNumber = null;
         filterClass = null;
         filterDidFly = null;
         filterFromUtc = null;
         filterToUtc = null;
-        UpdateUrl();
+        await UpdateUrlAsync();
     }
 
-    private void OnFiltersChanged()
+    private Task OnFiltersChangedAsync()
     {
-        UpdateUrl();
+        return UpdateUrlAsync();
     }
 
-    private void UpdateUrl()
+    private async Task UpdateUrlAsync()
     {
         var uri = new Uri(Nav.Uri);
         var basePath = uri.GetLeftPart(UriPartial.Path);
@@ -192,10 +196,7 @@ public partial class UserFlightsList
         }
 
         var newUrl = QueryHelpers.AddQueryString(basePath, qs);
-        if (!string.Equals(Nav.Uri, newUrl, StringComparison.OrdinalIgnoreCase))
-        {
-            Nav.NavigateTo(newUrl, replace: true);
-        }
+        await JS.InvokeVoidAsync("FlightTracker.replaceUrl", newUrl);
     }
 
     private async Task HandleDeleteAsync(UserFlightDto flight)
