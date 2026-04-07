@@ -1,0 +1,23 @@
+@using FlightTracker.Application.Dtos
+@using Radzen
+@namespace FlightTracker.Web.Components.Maps
+
+<div data-flight-map-search>
+    <span class="flight-map__search-icon material-icons">search</span>
+    <RadzenTextBox Value="@_search" @oninput="OnInput" @onkeydown="OnKeyDown" Placeholder="Search flights" class="flight-map__search-textbox" Style="width:100%;font-size:.75rem;line-height:1.2;" />
+    @if (!string.IsNullOrEmpty(_search))
+    {
+        <button type="button" class="flight-map__search-clear" @onclick="Clear" aria-label="Clear search">&times;</button>
+    }
+    @if (!string.IsNullOrWhiteSpace(_search) && Filtered.Any())
+    {
+        <ul class="flight-map__search-dropdown" role="listbox" aria-label="Flight matches">
+            @for (int i = 0; i < _currentFiltered.Count; i++)
+            {
+                var item = _currentFiltered[i];
+                var active = i == _activeIndex ? " active" : string.Empty;
+                <li role="option" class="@active" @onclick="(()=>Select(item))">@item</li>
+            }
+        </ul>
+    }
+</div>

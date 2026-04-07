@@ -237,6 +237,183 @@ public class UserFlightServiceTests
         airlineRepository.Verify(r => r.AddAsync(It.IsAny<Airline>(), It.IsAny<CancellationToken>()), Times.Once);
         airlineLookupClient.Verify(c => c.GetAirlineByCodeAsync("MSI", It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task AddUserFlightAsync_ReturnsFailure_WhenFlightAlreadyRecorded()
+    {
+        var createDto = new CreateUserFlightDto
+        {
+            FlightId = 10,
+            FlightClass = FlightClass.Economy,
+            SeatNumber = "12A",
+            DidFly = true
+        };
+
+        var userFlightRepository = new Mock<IUserFlightRepository>();
+        userFlightRepository
+            .Setup(r => r.HasUserFlownFlightAsync(5, 10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var flightRepository = new Mock<IFlightRepository>();
+        flightRepository
+            .Setup(r => r.GetByIdAsync(10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Flight { Id = 10 });
+
+        var service = CreateService(
+            userFlightRepository.Object,
+            flightRepository.Object,
+            new Mock<IFlightService>().Object,
+            CreateMapper());
+
+        var result = await service.AddUserFlightAsync(5, createDto);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("userflight.add.failed", result.ErrorCode);
+        Assert.Contains("already recorded flight 10", result.ErrorMessage);
+        userFlightRepository.Verify(
+            r => r.AddAsync(It.IsAny<UserFlight>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task AddUserFlightAsync_ReturnsFailure_WhenProvidedFlightDoesNotExist()
+    {
+        var createDto = new CreateUserFlightDto
+        {
+            FlightId = 77,
+            FlightClass = FlightClass.Economy,
+            SeatNumber = "14C",
+            DidFly = true
+        };
+
+        var flightRepository = new Mock<IFlightRepository>();
+        flightRepository
+            .Setup(r => r.GetByIdAsync(77, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Flight?)null);
+
+        var service = CreateService(
+            new Mock<IUserFlightRepository>().Object,
+            flightRepository.Object,
+            new Mock<IFlightService>().Object,
+            CreateMapper());
+
+        var result = await service.AddUserFlightAsync(5, createDto);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal("userflight.add.failed", result.ErrorCode);
+        Assert.Contains("Flight with ID 77 not found.", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateUserFlightAsync_ReturnsNull_WhenRecordDoesNotExist()
+    {
+        var repository = new Mock<IUserFlightRepository>();
+        repository
+            .Setup(r => r.GetByIdAsync(88, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserFlight?)null);
+
+        var service = CreateService(
+            repository.Object,
+            new Mock<IFlightRepository>().Object,
+            new Mock<IFlightService>().Object,
+            CreateMapper());
+
+        var result = await service.UpdateUserFlightAsync(
+            88,
+            new CreateUserFlightDto
+            {
+                FlightClass = FlightClass.Business,
+                SeatNumber = "2A",
+                DidFly = true
+            });
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value);
+        repository.Verify(
+            r => r.UpdateAsync(It.IsAny<UserFlight>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateUserFlightAsync_UpdatesExistingRecord()
+    {
+        var existing = new UserFlight
+        {
+            Id = 12,
+            UserId = 3,
+            FlightId = 44,
+            FlightClass = FlightClass.Economy,
+            SeatNumber = "18B",
+            Notes = "old",
+            DidFly = true,
+            Flight = new Flight { Id = 44 }
+        };
+
+        var repository = new Mock<IUserFlightRepository>();
+        repository
+            .Setup(r => r.GetByIdAsync(12, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        repository
+            .Setup(r => r.UpdateAsync(existing, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var service = CreateService(
+            repository.Object,
+            new Mock<IFlightRepository>().Object,
+            new Mock<IFlightService>().Object,
+            CreateMapper());
+
+        var result = await service.UpdateUserFlightAsync(
+            12,
+            new CreateUserFlightDto
+            {
+                FlightClass = FlightClass.First,
+                SeatNumber = "1A",
+                Notes = "upgraded",
+                DidFly = false
+            });
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(FlightClass.First, existing.FlightClass);
+        Assert.Equal("1A", existing.SeatNumber);
+        Assert.Equal("upgraded", existing.Notes);
+        Assert.False(existing.DidFly);
+        repository.Verify(r => r.UpdateAsync(existing, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteUserFlightAsync_ReturnsFalse_WhenRecordDoesNotExist()
+    {
+        var repository = new Mock<IUserFlightRepository>();
+        repository
+            .Setup(r => r.GetByIdAsync(25, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((UserFlight?)null);
+
+        var service = CreateService(repository.Object);
+
+        var result = await service.DeleteUserFlightAsync(25);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value);
+        repository.Verify(r => r.DeleteAsync(25, It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task HasUserFlownFlightAsync_ReturnsRepositoryValue()
+    {
+        var repository = new Mock<IUserFlightRepository>();
+        repository
+            .Setup(r => r.HasUserFlownFlightAsync(7, 30, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var service = CreateService(repository.Object);
+
+        var result = await service.HasUserFlownFlightAsync(7, 30);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value);
+    }
+
     [Fact]
     public async Task GetUserFlightStatsAsync_ComputesTotals_AndIgnoresNoShows()
     {

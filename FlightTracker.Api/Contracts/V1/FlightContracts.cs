@@ -29,3 +29,39 @@ public sealed record FlightResponse(
 public sealed record FlightsQuery(
     DateTime? FromUtc,
     int? WindowHours);
+
+/// <summary>Query parameters for designator-based flight lookup.</summary>
+/// <param name="Designator">Flight number or callsign.</param>
+/// <param name="Date">Optional date filter applied to local DB results only.</param>
+public sealed record FlightLookupQuery(
+    string Designator,
+    DateOnly? Date);
+
+/// <summary>A quick-add candidate derived from DB and/or ADSBDB lookups.</summary>
+/// <param name="FlightId">Internal flight ID when candidate exists in the DB.</param>
+/// <param name="FlightNumber">Flight number/designator.</param>
+/// <param name="Callsign">Resolved callsign used by ADSBDB.</param>
+/// <param name="DepartureTimeUtc">Known departure time (DB candidates).</param>
+/// <param name="ArrivalTimeUtc">Known arrival time (DB candidates).</param>
+/// <param name="DepartureCode">Departure airport IATA/ICAO code when known.</param>
+/// <param name="ArrivalCode">Arrival airport IATA/ICAO code when known.</param>
+/// <param name="DepartureAirportName">Departure airport name when known.</param>
+/// <param name="ArrivalAirportName">Arrival airport name when known.</param>
+/// <param name="AirlineIataCode">Operating airline IATA code when known.</param>
+/// <param name="AirlineIcaoCode">Operating airline ICAO code when known.</param>
+/// <param name="AirlineName">Operating airline name when known.</param>
+/// <param name="IsFromDatabase">True when sourced from local DB, false when from ADSBDB.</param>
+public sealed record FlightLookupCandidateResponse(
+    int? FlightId,
+    string FlightNumber,
+    string Callsign,
+    DateTime? DepartureTimeUtc,
+    DateTime? ArrivalTimeUtc,
+    string? DepartureCode,
+    string? ArrivalCode,
+    string? DepartureAirportName,
+    string? ArrivalAirportName,
+    string? AirlineIataCode,
+    string? AirlineIcaoCode,
+    string? AirlineName,
+    bool IsFromDatabase);

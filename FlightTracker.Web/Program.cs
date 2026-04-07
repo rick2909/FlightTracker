@@ -78,6 +78,15 @@ builder.Services.AddHttpClient<IUserFlightsApiClient, UserFlightsApiClient>((sp,
     }
 })
 .AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
+builder.Services.AddHttpClient<IFlightsApiClient, FlightsApiClient>((sp, client) =>
+{
+    var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;
+    if (Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out var baseUri))
+    {
+        client.BaseAddress = baseUri;
+    }
+})
+.AddHttpMessageHandler<FirstPartyApiBearerTokenHandler>();
 builder.Services.AddHttpClient<IPassportApiClient, PassportApiClient>((sp, client) =>
 {
     var options = sp.GetRequiredService<IOptions<FlightTrackerApiOptions>>().Value;

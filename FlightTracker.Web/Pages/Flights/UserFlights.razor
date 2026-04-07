@@ -25,7 +25,10 @@
             <div class="card-body">
                 @if (Flights.Any())
                 {
-                    <FlightTracker.Web.Components.UserFlightsList Flights="Flights" DateFormat="DateFormat" TimeFormat="TimeFormat" />
+                    <FlightTracker.Web.Components.UserFlightsList Flights="Flights"
+                                                                  DateFormat="DateFormat"
+                                                                  TimeFormat="TimeFormat"
+                                                                  OnFlightsChanged="ReloadFlightsAsync" />
                 }
                 else
                 {
